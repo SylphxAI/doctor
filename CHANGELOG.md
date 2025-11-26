@@ -1,5 +1,12 @@
 # sylphx-doctor
 
+## 1.2.2 (2025-11-26)
+
+### 🐛 Bug Fixes
+
+- use correct package name @sylphx/doctor and bin name doctor ([94d2e1c](https://github.com/SylphxAI/doctor/commit/94d2e1c417e10b6606efd6863bb135175e76aeea))
+- **hooks:** use @sylphx/doctor package name instead of sylphx-doctor ([b992f90](https://github.com/SylphxAI/doctor/commit/b992f907ba6035e03ee1cbbd2980e115a9709bbf))
+
 ## 1.2.1 (2025-11-26)
 
 ### 🐛 Bug Fixes
