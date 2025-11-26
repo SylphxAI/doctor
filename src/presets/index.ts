@@ -65,6 +65,11 @@ const initPreset: PresetConfig = {
 	'monorepo/packages-readme': 'off',
 	'monorepo/packages-license': 'off',
 	'monorepo/packages-description': 'off',
+	'monorepo/packages-type-module': 'off',
+	'monorepo/packages-exports': 'off',
+	'monorepo/packages-build': 'off',
+	'monorepo/packages-test': 'off',
+	'monorepo/packages-bench': 'off',
 }
 
 const devPreset: PresetConfig = {
@@ -132,6 +137,11 @@ const devPreset: PresetConfig = {
 	'monorepo/packages-readme': 'warn',
 	'monorepo/packages-license': 'warn',
 	'monorepo/packages-description': 'warn',
+	'monorepo/packages-type-module': 'warn',
+	'monorepo/packages-exports': 'warn',
+	'monorepo/packages-build': 'warn',
+	'monorepo/packages-test': 'off',
+	'monorepo/packages-bench': 'off',
 }
 
 const stablePreset: PresetConfig = {
@@ -199,6 +209,11 @@ const stablePreset: PresetConfig = {
 	'monorepo/packages-readme': 'error',
 	'monorepo/packages-license': 'error',
 	'monorepo/packages-description': 'error',
+	'monorepo/packages-type-module': 'error',
+	'monorepo/packages-exports': 'error',
+	'monorepo/packages-build': 'error',
+	'monorepo/packages-test': 'warn',
+	'monorepo/packages-bench': 'off',
 }
 
 export const presets: Record<PresetName, PresetConfig> = {

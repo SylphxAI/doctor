@@ -6,6 +6,9 @@ interface PackageJson {
 	name?: string
 	description?: string
 	workspaces?: string[]
+	type?: string
+	exports?: unknown
+	scripts?: Record<string, string>
 }
 
 async function getPackageDirs(cwd: string): Promise<string[]> {
@@ -187,8 +190,171 @@ export const packagesDescriptionCheck: Check = {
 	},
 }
 
+export const packagesTypeModuleCheck: Check = {
+	name: 'monorepo/packages-type-module',
+	category: 'monorepo',
+	description: 'Check if all packages have "type": "module"',
+	fixable: false,
+	async run(ctx: CheckContext): Promise<CheckResult> {
+		const packageDirs = await getPackageDirs(ctx.cwd)
+
+		if (packageDirs.length === 0) {
+			return {
+				name: 'monorepo/packages-type-module',
+				category: 'monorepo',
+				passed: true,
+				message: 'No packages found',
+				severity: ctx.severity,
+				fixable: false,
+			}
+		}
+
+		const missing: string[] = []
+
+		for (const pkgDir of packageDirs) {
+			const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
+			if (!pkg?.name) continue
+
+			if (pkg.type !== 'module') {
+				const relativePath = pkgDir.replace(`${ctx.cwd}/`, '')
+				missing.push(relativePath)
+			}
+		}
+
+		const passed = missing.length === 0
+
+		return {
+			name: 'monorepo/packages-type-module',
+			category: 'monorepo',
+			passed,
+			message: passed
+				? `All ${packageDirs.length} packages have "type": "module"`
+				: `Missing "type": "module" in: ${missing.join(', ')}`,
+			severity: ctx.severity,
+			fixable: false,
+		}
+	},
+}
+
+export const packagesExportsCheck: Check = {
+	name: 'monorepo/packages-exports',
+	category: 'monorepo',
+	description: 'Check if all packages have exports field',
+	fixable: false,
+	async run(ctx: CheckContext): Promise<CheckResult> {
+		const packageDirs = await getPackageDirs(ctx.cwd)
+
+		if (packageDirs.length === 0) {
+			return {
+				name: 'monorepo/packages-exports',
+				category: 'monorepo',
+				passed: true,
+				message: 'No packages found',
+				severity: ctx.severity,
+				fixable: false,
+			}
+		}
+
+		const missing: string[] = []
+
+		for (const pkgDir of packageDirs) {
+			const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
+			if (!pkg?.name) continue
+
+			if (!pkg.exports) {
+				const relativePath = pkgDir.replace(`${ctx.cwd}/`, '')
+				missing.push(relativePath)
+			}
+		}
+
+		const passed = missing.length === 0
+
+		return {
+			name: 'monorepo/packages-exports',
+			category: 'monorepo',
+			passed,
+			message: passed
+				? `All ${packageDirs.length} packages have exports`
+				: `Missing exports in: ${missing.join(', ')}`,
+			severity: ctx.severity,
+			fixable: false,
+		}
+	},
+}
+
+function createPackagesScriptCheck(name: string, scriptName: string, description: string): Check {
+	return {
+		name,
+		category: 'monorepo',
+		description,
+		fixable: false,
+		async run(ctx: CheckContext): Promise<CheckResult> {
+			const packageDirs = await getPackageDirs(ctx.cwd)
+
+			if (packageDirs.length === 0) {
+				return {
+					name,
+					category: 'monorepo',
+					passed: true,
+					message: 'No packages found',
+					severity: ctx.severity,
+					fixable: false,
+				}
+			}
+
+			const missing: string[] = []
+
+			for (const pkgDir of packageDirs) {
+				const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
+				if (!pkg?.name) continue
+
+				if (!pkg.scripts?.[scriptName]) {
+					const relativePath = pkgDir.replace(`${ctx.cwd}/`, '')
+					missing.push(relativePath)
+				}
+			}
+
+			const passed = missing.length === 0
+
+			return {
+				name,
+				category: 'monorepo',
+				passed,
+				message: passed
+					? `All ${packageDirs.length} packages have "${scriptName}" script`
+					: `Missing "${scriptName}" script in: ${missing.join(', ')}`,
+				severity: ctx.severity,
+				fixable: false,
+			}
+		},
+	}
+}
+
+export const packagesBuildCheck = createPackagesScriptCheck(
+	'monorepo/packages-build',
+	'build',
+	'Check if all packages have build script'
+)
+
+export const packagesTestCheck = createPackagesScriptCheck(
+	'monorepo/packages-test',
+	'test',
+	'Check if all packages have test script'
+)
+
+export const packagesBenchCheck = createPackagesScriptCheck(
+	'monorepo/packages-bench',
+	'bench',
+	'Check if all packages have bench script'
+)
+
 export const monorepoChecks: Check[] = [
 	packagesReadmeCheck,
 	packagesLicenseCheck,
 	packagesDescriptionCheck,
+	packagesTypeModuleCheck,
+	packagesExportsCheck,
+	packagesBuildCheck,
+	packagesTestCheck,
+	packagesBenchCheck,
 ]
