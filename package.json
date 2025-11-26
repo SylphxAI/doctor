@@ -23,7 +23,7 @@
     "test": "bun test",
     "test:coverage": "bun test --coverage",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "[ \"$CI\" = 'true' ] || [ \"$GITHUB_ACTIONS\" = 'true' ] || (echo '❌ Direct npm publish is blocked. Use automated release workflow.' && exit 1)"
   },
   "dependencies": {
     "citty": "^0.1.6",

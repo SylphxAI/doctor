@@ -2,6 +2,22 @@ import type { Check } from '../types'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
+/**
+ * Check if commit message matches release patterns
+ */
+function isReleaseCommit(msg: string): boolean {
+	const releasePatterns = [
+		/^chore\(release\)/i,
+		/^chore:\s*release/i,
+		/^release:/i,
+		/^release\(/i,
+		/bump.*version/i,
+		/^v?\d+\.\d+\.\d+$/,
+	]
+
+	return releasePatterns.some((pattern) => pattern.test(msg))
+}
+
 export const releaseModule: CheckModule = defineCheckModule(
 	{
 		category: 'release',
@@ -148,24 +164,63 @@ export const releaseModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'release/no-direct-publish',
+			description: 'Check if prepublishOnly blocks direct npm publish',
+			fixable: true,
+			async check(ctx) {
+				const pkg = ctx.packageJson
+				const prepublishOnly = pkg?.scripts?.prepublishOnly as string | undefined
+
+				if (!prepublishOnly) {
+					return {
+						passed: false,
+						message: 'Missing prepublishOnly script to block direct npm publish',
+						hint: 'Add prepublishOnly script that checks for CI environment',
+						fix: async () => {
+							const { join } = await import('node:path')
+							const { readJson } = await import('../utils/fs')
+							const { writeFileSync } = await import('node:fs')
+
+							const pkgPath = join(ctx.cwd, 'package.json')
+							const pkgJson = readJson(pkgPath) as Record<string, unknown>
+
+							if (!pkgJson.scripts) {
+								pkgJson.scripts = {}
+							}
+
+							const scripts = pkgJson.scripts as Record<string, string>
+							scripts.prepublishOnly =
+								'[ "$CI" = \'true\' ] || [ "$GITHUB_ACTIONS" = \'true\' ] || (echo \'❌ Direct npm publish is blocked. Use automated release workflow.\' && exit 1)'
+
+							writeFileSync(pkgPath, JSON.stringify(pkgJson, null, 2), 'utf-8')
+						},
+					}
+				}
+
+				// Check if prepublishOnly has CI check
+				const hasCICheck =
+					prepublishOnly.includes('$CI') ||
+					prepublishOnly.includes('GITHUB_ACTIONS') ||
+					prepublishOnly.includes('CI=')
+
+				if (!hasCICheck) {
+					return {
+						passed: false,
+						message: 'prepublishOnly script does not check for CI environment',
+						hint: 'prepublishOnly should block publishing unless in CI',
+					}
+				}
+
+				return {
+					passed: true,
+					message: 'prepublishOnly blocks direct npm publish',
+				}
+			},
+		},
 	]
 )
-
-/**
- * Check if commit message matches release patterns
- */
-function isReleaseCommit(msg: string): boolean {
-	const releasePatterns = [
-		/^chore\(release\)/i,
-		/^chore:\s*release/i,
-		/^release:/i,
-		/^release\(/i,
-		/bump.*version/i,
-		/^v?\d+\.\d+\.\d+$/,
-	]
-
-	return releasePatterns.some((pattern) => pattern.test(msg))
-}
 
 // Export for backward compatibility
 export const releaseChecks: Check[] = releaseModule.checks

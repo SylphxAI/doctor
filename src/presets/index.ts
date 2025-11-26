@@ -81,6 +81,7 @@ const initPreset: PresetConfig = {
 	// Release (enforce automated workflow)
 	'release/no-manual-version': 'error',
 	'release/no-release-commit': 'error',
+	'release/no-direct-publish': 'error',
 }
 
 const devPreset: PresetConfig = {
@@ -162,6 +163,7 @@ const devPreset: PresetConfig = {
 	// Release (enforce automated workflow)
 	'release/no-manual-version': 'error',
 	'release/no-release-commit': 'error',
+	'release/no-direct-publish': 'error',
 }
 
 const stablePreset: PresetConfig = {
@@ -243,6 +245,7 @@ const stablePreset: PresetConfig = {
 	// Release (enforce automated workflow)
 	'release/no-manual-version': 'error',
 	'release/no-release-commit': 'error',
+	'release/no-direct-publish': 'error',
 }
 
 export const presets: Record<PresetName, PresetConfig> = {
