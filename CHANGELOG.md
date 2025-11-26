@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.12.2 (2025-11-26)
+
+### 🐛 Bug Fixes
+
+- **prepublish:** use inline CI check to bootstrap ([048fe73](https://github.com/SylphxAI/doctor/commit/048fe73360fd743990fafd5f6053682bc6969e50))
+
 ## 1.12.1 (2025-11-26)
 
 ### 🐛 Bug Fixes
