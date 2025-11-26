@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.7.0 (2025-11-26)
+
+### ✨ Features
+
+- **cli:** add --pre-push mode with release hint ([b583c53](https://github.com/SylphxAI/doctor/commit/b583c5309e7b373dd6fe885b2b51fe4432211936))
+
 ## 1.6.1 (2025-11-26)
 
 ### 🐛 Bug Fixes
