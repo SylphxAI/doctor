@@ -29,6 +29,11 @@ const checkCommand = defineCommand({
 			description: 'Run in pre-commit mode (only errors, no warnings)',
 			default: false,
 		},
+		'pre-push': {
+			type: 'boolean',
+			description: 'Run in pre-push mode (with release hint)',
+			default: false,
+		},
 		'dry-run': {
 			type: 'boolean',
 			description: 'Preview what would be fixed without making changes',
@@ -38,6 +43,7 @@ const checkCommand = defineCommand({
 	async run({ args }) {
 		const cwd = process.cwd()
 		const preCommit = args['pre-commit']
+		const prePush = args['pre-push']
 
 		// Load config to get preset
 		const config = await loadConfig(cwd)
@@ -51,14 +57,20 @@ const checkCommand = defineCommand({
 		const report = await runChecks({
 			cwd,
 			fix: args.fix && !args['dry-run'],
-			preCommit,
+			preCommit: preCommit || prePush, // Both modes skip warnings
 			preset,
 			config,
 		})
 
 		// Output report
-		if (preCommit) {
+		if (preCommit || prePush) {
 			console.log(formatPreCommitReport(report))
+
+			// Show release hint in pre-push mode
+			if (prePush && report.failed === 0) {
+				console.log('')
+				console.log(pc.dim('💡 Release? Check: gh pr list --head bump/release'))
+			}
 		} else {
 			console.log(formatReport(report, preset))
 
@@ -99,7 +111,7 @@ const checkCommand = defineCommand({
 		}
 
 		// Exit with appropriate code
-		const exitCode = getExitCode(report, preCommit)
+		const exitCode = getExitCode(report, preCommit || prePush)
 		process.exit(exitCode)
 	},
 })

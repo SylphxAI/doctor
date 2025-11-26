@@ -19,6 +19,11 @@ pre-commit:
 
     doctor:
       run: bunx @sylphx/doctor check --pre-commit
+
+pre-push:
+  commands:
+    doctor:
+      run: bunx @sylphx/doctor check --pre-push
 `
 
 export const hooksModule: CheckModule = defineCheckModule(
