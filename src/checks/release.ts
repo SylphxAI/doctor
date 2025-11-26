@@ -181,7 +181,7 @@ export const releaseModule: CheckModule = defineCheckModule(
 						fix: async () => {
 							const { join } = await import('node:path')
 							const { readJson } = await import('../utils/fs')
-							const { writeFileSync } = await import('node:fs')
+							const { writeFile } = await import('node:fs/promises')
 
 							const pkgPath = join(ctx.cwd, 'package.json')
 							const pkgJson = readJson(pkgPath) as Record<string, unknown>
@@ -194,7 +194,7 @@ export const releaseModule: CheckModule = defineCheckModule(
 							scripts.prepublishOnly =
 								'[ "$CI" = \'true\' ] || [ "$GITHUB_ACTIONS" = \'true\' ] || (echo \'❌ Direct npm publish is blocked. Use automated release workflow.\' && exit 1)'
 
-							writeFileSync(pkgPath, JSON.stringify(pkgJson, null, 2), 'utf-8')
+							await writeFile(pkgPath, JSON.stringify(pkgJson, null, 2), 'utf-8')
 						},
 					}
 				}
