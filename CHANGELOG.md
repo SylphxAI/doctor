@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.14.0 (2025-11-26)
+
+### ✨ Features
+
+- **checks:** check all packages in monorepo with detailed error messages ([ee35584](https://github.com/SylphxAI/doctor/commit/ee355846de809c446971bb61e3e447326690f9ae))
+
 ## 1.13.2 (2025-11-26)
 
 ### 🐛 Bug Fixes
