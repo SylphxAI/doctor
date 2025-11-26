@@ -1,4 +1,5 @@
 import pc from 'picocolors'
+import { version } from '../package.json'
 import type { CheckReport, CheckResult, PresetName } from './types'
 
 function getIcon(result: CheckResult): string {
@@ -109,7 +110,7 @@ export function formatReport(report: CheckReport, preset: PresetName): string {
 
 	// Header
 	lines.push('')
-	lines.push(pc.bold('🩺 doctor check'))
+	lines.push(`${pc.bold('🩺 doctor')} ${pc.dim(`v${version}`)}`)
 	lines.push(pc.dim(`   Preset: ${preset}`))
 	lines.push('')
 
