@@ -242,7 +242,10 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { readPackageJson } = await import('../utils/fs')
 
 				const script = ctx.packageJson?.scripts?.lint
-				// Always use biome check - fast enough without turbo caching
+				// Always use biome directly (even in monorepo root)
+				// - Biome is extremely fast (Rust), no caching needed
+				// - Runs from root and checks all files recursively
+				// - Simpler than turbo, same result
 				const defaultScript = 'biome check .'
 
 				if (!script) {
@@ -282,17 +285,21 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { readPackageJson } = await import('../utils/fs')
 
 				const script = ctx.packageJson?.scripts?.format
+				// Always use biome directly (even in monorepo root)
+				// - Biome is extremely fast (Rust), no caching needed
+				// - Runs from root and formats all files recursively
+				const defaultScript = 'biome format --write .'
 
 				if (!script) {
 					return {
 						passed: false,
 						message: 'Missing "format" script in package.json',
-						hint: 'Add "format": "biome format --write ." to package.json scripts',
+						hint: `Add "format": "${defaultScript}" to package.json scripts`,
 						fix: async () => {
 							const pkgPath = join(ctx.cwd, 'package.json')
 							const currentPkg = readPackageJson(ctx.cwd) ?? {}
 							currentPkg.scripts = currentPkg.scripts ?? {}
-							currentPkg.scripts.format = 'biome format --write .'
+							currentPkg.scripts.format = defaultScript
 							writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
 						},
 					}
@@ -304,8 +311,8 @@ export const packageModule: CheckModule = defineCheckModule(
 					passed: usesBiome,
 					message: usesBiome
 						? `format script: "${script}"`
-						: `format script uses "${script}" (expected biome)`,
-					hint: usesBiome ? undefined : 'Use "biome format --write ."',
+						: `format script should use biome (found "${script}")`,
+					hint: usesBiome ? undefined : `Use "${defaultScript}"`,
 				}
 			},
 		},
@@ -411,8 +418,10 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { readPackageJson } = await import('../utils/fs')
 
 				const script = ctx.packageJson?.scripts?.typecheck
-				// Always use tsc --noEmit directly
-				// tsc has built-in incremental caching, turbo adds no benefit
+				// Always use tsc directly (even in monorepo root)
+				// - tsc has built-in incremental caching (--incremental)
+				// - turbo caching adds no benefit on top of tsc's cache
+				// - Only tsc can do real type checking (no alternatives exist)
 				const defaultScript = 'tsc --noEmit'
 
 				if (!script) {
