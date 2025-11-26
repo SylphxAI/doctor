@@ -1,5 +1,23 @@
 # sylphx-doctor
 
+## 1.8.0 (2025-11-26)
+
+### ✨ Features
+
+- **checks:** enforce standards and support workspace configs ([3ff20d3](https://github.com/SylphxAI/doctor/commit/3ff20d325a345f013cc6ae24592b65b9f4abc432))
+- **files:** restore progress.md check with info severity ([c085077](https://github.com/SylphxAI/doctor/commit/c085077546a98702594a73df46ffad4ceee68235))
+
+### 🐛 Bug Fixes
+
+- **build:** check bunup config only when build script uses bunup ([64d662b](https://github.com/SylphxAI/doctor/commit/64d662b13aecd721c0d451b475aaa2bfde66e15d))
+- **pkg:** accept bun run --filter for monorepo root scripts ([9201287](https://github.com/SylphxAI/doctor/commit/920128783ce9034111b88e9cdab3fe7835a2a222))
+
+### ♻️ Refactoring
+
+- **build:** remove bunup config check (works with defaults) ([d60de15](https://github.com/SylphxAI/doctor/commit/d60de156dac9b8f46bfbc5b85c4f1edccef0ff66))
+- **checks:** simplify and improve check logic ([2f71605](https://github.com/SylphxAI/doctor/commit/2f7160577de4791973327e2e99f0b72ffeebdb45))
+- **pkg:** monorepo always requires turbo (company standard) ([d2a4563](https://github.com/SylphxAI/doctor/commit/d2a4563435291efb16d16aee9867fe617bc2aba3))
+
 ## 1.7.1 (2025-11-26)
 
 ### 🐛 Bug Fixes
