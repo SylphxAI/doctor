@@ -1,17 +1,17 @@
-# sylphx-doctor
+# @sylphx/doctor
 
 CLI tool to check and enforce project standards across SylphxAI repositories.
 
 ## Installation
 
 ```bash
-bun add -D sylphx-doctor
+bun add -D @sylphx/doctor
 ```
 
 Or run directly:
 
 ```bash
-bunx sylphx-doctor check
+bunx @sylphx/doctor check
 ```
 
 ## Usage
@@ -20,46 +20,46 @@ bunx sylphx-doctor check
 
 ```bash
 # Check with default preset (dev)
-sylphx-doctor check
+doctor check
 
 # Check with specific preset
-sylphx-doctor check --preset=init
-sylphx-doctor check --preset=stable
+doctor check --preset=init
+doctor check --preset=stable
 
 # Auto-fix fixable issues
-sylphx-doctor check --fix
+doctor check --fix
 
 # Pre-commit mode (only errors, no warnings)
-sylphx-doctor check --pre-commit
+doctor check --pre-commit
 ```
 
 ### Initialize config
 
 ```bash
 # Create config file with init preset
-sylphx-doctor init
+doctor init
 
 # Create config and auto-fix
-sylphx-doctor init --fix
+doctor init --fix
 
 # Start with specific preset
-sylphx-doctor init --preset=dev
+doctor init --preset=dev
 ```
 
 ### Check upgrade readiness
 
 ```bash
 # Preview upgrade to next preset level
-sylphx-doctor upgrade
+doctor upgrade
 
 # Preview upgrade to specific preset
-sylphx-doctor upgrade --target=stable
+doctor upgrade --target=stable
 ```
 
-> **💡 Auto-suggestion**: When all checks pass, sylphx-doctor automatically checks if you're ready for the next preset level and shows a suggestion like:
+> **💡 Auto-suggestion**: When all checks pass, doctor automatically checks if you're ready for the next preset level and shows a suggestion like:
 > ```
 > 🎉 Ready to upgrade to dev preset!
->    Run: sylphx-doctor upgrade or update your config manually
+>    Run: doctor upgrade or update your config manually
 > ```
 
 ## Presets
@@ -75,7 +75,7 @@ sylphx-doctor upgrade --target=stable
 Create `sylphx-doctor.config.ts` in your project root:
 
 ```ts
-import { defineConfig } from 'sylphx-doctor'
+import { defineConfig } from '@sylphx/doctor'
 
 export default defineConfig({
   preset: 'dev',
@@ -104,7 +104,7 @@ pre-commit:
   parallel: true
   commands:
     doctor:
-      run: bunx sylphx-doctor check --pre-commit
+      run: bunx @sylphx/doctor check --pre-commit
 ```
 
 ## Checks
