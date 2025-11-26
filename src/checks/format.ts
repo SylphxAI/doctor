@@ -17,6 +17,7 @@ export const biomeCheckCheck: Check = {
 			message: passed ? 'biome check passed' : 'biome check failed',
 			severity: ctx.severity,
 			fixable: true,
+			hint: passed ? undefined : 'Run: bunx biome check --write . (or use --fix)',
 			fix: async () => {
 				await exec('bunx', ['biome', 'check', '--write', '.'], ctx.cwd)
 			},
@@ -40,6 +41,7 @@ export const biomeFormatCheck: Check = {
 			message: passed ? 'biome format passed' : 'biome format failed - files need formatting',
 			severity: ctx.severity,
 			fixable: true,
+			hint: passed ? undefined : 'Run: bunx biome format --write . (or use --fix)',
 			fix: async () => {
 				await exec('bunx', ['biome', 'format', '--write', '.'], ctx.cwd)
 			},

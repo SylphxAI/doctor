@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import type { Check, CheckContext, CheckResult } from '../types'
 import { readPackageJson } from '../utils/fs'
 
-function createPackageFieldCheck(name: string, field: string, description: string): Check {
+function createPackageFieldCheck(name: string, field: string, description: string, hint?: string): Check {
 	return {
 		name,
 		category: 'pkg',
@@ -20,6 +20,7 @@ function createPackageFieldCheck(name: string, field: string, description: strin
 				message: hasField ? `package.json has "${field}"` : `package.json missing "${field}"`,
 				severity: ctx.severity,
 				fixable: false,
+				hint: hasField ? undefined : hint ?? `Add "${field}" field to package.json`,
 			}
 		},
 	}
@@ -44,6 +45,7 @@ function createScriptCheck(name: string, scriptName: string, defaultScript: stri
 					: `Missing "${scriptName}" script in package.json`,
 				severity: ctx.severity,
 				fixable: true,
+				hint: hasScript ? undefined : `Add to package.json scripts: "${scriptName}": "${defaultScript}"`,
 				fix: async () => {
 					const pkgPath = join(ctx.cwd, 'package.json')
 					const currentPkg = readPackageJson(ctx.cwd) ?? {}
@@ -86,6 +88,7 @@ export const pkgTypeModuleCheck: Check = {
 				: 'package.json missing "type": "module"',
 			severity: ctx.severity,
 			fixable: true,
+			hint: isModule ? undefined : 'Add "type": "module" to package.json for ESM support',
 			fix: async () => {
 				const pkgPath = join(ctx.cwd, 'package.json')
 				const currentPkg = readPackageJson(ctx.cwd) ?? {}
@@ -137,6 +140,7 @@ export const pkgRepositoryCheck: Check = {
 			message: hasRepo ? 'package.json has "repository"' : 'package.json missing "repository"',
 			severity: ctx.severity,
 			fixable: false,
+			hint: hasRepo ? undefined : 'Add "repository": { "type": "git", "url": "https://github.com/..." }',
 		}
 	},
 }
@@ -160,6 +164,7 @@ export const pkgKeywordsCheck: Check = {
 				: 'package.json missing "keywords"',
 			severity: ctx.severity,
 			fixable: false,
+			hint: hasKeywords ? undefined : 'Add "keywords": ["keyword1", "keyword2"] for npm discoverability',
 		}
 	},
 }

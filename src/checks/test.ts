@@ -18,6 +18,7 @@ export const hasTestsCheck: Check = {
 			message: hasTests ? `Found ${testFiles.length} test file(s)` : 'No test files found',
 			severity: ctx.severity,
 			fixable: false,
+			hint: hasTests ? undefined : 'Create test files with .test.ts or .spec.ts extension',
 		}
 	},
 }
@@ -51,6 +52,7 @@ export const testPassesCheck: Check = {
 			message: passed ? 'All tests passed' : 'Tests failed',
 			severity: ctx.severity,
 			fixable: false,
+			hint: passed ? undefined : 'Run "bun test" to see failing tests',
 		}
 	},
 }
@@ -73,6 +75,7 @@ export const coverageThresholdCheck: Check = {
 				message: `No tests - coverage is 0% (threshold: ${threshold}%)`,
 				severity: ctx.severity,
 				fixable: false,
+				hint: 'Create test files with .test.ts or .spec.ts extension',
 			}
 		}
 
@@ -92,6 +95,7 @@ export const coverageThresholdCheck: Check = {
 				: `Coverage ${coverage}% below threshold (${threshold}%)`,
 			severity: ctx.severity,
 			fixable: false,
+			hint: passed ? undefined : 'Add more tests to increase coverage',
 		}
 	},
 }
@@ -127,6 +131,7 @@ export const benchHasFilesCheck: Check = {
 				: 'No benchmark files found (but bench script exists)',
 			severity: ctx.severity,
 			fixable: false,
+			hint: hasFiles ? undefined : 'Create benchmark files with .bench.ts extension',
 		}
 	},
 }

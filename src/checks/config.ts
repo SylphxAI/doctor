@@ -19,6 +19,7 @@ export const biomeExtendsCheck: Check = {
 				message: 'biome.json does not exist',
 				severity: ctx.severity,
 				fixable: true,
+				hint: 'Run: bun add -D @sylphx/biome-config && echo \'{"extends":["@sylphx/biome-config"]}\' > biome.json',
 				fix: async () => {
 					const config = {
 						$schema: 'https://biomejs.dev/schemas/1.9.4/schema.json',
@@ -41,6 +42,7 @@ export const biomeExtendsCheck: Check = {
 				: 'biome.json does not extend shared config',
 			severity: ctx.severity,
 			fixable: true,
+			hint: hasExtends ? undefined : 'Add "extends": ["@sylphx/biome-config"] to biome.json',
 			fix: async () => {
 				const currentConfig = readJson<Record<string, unknown>>(configPath) ?? {}
 				currentConfig.$schema = 'https://biomejs.dev/schemas/1.9.4/schema.json'
@@ -67,6 +69,7 @@ export const tsconfigExtendsCheck: Check = {
 				message: 'tsconfig.json does not exist',
 				severity: ctx.severity,
 				fixable: false,
+				hint: 'Run: bun add -D @sylphx/tsconfig && echo \'{"extends":"@sylphx/tsconfig"}\' > tsconfig.json',
 			}
 		}
 
@@ -82,6 +85,7 @@ export const tsconfigExtendsCheck: Check = {
 				: 'tsconfig.json does not extend shared config',
 			severity: ctx.severity,
 			fixable: true,
+			hint: hasExtends ? undefined : 'Add "extends": "@sylphx/tsconfig" to tsconfig.json',
 			fix: async () => {
 				const currentConfig = readJson<Record<string, unknown>>(configPath) ?? {}
 				currentConfig.extends = '@sylphx/tsconfig'
@@ -120,6 +124,7 @@ export const turboPipelineCheck: Check = {
 				message: 'turbo.json does not exist',
 				severity: ctx.severity,
 				fixable: false,
+				hint: 'Run: bunx turbo init',
 			}
 		}
 
@@ -141,6 +146,7 @@ export const turboPipelineCheck: Check = {
 				: `turbo.json missing tasks: ${missingTasks.join(', ')}`,
 			severity: ctx.severity,
 			fixable: true,
+			hint: passed ? undefined : `Add tasks to turbo.json: ${missingTasks.map((t) => `"${t}": {}`).join(', ')}`,
 			fix: async () => {
 				const currentConfig = readJson<Record<string, unknown>>(configPath) ?? {}
 				currentConfig.$schema = 'https://turbo.build/schema.json'

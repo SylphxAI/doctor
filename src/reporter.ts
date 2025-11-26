@@ -16,7 +16,10 @@ export function formatResult(result: CheckResult): string {
 			? pc.yellow(result.message)
 			: pc.red(result.message)
 
-	return `  ${icon} ${message}${fixable}`
+	// Add hint on new line if present and check failed
+	const hint = !result.passed && result.hint ? `\n      ${pc.dim('→')} ${pc.cyan(result.hint)}` : ''
+
+	return `  ${icon} ${message}${fixable}${hint}`
 }
 
 export function formatReport(report: CheckReport, preset: PresetName): string {

@@ -12,6 +12,8 @@ export interface CheckResult {
 	fix?: () => Promise<void>
 	/** If true, this check was skipped (not applicable to this project) */
 	skipped?: boolean
+	/** Hint on how to fix the issue (shown when check fails) */
+	hint?: string
 }
 
 export interface CheckContext {
