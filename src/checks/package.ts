@@ -1,4 +1,5 @@
 import type { Check, CheckContext } from '../types'
+import { isMonorepoRoot } from '../utils/context'
 import type { CheckModule, CheckReturnValue } from './define'
 import { defineCheckModule } from './define'
 
@@ -7,7 +8,7 @@ function skipForMonorepoRoot(
 	ctx: CheckContext,
 	message = 'Skipped for monorepo root'
 ): CheckReturnValue | null {
-	if (ctx.isMonorepo && ctx.workspacePackages.length > 0) {
+	if (isMonorepoRoot(ctx)) {
 		return {
 			passed: true,
 			message,
@@ -160,13 +161,13 @@ export const packageModule: CheckModule = defineCheckModule(
 				const script = ctx.packageJson?.scripts?.lint
 				// Monorepo root: always use turbo (company standard)
 				// Packages: biome check
-				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
+				const isRoot = isMonorepoRoot(ctx)
 
-				const validLint = isMonorepoRoot
+				const validLint = isRoot
 					? script?.includes('turbo')
 					: script?.includes('biome')
 
-				const defaultScript = isMonorepoRoot ? 'turbo lint' : 'biome check .'
+				const defaultScript = isRoot ? 'turbo lint' : 'biome check .'
 
 				if (!script) {
 					return {
@@ -242,13 +243,13 @@ export const packageModule: CheckModule = defineCheckModule(
 				const script = ctx.packageJson?.scripts?.build
 				// Monorepo root: always use turbo (company standard)
 				// Packages: bunup, tsc, bun build
-				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
+				const isRoot = isMonorepoRoot(ctx)
 
-				const validBuild = isMonorepoRoot
+				const validBuild = isRoot
 					? script?.includes('turbo')
 					: script?.includes('bunup') || script?.includes('tsc') || script?.includes('bun build')
 
-				const defaultScript = isMonorepoRoot ? 'turbo build' : 'bunup'
+				const defaultScript = isRoot ? 'turbo build' : 'bunup'
 
 				if (!script) {
 					return {
@@ -287,13 +288,13 @@ export const packageModule: CheckModule = defineCheckModule(
 				const script = ctx.packageJson?.scripts?.test
 				// Monorepo root: always use turbo (company standard)
 				// Packages: bun test
-				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
+				const isRoot = isMonorepoRoot(ctx)
 
-				const validTest = isMonorepoRoot
+				const validTest = isRoot
 					? script?.includes('turbo')
 					: script?.startsWith('bun test')
 
-				const defaultScript = isMonorepoRoot ? 'turbo test' : 'bun test'
+				const defaultScript = isRoot ? 'turbo test' : 'bun test'
 
 				if (!script) {
 					return {
@@ -332,13 +333,13 @@ export const packageModule: CheckModule = defineCheckModule(
 				const script = ctx.packageJson?.scripts?.typecheck
 				// Monorepo root: always use turbo (company standard)
 				// Packages: tsc --noEmit
-				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
+				const isRoot = isMonorepoRoot(ctx)
 
-				const validTypecheck = isMonorepoRoot
+				const validTypecheck = isRoot
 					? script?.includes('turbo')
 					: script?.includes('tsc')
 
-				const defaultScript = isMonorepoRoot ? 'turbo typecheck' : 'tsc --noEmit'
+				const defaultScript = isRoot ? 'turbo typecheck' : 'tsc --noEmit'
 
 				if (!script) {
 					return {
@@ -427,8 +428,8 @@ export const packageModule: CheckModule = defineCheckModule(
 
 				// For monorepo root, test:coverage is less common (turbo doesn't aggregate coverage well)
 				// Skip this check for monorepo root
-				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
-				if (isMonorepoRoot) {
+				const isRoot = isMonorepoRoot(ctx)
+				if (isRoot) {
 					return {
 						passed: true,
 						message: 'Skipped for monorepo root (coverage is per-package)',
