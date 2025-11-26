@@ -1,52 +1,57 @@
-import type { Check, CheckContext, CheckResult } from '../types'
-import { exec } from '../utils/exec'
+import type { Check } from '../types'
+import type { CheckModule } from './define'
+import { defineCheckModule } from './define'
 
-export const biomeCheckCheck: Check = {
-	name: 'format/biome-check',
-	category: 'format',
-	description: 'Run biome check',
-	fixable: true,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const result = await exec('bunx', ['biome', 'check', '.'], ctx.cwd)
-		const passed = result.exitCode === 0
-
-		return {
+export const formatModule: CheckModule = defineCheckModule(
+	{
+		category: 'format',
+		label: '✨ Format',
+		description: 'Check code formatting and linting',
+	},
+	[
+		{
 			name: 'format/biome-check',
-			category: 'format',
-			passed,
-			message: passed ? 'biome check passed' : 'biome check failed',
-			severity: ctx.severity,
+			description: 'Run biome check',
 			fixable: true,
-			hint: passed ? undefined : 'Run: bunx biome check --write . (or use --fix)',
-			fix: async () => {
-				await exec('bunx', ['biome', 'check', '--write', '.'], ctx.cwd)
+			async check(ctx) {
+				const { exec } = await import('../utils/exec')
+
+				const result = await exec('bunx', ['biome', 'check', '.'], ctx.cwd)
+				const passed = result.exitCode === 0
+
+				return {
+					passed,
+					message: passed ? 'biome check passed' : 'biome check failed',
+					hint: passed ? undefined : 'Run: bunx biome check --write . (or use --fix)',
+					fix: async () => {
+						await exec('bunx', ['biome', 'check', '--write', '.'], ctx.cwd)
+					},
+				}
 			},
-		}
-	},
-}
+		},
 
-export const biomeFormatCheck: Check = {
-	name: 'format/biome-format',
-	category: 'format',
-	description: 'Run biome format',
-	fixable: true,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const result = await exec('bunx', ['biome', 'format', '.'], ctx.cwd)
-		const passed = result.exitCode === 0
-
-		return {
+		{
 			name: 'format/biome-format',
-			category: 'format',
-			passed,
-			message: passed ? 'biome format passed' : 'biome format failed - files need formatting',
-			severity: ctx.severity,
+			description: 'Run biome format',
 			fixable: true,
-			hint: passed ? undefined : 'Run: bunx biome format --write . (or use --fix)',
-			fix: async () => {
-				await exec('bunx', ['biome', 'format', '--write', '.'], ctx.cwd)
-			},
-		}
-	},
-}
+			async check(ctx) {
+				const { exec } = await import('../utils/exec')
 
-export const formatChecks: Check[] = [biomeCheckCheck, biomeFormatCheck]
+				const result = await exec('bunx', ['biome', 'format', '.'], ctx.cwd)
+				const passed = result.exitCode === 0
+
+				return {
+					passed,
+					message: passed ? 'biome format passed' : 'biome format failed - files need formatting',
+					hint: passed ? undefined : 'Run: bunx biome format --write . (or use --fix)',
+					fix: async () => {
+						await exec('bunx', ['biome', 'format', '--write', '.'], ctx.cwd)
+					},
+				}
+			},
+		},
+	]
+)
+
+// Export for backward compatibility
+export const formatChecks: Check[] = formatModule.checks

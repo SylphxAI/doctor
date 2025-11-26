@@ -1,185 +1,281 @@
-import { writeFileSync } from 'node:fs'
-import { join } from 'node:path'
-import type { Check, CheckContext, CheckResult } from '../types'
-import { readPackageJson } from '../utils/fs'
+import type { Check } from '../types'
+import type { CheckModule } from './define'
+import { defineCheckModule } from './define'
 
-function createPackageFieldCheck(name: string, field: string, description: string, hint?: string): Check {
-	return {
-		name,
+export const packageModule: CheckModule = defineCheckModule(
+	{
 		category: 'pkg',
-		description,
-		fixable: false,
-		async run(ctx: CheckContext): Promise<CheckResult> {
-			const pkg = ctx.packageJson
-			const hasField = pkg && field in pkg && pkg[field]
-
-			return {
-				name,
-				category: 'pkg',
-				passed: !!hasField,
-				message: hasField ? `package.json has "${field}"` : `package.json missing "${field}"`,
-				severity: ctx.severity,
-				fixable: false,
-				hint: hasField ? undefined : hint ?? `Add "${field}" field to package.json`,
-			}
-		},
-	}
-}
-
-function createScriptCheck(name: string, scriptName: string, defaultScript: string): Check {
-	return {
-		name,
-		category: 'pkg',
-		description: `Check if "${scriptName}" script exists`,
-		fixable: true,
-		async run(ctx: CheckContext): Promise<CheckResult> {
-			const pkg = ctx.packageJson
-			const hasScript = pkg?.scripts?.[scriptName]
-
-			return {
-				name,
-				category: 'pkg',
-				passed: !!hasScript,
-				message: hasScript
-					? `Has "${scriptName}" script`
-					: `Missing "${scriptName}" script in package.json`,
-				severity: ctx.severity,
-				fixable: true,
-				hint: hasScript ? undefined : `Add to package.json scripts: "${scriptName}": "${defaultScript}"`,
-				fix: async () => {
-					const pkgPath = join(ctx.cwd, 'package.json')
-					const currentPkg = readPackageJson(ctx.cwd) ?? {}
-					currentPkg.scripts = currentPkg.scripts ?? {}
-					currentPkg.scripts[scriptName] = defaultScript
-					writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
-				},
-			}
-		},
-	}
-}
-
-export const pkgNameCheck: Check = createPackageFieldCheck(
-	'pkg/name',
-	'name',
-	'Check if package.json has name'
-)
-
-export const pkgDescriptionCheck: Check = createPackageFieldCheck(
-	'pkg/description',
-	'description',
-	'Check if package.json has description'
-)
-
-export const pkgTypeModuleCheck: Check = {
-	name: 'pkg/type-module',
-	category: 'pkg',
-	description: 'Check if package.json has "type": "module"',
-	fixable: true,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const pkg = ctx.packageJson
-		const isModule = pkg?.type === 'module'
-
-		return {
-			name: 'pkg/type-module',
-			category: 'pkg',
-			passed: isModule,
-			message: isModule
-				? 'package.json has "type": "module"'
-				: 'package.json missing "type": "module"',
-			severity: ctx.severity,
-			fixable: true,
-			hint: isModule ? undefined : 'Add "type": "module" to package.json for ESM support',
-			fix: async () => {
-				const pkgPath = join(ctx.cwd, 'package.json')
-				const currentPkg = readPackageJson(ctx.cwd) ?? {}
-				currentPkg.type = 'module'
-				writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+		label: '📦 Package',
+		description: 'Check package.json configuration',
+	},
+	[
+		{
+			name: 'pkg/name',
+			description: 'Check if package.json has name',
+			fixable: false,
+			async check(ctx) {
+				const hasField = ctx.packageJson && 'name' in ctx.packageJson && ctx.packageJson.name
+				return {
+					passed: !!hasField,
+					message: hasField ? 'package.json has "name"' : 'package.json missing "name"',
+					hint: hasField ? undefined : 'Add "name" field to package.json',
+				}
 			},
-		}
-	},
-}
+		},
 
-export const pkgExportsCheck: Check = createPackageFieldCheck(
-	'pkg/exports',
-	'exports',
-	'Check if package.json has exports'
-)
+		{
+			name: 'pkg/description',
+			description: 'Check if package.json has description',
+			fixable: false,
+			async check(ctx) {
+				const hasField =
+					ctx.packageJson && 'description' in ctx.packageJson && ctx.packageJson.description
+				return {
+					passed: !!hasField,
+					message: hasField
+						? 'package.json has "description"'
+						: 'package.json missing "description"',
+					hint: hasField ? undefined : 'Add "description" field to package.json',
+				}
+			},
+		},
 
-export const scriptsLintCheck: Check = createScriptCheck(
-	'pkg/scripts-lint',
-	'lint',
-	'biome check .'
-)
-export const scriptsFormatCheck: Check = createScriptCheck(
-	'pkg/scripts-format',
-	'format',
-	'biome format --write .'
-)
-export const scriptsBuildCheck: Check = createScriptCheck('pkg/scripts-build', 'build', 'bunup')
-export const scriptsTestCheck: Check = createScriptCheck('pkg/scripts-test', 'test', 'bun test')
-export const scriptsBenchCheck: Check = createScriptCheck('pkg/scripts-bench', 'bench', 'bun bench')
-export const scriptsCoverageCheck: Check = createScriptCheck(
-	'pkg/scripts-coverage',
-	'test:coverage',
-	'bun test --coverage'
-)
-
-export const pkgRepositoryCheck: Check = {
-	name: 'pkg/repository',
-	category: 'pkg',
-	description: 'Check if package.json has repository field',
-	fixable: false,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const pkg = ctx.packageJson
-		const hasRepo = !!(pkg?.repository || (pkg as Record<string, unknown>)?.repository)
-
-		return {
+		{
 			name: 'pkg/repository',
-			category: 'pkg',
-			passed: hasRepo,
-			message: hasRepo ? 'package.json has "repository"' : 'package.json missing "repository"',
-			severity: ctx.severity,
+			description: 'Check if package.json has repository field',
 			fixable: false,
-			hint: hasRepo ? undefined : 'Add "repository": { "type": "git", "url": "https://github.com/..." }',
-		}
-	},
-}
+			async check(ctx) {
+				const pkg = ctx.packageJson as Record<string, unknown> | null
+				const hasRepo = !!(pkg?.repository || pkg?.repository)
+				return {
+					passed: hasRepo,
+					message: hasRepo ? 'package.json has "repository"' : 'package.json missing "repository"',
+					hint: hasRepo
+						? undefined
+						: 'Add "repository": { "type": "git", "url": "https://github.com/..." }',
+				}
+			},
+		},
 
-export const pkgKeywordsCheck: Check = {
-	name: 'pkg/keywords',
-	category: 'pkg',
-	description: 'Check if package.json has keywords',
-	fixable: false,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const pkg = ctx.packageJson as Record<string, unknown> | null
-		const keywords = pkg?.keywords as string[] | undefined
-		const hasKeywords = !!(keywords && Array.isArray(keywords) && keywords.length > 0)
-
-		return {
+		{
 			name: 'pkg/keywords',
-			category: 'pkg',
-			passed: hasKeywords,
-			message: hasKeywords
-				? `package.json has ${keywords?.length} keywords`
-				: 'package.json missing "keywords"',
-			severity: ctx.severity,
+			description: 'Check if package.json has keywords',
 			fixable: false,
-			hint: hasKeywords ? undefined : 'Add "keywords": ["keyword1", "keyword2"] for npm discoverability',
-		}
-	},
-}
+			async check(ctx) {
+				const pkg = ctx.packageJson as Record<string, unknown> | null
+				const keywords = pkg?.keywords as string[] | undefined
+				const hasKeywords = !!(keywords && Array.isArray(keywords) && keywords.length > 0)
+				return {
+					passed: hasKeywords,
+					message: hasKeywords
+						? `package.json has ${keywords?.length} keywords`
+						: 'package.json missing "keywords"',
+					hint: hasKeywords
+						? undefined
+						: 'Add "keywords": ["keyword1", "keyword2"] for npm discoverability',
+				}
+			},
+		},
 
-export const packageChecks: Check[] = [
-	pkgNameCheck,
-	pkgDescriptionCheck,
-	pkgRepositoryCheck,
-	pkgKeywordsCheck,
-	pkgTypeModuleCheck,
-	pkgExportsCheck,
-	scriptsLintCheck,
-	scriptsFormatCheck,
-	scriptsBuildCheck,
-	scriptsTestCheck,
-	scriptsBenchCheck,
-	scriptsCoverageCheck,
-]
+		{
+			name: 'pkg/type-module',
+			description: 'Check if package.json has "type": "module"',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { writeFileSync } = await import('node:fs')
+				const { readPackageJson } = await import('../utils/fs')
+
+				const pkg = ctx.packageJson
+				const isModule = pkg?.type === 'module'
+
+				return {
+					passed: isModule,
+					message: isModule
+						? 'package.json has "type": "module"'
+						: 'package.json missing "type": "module"',
+					hint: isModule ? undefined : 'Add "type": "module" to package.json for ESM support',
+					fix: async () => {
+						const pkgPath = join(ctx.cwd, 'package.json')
+						const currentPkg = readPackageJson(ctx.cwd) ?? {}
+						currentPkg.type = 'module'
+						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+					},
+				}
+			},
+		},
+
+		{
+			name: 'pkg/exports',
+			description: 'Check if package.json has exports',
+			fixable: false,
+			async check(ctx) {
+				const hasField = ctx.packageJson && 'exports' in ctx.packageJson && ctx.packageJson.exports
+				return {
+					passed: !!hasField,
+					message: hasField ? 'package.json has "exports"' : 'package.json missing "exports"',
+					hint: hasField ? undefined : 'Add "exports" field to package.json',
+				}
+			},
+		},
+
+		{
+			name: 'pkg/scripts-lint',
+			description: 'Check if "lint" script exists',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { writeFileSync } = await import('node:fs')
+				const { readPackageJson } = await import('../utils/fs')
+
+				const hasScript = ctx.packageJson?.scripts?.lint
+				return {
+					passed: !!hasScript,
+					message: hasScript ? 'Has "lint" script' : 'Missing "lint" script in package.json',
+					hint: hasScript ? undefined : 'Add to package.json scripts: "lint": "biome check ."',
+					fix: async () => {
+						const pkgPath = join(ctx.cwd, 'package.json')
+						const currentPkg = readPackageJson(ctx.cwd) ?? {}
+						currentPkg.scripts = currentPkg.scripts ?? {}
+						currentPkg.scripts.lint = 'biome check .'
+						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+					},
+				}
+			},
+		},
+
+		{
+			name: 'pkg/scripts-format',
+			description: 'Check if "format" script exists',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { writeFileSync } = await import('node:fs')
+				const { readPackageJson } = await import('../utils/fs')
+
+				const hasScript = ctx.packageJson?.scripts?.format
+				return {
+					passed: !!hasScript,
+					message: hasScript ? 'Has "format" script' : 'Missing "format" script in package.json',
+					hint: hasScript
+						? undefined
+						: 'Add to package.json scripts: "format": "biome format --write ."',
+					fix: async () => {
+						const pkgPath = join(ctx.cwd, 'package.json')
+						const currentPkg = readPackageJson(ctx.cwd) ?? {}
+						currentPkg.scripts = currentPkg.scripts ?? {}
+						currentPkg.scripts.format = 'biome format --write .'
+						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+					},
+				}
+			},
+		},
+
+		{
+			name: 'pkg/scripts-build',
+			description: 'Check if "build" script exists',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { writeFileSync } = await import('node:fs')
+				const { readPackageJson } = await import('../utils/fs')
+
+				const hasScript = ctx.packageJson?.scripts?.build
+				return {
+					passed: !!hasScript,
+					message: hasScript ? 'Has "build" script' : 'Missing "build" script in package.json',
+					hint: hasScript ? undefined : 'Add to package.json scripts: "build": "bunup"',
+					fix: async () => {
+						const pkgPath = join(ctx.cwd, 'package.json')
+						const currentPkg = readPackageJson(ctx.cwd) ?? {}
+						currentPkg.scripts = currentPkg.scripts ?? {}
+						currentPkg.scripts.build = 'bunup'
+						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+					},
+				}
+			},
+		},
+
+		{
+			name: 'pkg/scripts-test',
+			description: 'Check if "test" script exists',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { writeFileSync } = await import('node:fs')
+				const { readPackageJson } = await import('../utils/fs')
+
+				const hasScript = ctx.packageJson?.scripts?.test
+				return {
+					passed: !!hasScript,
+					message: hasScript ? 'Has "test" script' : 'Missing "test" script in package.json',
+					hint: hasScript ? undefined : 'Add to package.json scripts: "test": "bun test"',
+					fix: async () => {
+						const pkgPath = join(ctx.cwd, 'package.json')
+						const currentPkg = readPackageJson(ctx.cwd) ?? {}
+						currentPkg.scripts = currentPkg.scripts ?? {}
+						currentPkg.scripts.test = 'bun test'
+						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+					},
+				}
+			},
+		},
+
+		{
+			name: 'pkg/scripts-bench',
+			description: 'Check if "bench" script exists',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { writeFileSync } = await import('node:fs')
+				const { readPackageJson } = await import('../utils/fs')
+
+				const hasScript = ctx.packageJson?.scripts?.bench
+				return {
+					passed: !!hasScript,
+					message: hasScript ? 'Has "bench" script' : 'Missing "bench" script in package.json',
+					hint: hasScript ? undefined : 'Add to package.json scripts: "bench": "bun bench"',
+					fix: async () => {
+						const pkgPath = join(ctx.cwd, 'package.json')
+						const currentPkg = readPackageJson(ctx.cwd) ?? {}
+						currentPkg.scripts = currentPkg.scripts ?? {}
+						currentPkg.scripts.bench = 'bun bench'
+						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+					},
+				}
+			},
+		},
+
+		{
+			name: 'pkg/scripts-coverage',
+			description: 'Check if "test:coverage" script exists',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { writeFileSync } = await import('node:fs')
+				const { readPackageJson } = await import('../utils/fs')
+
+				const hasScript = ctx.packageJson?.scripts?.['test:coverage']
+				return {
+					passed: !!hasScript,
+					message: hasScript
+						? 'Has "test:coverage" script'
+						: 'Missing "test:coverage" script in package.json',
+					hint: hasScript
+						? undefined
+						: 'Add to package.json scripts: "test:coverage": "bun test --coverage"',
+					fix: async () => {
+						const pkgPath = join(ctx.cwd, 'package.json')
+						const currentPkg = readPackageJson(ctx.cwd) ?? {}
+						currentPkg.scripts = currentPkg.scripts ?? {}
+						currentPkg.scripts['test:coverage'] = 'bun test --coverage'
+						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+					},
+				}
+			},
+		},
+	]
+)
+
+// Export for backward compatibility
+export const packageChecks: Check[] = packageModule.checks

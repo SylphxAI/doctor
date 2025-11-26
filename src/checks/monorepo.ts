@@ -1,6 +1,6 @@
-import { join } from 'node:path'
-import type { Check, CheckContext, CheckResult } from '../types'
-import { directoryExists, fileExists, readJson } from '../utils/fs'
+import type { Check, CheckContext } from '../types'
+import type { CheckModule, CheckReturnValue } from './define'
+import { defineCheckModule } from './define'
 
 interface PackageJson {
 	name?: string
@@ -12,6 +12,9 @@ interface PackageJson {
 }
 
 async function getPackageDirs(cwd: string): Promise<string[]> {
+	const { join } = await import('node:path')
+	const { directoryExists, fileExists } = await import('../utils/fs')
+
 	const packageDirs: string[] = []
 
 	// Check for common monorepo package directories
@@ -42,186 +45,283 @@ async function getPackageDirs(cwd: string): Promise<string[]> {
 }
 
 /** Helper to create a skipped result for non-monorepos */
-function skipResult(name: string, ctx: CheckContext): CheckResult {
+function skipResult(): CheckReturnValue {
 	return {
-		name,
-		category: 'monorepo',
 		passed: true,
 		message: 'Not a monorepo',
-		severity: ctx.severity,
-		fixable: false,
 		skipped: true,
 	}
 }
 
-export const packagesReadmeCheck: Check = {
-	name: 'monorepo/packages-readme',
-	category: 'monorepo',
-	description: 'Check if all packages in monorepo have README.md',
-	fixable: false,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		if (!ctx.isMonorepo) return skipResult('monorepo/packages-readme', ctx)
-
-		const packageDirs = await getPackageDirs(ctx.cwd)
-		if (packageDirs.length === 0) return skipResult('monorepo/packages-readme', ctx)
-
-		const missing: string[] = []
-		for (const pkgDir of packageDirs) {
-			if (!fileExists(join(pkgDir, 'README.md'))) {
-				missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
-			}
-		}
-
-		return {
-			name: 'monorepo/packages-readme',
-			category: 'monorepo',
-			passed: missing.length === 0,
-			message:
-				missing.length === 0
-					? `All ${packageDirs.length} packages have README.md`
-					: `Missing README.md in: ${missing.join(', ')}`,
-			severity: ctx.severity,
-			fixable: false,
-		}
-	},
-}
-
-export const packagesLicenseCheck: Check = {
-	name: 'monorepo/packages-license',
-	category: 'monorepo',
-	description: 'Check if all packages in monorepo have LICENSE',
-	fixable: false,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		if (!ctx.isMonorepo) return skipResult('monorepo/packages-license', ctx)
-
-		const packageDirs = await getPackageDirs(ctx.cwd)
-		if (packageDirs.length === 0) return skipResult('monorepo/packages-license', ctx)
-
-		// Root LICENSE is enough for all packages
-		if (fileExists(join(ctx.cwd, 'LICENSE'))) {
-			return {
-				name: 'monorepo/packages-license',
-				category: 'monorepo',
-				passed: true,
-				message: `Root LICENSE exists (${packageDirs.length} packages inherit)`,
-				severity: ctx.severity,
-				fixable: false,
-			}
-		}
-
-		const missing: string[] = []
-		for (const pkgDir of packageDirs) {
-			if (!fileExists(join(pkgDir, 'LICENSE'))) {
-				missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
-			}
-		}
-
-		return {
-			name: 'monorepo/packages-license',
-			category: 'monorepo',
-			passed: missing.length === 0,
-			message:
-				missing.length === 0
-					? `All ${packageDirs.length} packages have LICENSE`
-					: `Missing LICENSE in: ${missing.join(', ')}`,
-			severity: ctx.severity,
-			fixable: false,
-		}
-	},
-}
-
-function createPackageFieldCheck(
-	name: string,
-	fieldName: string,
-	checker: (pkg: PackageJson) => boolean,
-	successMsg: (count: number) => string,
-	failMsg: (missing: string[]) => string
-): Check {
-	return {
-		name,
+export const monorepoModule: CheckModule = defineCheckModule(
+	{
 		category: 'monorepo',
-		description: `Check if all packages have ${fieldName}`,
-		fixable: false,
-		async run(ctx: CheckContext): Promise<CheckResult> {
-			if (!ctx.isMonorepo) return skipResult(name, ctx)
+		label: '🏗️ Monorepo',
+		description: 'Check monorepo configuration',
+		enabled: (ctx) => ctx.isMonorepo,
+	},
+	[
+		{
+			name: 'monorepo/packages-readme',
+			description: 'Check if all packages in monorepo have README.md',
+			fixable: false,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { fileExists } = await import('../utils/fs')
 
-			const packageDirs = await getPackageDirs(ctx.cwd)
-			if (packageDirs.length === 0) return skipResult(name, ctx)
+				if (!ctx.isMonorepo) return skipResult()
 
-			const missing: string[] = []
-			for (const pkgDir of packageDirs) {
-				const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
-				if (!pkg?.name) continue
-				if (!checker(pkg)) {
-					missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
+				const packageDirs = await getPackageDirs(ctx.cwd)
+				if (packageDirs.length === 0) return skipResult()
+
+				const missing: string[] = []
+				for (const pkgDir of packageDirs) {
+					if (!fileExists(join(pkgDir, 'README.md'))) {
+						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
+					}
 				}
-			}
 
-			return {
-				name,
-				category: 'monorepo',
-				passed: missing.length === 0,
-				message: missing.length === 0 ? successMsg(packageDirs.length) : failMsg(missing),
-				severity: ctx.severity,
-				fixable: false,
-			}
+				return {
+					passed: missing.length === 0,
+					message:
+						missing.length === 0
+							? `All ${packageDirs.length} packages have README.md`
+							: `Missing README.md in: ${missing.join(', ')}`,
+				}
+			},
 		},
-	}
-}
 
-export const packagesDescriptionCheck: Check = createPackageFieldCheck(
-	'monorepo/packages-description',
-	'description',
-	(pkg) => !!pkg.description,
-	(count) => `All ${count} packages have description`,
-	(missing) => `Missing description in: ${missing.join(', ')}`
+		{
+			name: 'monorepo/packages-license',
+			description: 'Check if all packages in monorepo have LICENSE',
+			fixable: false,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { fileExists } = await import('../utils/fs')
+
+				if (!ctx.isMonorepo) return skipResult()
+
+				const packageDirs = await getPackageDirs(ctx.cwd)
+				if (packageDirs.length === 0) return skipResult()
+
+				// Root LICENSE is enough for all packages
+				if (fileExists(join(ctx.cwd, 'LICENSE'))) {
+					return {
+						passed: true,
+						message: `Root LICENSE exists (${packageDirs.length} packages inherit)`,
+					}
+				}
+
+				const missing: string[] = []
+				for (const pkgDir of packageDirs) {
+					if (!fileExists(join(pkgDir, 'LICENSE'))) {
+						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
+					}
+				}
+
+				return {
+					passed: missing.length === 0,
+					message:
+						missing.length === 0
+							? `All ${packageDirs.length} packages have LICENSE`
+							: `Missing LICENSE in: ${missing.join(', ')}`,
+				}
+			},
+		},
+
+		{
+			name: 'monorepo/packages-description',
+			description: 'Check if all packages have description',
+			fixable: false,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { readJson } = await import('../utils/fs')
+
+				if (!ctx.isMonorepo) return skipResult()
+
+				const packageDirs = await getPackageDirs(ctx.cwd)
+				if (packageDirs.length === 0) return skipResult()
+
+				const missing: string[] = []
+				for (const pkgDir of packageDirs) {
+					const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
+					if (!pkg?.name) continue
+					if (!pkg.description) {
+						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
+					}
+				}
+
+				return {
+					passed: missing.length === 0,
+					message:
+						missing.length === 0
+							? `All ${packageDirs.length} packages have description`
+							: `Missing description in: ${missing.join(', ')}`,
+				}
+			},
+		},
+
+		{
+			name: 'monorepo/packages-type-module',
+			description: 'Check if all packages have "type": "module"',
+			fixable: false,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { readJson } = await import('../utils/fs')
+
+				if (!ctx.isMonorepo) return skipResult()
+
+				const packageDirs = await getPackageDirs(ctx.cwd)
+				if (packageDirs.length === 0) return skipResult()
+
+				const missing: string[] = []
+				for (const pkgDir of packageDirs) {
+					const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
+					if (!pkg?.name) continue
+					if (pkg.type !== 'module') {
+						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
+					}
+				}
+
+				return {
+					passed: missing.length === 0,
+					message:
+						missing.length === 0
+							? `All ${packageDirs.length} packages have "type": "module"`
+							: `Missing "type": "module" in: ${missing.join(', ')}`,
+				}
+			},
+		},
+
+		{
+			name: 'monorepo/packages-exports',
+			description: 'Check if all packages have exports',
+			fixable: false,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { readJson } = await import('../utils/fs')
+
+				if (!ctx.isMonorepo) return skipResult()
+
+				const packageDirs = await getPackageDirs(ctx.cwd)
+				if (packageDirs.length === 0) return skipResult()
+
+				const missing: string[] = []
+				for (const pkgDir of packageDirs) {
+					const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
+					if (!pkg?.name) continue
+					if (!pkg.exports) {
+						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
+					}
+				}
+
+				return {
+					passed: missing.length === 0,
+					message:
+						missing.length === 0
+							? `All ${packageDirs.length} packages have exports`
+							: `Missing exports in: ${missing.join(', ')}`,
+				}
+			},
+		},
+
+		{
+			name: 'monorepo/packages-build',
+			description: 'Check if all packages have "build" script',
+			fixable: false,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { readJson } = await import('../utils/fs')
+
+				if (!ctx.isMonorepo) return skipResult()
+
+				const packageDirs = await getPackageDirs(ctx.cwd)
+				if (packageDirs.length === 0) return skipResult()
+
+				const missing: string[] = []
+				for (const pkgDir of packageDirs) {
+					const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
+					if (!pkg?.name) continue
+					if (!pkg.scripts?.build) {
+						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
+					}
+				}
+
+				return {
+					passed: missing.length === 0,
+					message:
+						missing.length === 0
+							? `All ${packageDirs.length} packages have "build" script`
+							: `Missing "build" script in: ${missing.join(', ')}`,
+				}
+			},
+		},
+
+		{
+			name: 'monorepo/packages-test',
+			description: 'Check if all packages have "test" script',
+			fixable: false,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { readJson } = await import('../utils/fs')
+
+				if (!ctx.isMonorepo) return skipResult()
+
+				const packageDirs = await getPackageDirs(ctx.cwd)
+				if (packageDirs.length === 0) return skipResult()
+
+				const missing: string[] = []
+				for (const pkgDir of packageDirs) {
+					const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
+					if (!pkg?.name) continue
+					if (!pkg.scripts?.test) {
+						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
+					}
+				}
+
+				return {
+					passed: missing.length === 0,
+					message:
+						missing.length === 0
+							? `All ${packageDirs.length} packages have "test" script`
+							: `Missing "test" script in: ${missing.join(', ')}`,
+				}
+			},
+		},
+
+		{
+			name: 'monorepo/packages-bench',
+			description: 'Check if all packages have "bench" script',
+			fixable: false,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { readJson } = await import('../utils/fs')
+
+				if (!ctx.isMonorepo) return skipResult()
+
+				const packageDirs = await getPackageDirs(ctx.cwd)
+				if (packageDirs.length === 0) return skipResult()
+
+				const missing: string[] = []
+				for (const pkgDir of packageDirs) {
+					const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
+					if (!pkg?.name) continue
+					if (!pkg.scripts?.bench) {
+						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
+					}
+				}
+
+				return {
+					passed: missing.length === 0,
+					message:
+						missing.length === 0
+							? `All ${packageDirs.length} packages have "bench" script`
+							: `Missing "bench" script in: ${missing.join(', ')}`,
+				}
+			},
+		},
+	]
 )
 
-export const packagesTypeModuleCheck: Check = createPackageFieldCheck(
-	'monorepo/packages-type-module',
-	'"type": "module"',
-	(pkg) => pkg.type === 'module',
-	(count) => `All ${count} packages have "type": "module"`,
-	(missing) => `Missing "type": "module" in: ${missing.join(', ')}`
-)
-
-export const packagesExportsCheck: Check = createPackageFieldCheck(
-	'monorepo/packages-exports',
-	'exports',
-	(pkg) => !!pkg.exports,
-	(count) => `All ${count} packages have exports`,
-	(missing) => `Missing exports in: ${missing.join(', ')}`
-)
-
-function createPackagesScriptCheck(name: string, scriptName: string): Check {
-	return createPackageFieldCheck(
-		name,
-		`"${scriptName}" script`,
-		(pkg) => !!pkg.scripts?.[scriptName],
-		(count) => `All ${count} packages have "${scriptName}" script`,
-		(missing) => `Missing "${scriptName}" script in: ${missing.join(', ')}`
-	)
-}
-
-export const packagesBuildCheck: Check = createPackagesScriptCheck(
-	'monorepo/packages-build',
-	'build'
-)
-
-export const packagesTestCheck: Check = createPackagesScriptCheck('monorepo/packages-test', 'test')
-
-export const packagesBenchCheck: Check = createPackagesScriptCheck(
-	'monorepo/packages-bench',
-	'bench'
-)
-
-export const monorepoChecks: Check[] = [
-	packagesReadmeCheck,
-	packagesLicenseCheck,
-	packagesDescriptionCheck,
-	packagesTypeModuleCheck,
-	packagesExportsCheck,
-	packagesBuildCheck,
-	packagesTestCheck,
-	packagesBenchCheck,
-]
+// Export for backward compatibility
+export const monorepoChecks: Check[] = monorepoModule.checks

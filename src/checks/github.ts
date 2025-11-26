@@ -1,9 +1,12 @@
-import type { Check, CheckContext, CheckResult } from '../types'
-import { exec } from '../utils/exec'
+import type { Check } from '../types'
+import type { CheckModule } from './define'
+import { defineCheckModule } from './define'
 
 async function getGitHubRepoInfo(
 	cwd: string
 ): Promise<{ description: string; url: string; topics: string[] } | null> {
+	const { exec } = await import('../utils/exec')
+
 	// Try to get repo info using gh CLI
 	const result = await exec(
 		'gh',
@@ -27,117 +30,104 @@ async function getGitHubRepoInfo(
 	}
 }
 
-export const githubDescriptionCheck: Check = {
-	name: 'github/description',
-	category: 'github',
-	description: 'Check if GitHub repo has description',
-	fixable: false,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const info = await getGitHubRepoInfo(ctx.cwd)
-
-		if (!info) {
-			return {
-				name: 'github/description',
-				category: 'github',
-				passed: true,
-				message: 'Could not fetch GitHub repo info (skipped)',
-				severity: ctx.severity,
-				fixable: false,
-			}
-		}
-
-		const hasDescription = info.description.length > 0
-
-		return {
+export const githubModule: CheckModule = defineCheckModule(
+	{
+		category: 'github',
+		label: '🐙 GitHub',
+		description: 'Check GitHub repository settings',
+	},
+	[
+		{
 			name: 'github/description',
-			category: 'github',
-			passed: hasDescription,
-			message: hasDescription
-				? `GitHub description: "${info.description.slice(0, 50)}${info.description.length > 50 ? '...' : ''}"`
-				: 'GitHub repo missing description',
-			severity: ctx.severity,
+			description: 'Check if GitHub repo has description',
 			fixable: false,
-		}
-	},
-}
+			async check(ctx) {
+				const info = await getGitHubRepoInfo(ctx.cwd)
 
-export const githubWebsiteCheck: Check = {
-	name: 'github/website',
-	category: 'github',
-	description: 'Check if GitHub repo has website URL',
-	fixable: false,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const result = await exec('gh', ['repo', 'view', '--json', 'homepageUrl'], ctx.cwd)
+				if (!info) {
+					return {
+						passed: true,
+						message: 'Could not fetch GitHub repo info (skipped)',
+						skipped: true,
+					}
+				}
 
-		if (result.exitCode !== 0) {
-			return {
-				name: 'github/website',
-				category: 'github',
-				passed: true,
-				message: 'Could not fetch GitHub repo info (skipped)',
-				severity: ctx.severity,
-				fixable: false,
-			}
-		}
+				const hasDescription = info.description.length > 0
 
-		try {
-			const data = JSON.parse(result.stdout)
-			const hasUrl = data.homepageUrl && data.homepageUrl.length > 0
+				return {
+					passed: hasDescription,
+					message: hasDescription
+						? `GitHub description: "${info.description.slice(0, 50)}${info.description.length > 50 ? '...' : ''}"`
+						: 'GitHub repo missing description',
+				}
+			},
+		},
 
-			return {
-				name: 'github/website',
-				category: 'github',
-				passed: hasUrl,
-				message: hasUrl ? `GitHub website: ${data.homepageUrl}` : 'GitHub repo missing website URL',
-				severity: ctx.severity,
-				fixable: false,
-			}
-		} catch {
-			return {
-				name: 'github/website',
-				category: 'github',
-				passed: true,
-				message: 'Could not parse GitHub repo info (skipped)',
-				severity: ctx.severity,
-				fixable: false,
-			}
-		}
-	},
-}
+		{
+			name: 'github/website',
+			description: 'Check if GitHub repo has website URL',
+			fixable: false,
+			async check(ctx) {
+				const { exec } = await import('../utils/exec')
 
-export const githubTopicsCheck: Check = {
-	name: 'github/topics',
-	category: 'github',
-	description: 'Check if GitHub repo has topics',
-	fixable: false,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const minTopics = (ctx.options?.min as number) ?? 3
-		const info = await getGitHubRepoInfo(ctx.cwd)
+				const result = await exec('gh', ['repo', 'view', '--json', 'homepageUrl'], ctx.cwd)
 
-		if (!info) {
-			return {
-				name: 'github/topics',
-				category: 'github',
-				passed: true,
-				message: 'Could not fetch GitHub repo info (skipped)',
-				severity: ctx.severity,
-				fixable: false,
-			}
-		}
+				if (result.exitCode !== 0) {
+					return {
+						passed: true,
+						message: 'Could not fetch GitHub repo info (skipped)',
+						skipped: true,
+					}
+				}
 
-		const hasEnoughTopics = info.topics.length >= minTopics
+				try {
+					const data = JSON.parse(result.stdout)
+					const hasUrl = data.homepageUrl && data.homepageUrl.length > 0
 
-		return {
+					return {
+						passed: hasUrl,
+						message: hasUrl
+							? `GitHub website: ${data.homepageUrl}`
+							: 'GitHub repo missing website URL',
+					}
+				} catch {
+					return {
+						passed: true,
+						message: 'Could not parse GitHub repo info (skipped)',
+						skipped: true,
+					}
+				}
+			},
+		},
+
+		{
 			name: 'github/topics',
-			category: 'github',
-			passed: hasEnoughTopics,
-			message: hasEnoughTopics
-				? `GitHub topics (${info.topics.length}): ${info.topics.join(', ')}`
-				: `GitHub repo has ${info.topics.length} topics (need at least ${minTopics})`,
-			severity: ctx.severity,
+			description: 'Check if GitHub repo has topics',
 			fixable: false,
-		}
-	},
-}
+			async check(ctx) {
+				const minTopics = (ctx.options?.min as number) ?? 3
+				const info = await getGitHubRepoInfo(ctx.cwd)
 
-export const githubChecks: Check[] = [githubDescriptionCheck, githubWebsiteCheck, githubTopicsCheck]
+				if (!info) {
+					return {
+						passed: true,
+						message: 'Could not fetch GitHub repo info (skipped)',
+						skipped: true,
+					}
+				}
+
+				const hasEnoughTopics = info.topics.length >= minTopics
+
+				return {
+					passed: hasEnoughTopics,
+					message: hasEnoughTopics
+						? `GitHub topics (${info.topics.length}): ${info.topics.join(', ')}`
+						: `GitHub repo has ${info.topics.length} topics (need at least ${minTopics})`,
+				}
+			},
+		},
+	]
+)
+
+// Export for backward compatibility
+export const githubChecks: Check[] = githubModule.checks

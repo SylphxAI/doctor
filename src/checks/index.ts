@@ -1,53 +1,44 @@
 import type { Check } from '../types'
 import type { CheckModule } from './define'
 
-// Import all check modules
-import { buildChecks } from './build'
+// Import all check modules (new modular format)
+import { buildModule } from './build'
 import { ciModule } from './ci'
 import { configModule } from './config'
-import { depsChecks } from './deps'
-import { docsChecks } from './docs'
+import { depsModule } from './deps'
+import { docsModule } from './docs'
 import { filesModule } from './files'
-import { formatChecks } from './format'
-import { githubChecks } from './github'
-import { hooksChecks } from './hooks'
-import { monorepoChecks } from './monorepo'
-import { packageChecks } from './package'
-import { runtimeChecks } from './runtime'
-import { testChecks } from './test'
+import { formatModule } from './format'
+import { githubModule } from './github'
+import { hooksModule } from './hooks'
+import { monorepoModule } from './monorepo'
+import { packageModule } from './package'
+import { runtimeModule } from './runtime'
+import { testModule } from './test'
 
 /**
- * All check modules (new modular format)
+ * All check modules
  */
 export const checkModules: CheckModule[] = [
 	filesModule,
 	configModule,
 	ciModule,
+	packageModule,
+	depsModule,
+	testModule,
+	formatModule,
+	buildModule,
+	runtimeModule,
+	docsModule,
+	hooksModule,
+	githubModule,
+	monorepoModule,
 ]
 
 /**
- * Legacy check arrays (for backward compatibility during migration)
+ * All checks (combined from all modules)
  */
-const legacyChecks: Check[] = [
-	...packageChecks,
-	...depsChecks,
-	...testChecks,
-	...formatChecks,
-	...buildChecks,
-	...runtimeChecks,
-	...docsChecks,
-	...hooksChecks,
-	...githubChecks,
-	...monorepoChecks,
-]
-
-/**
- * All checks (combined from modules + legacy)
- */
-export const allChecks: Check[] = [
-	...checkModules.flatMap((m) => m.checks),
-	...legacyChecks,
-]
+export const allChecks: Check[] = checkModules.flatMap((m) => m.checks)
 
 /**
  * Checks indexed by name
@@ -77,27 +68,40 @@ export function getCategories(): string[] {
 	return [...new Set(allChecks.map((check) => check.category))]
 }
 
-// Re-export modules
-export { filesModule, configModule, ciModule }
-
-// Re-export legacy for backward compatibility
+// Re-export all modules
 export {
-	buildChecks,
-	depsChecks,
-	docsChecks,
-	formatChecks,
-	githubChecks,
-	hooksChecks,
-	monorepoChecks,
-	packageChecks,
-	runtimeChecks,
-	testChecks,
+	filesModule,
+	configModule,
+	ciModule,
+	packageModule,
+	depsModule,
+	testModule,
+	formatModule,
+	buildModule,
+	runtimeModule,
+	docsModule,
+	hooksModule,
+	githubModule,
+	monorepoModule,
 }
+
+// Re-export legacy check arrays for backward compatibility
+export { buildChecks } from './build'
+export { ciChecks } from './ci'
+export { configChecks } from './config'
+export { depsChecks } from './deps'
+export { docsChecks } from './docs'
+export { formatChecks } from './format'
+export { githubChecks } from './github'
+export { hooksChecks } from './hooks'
+export { monorepoChecks } from './monorepo'
+export { packageChecks } from './package'
+export { runtimeChecks } from './runtime'
+export { testChecks } from './test'
 
 // Backward compatibility aliases
 export const fileChecks: Check[] = filesModule.checks
-export const configChecks: Check[] = configModule.checks
-export const ciChecks: Check[] = ciModule.checks
+// Note: fileChecks is different from filesModule.checks name for backward compat
 
 // Re-export define helpers for external use
 export {
@@ -107,4 +111,11 @@ export {
 	createJsonConfigCheck,
 	createCommandCheck,
 } from './define'
-export type { CheckModule, DefineCheckOptions, FileCheckOptions, JsonConfigCheckOptions } from './define'
+export type {
+	CheckModule,
+	DefineCheckOptions,
+	FileCheckOptions,
+	JsonConfigCheckOptions,
+	CheckResultData,
+	CheckReturnValue,
+} from './define'

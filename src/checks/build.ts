@@ -1,26 +1,31 @@
-import { writeFileSync } from 'node:fs'
-import { join } from 'node:path'
-import type { Check, CheckContext, CheckResult } from '../types'
-import { fileExists } from '../utils/fs'
+import type { Check } from '../types'
+import type { CheckModule } from './define'
+import { defineCheckModule } from './define'
 
-export const bunupConfigCheck: Check = {
-	name: 'build/bunup-config',
-	category: 'build',
-	description: 'Check if build.config.ts exists for bunup',
-	fixable: true,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const configPath = join(ctx.cwd, 'build.config.ts')
-		const exists = fileExists(configPath)
-
-		return {
+export const buildModule: CheckModule = defineCheckModule(
+	{
+		category: 'build',
+		label: '🔨 Build',
+		description: 'Check build configuration',
+	},
+	[
+		{
 			name: 'build/bunup-config',
-			category: 'build',
-			passed: exists,
-			message: exists ? 'build.config.ts exists' : 'Missing build.config.ts for bunup',
-			severity: ctx.severity,
+			description: 'Check if build.config.ts exists for bunup',
 			fixable: true,
-			fix: async () => {
-				const defaultConfig = `import { defineConfig } from 'bunup'
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { writeFileSync } = await import('node:fs')
+				const { fileExists } = await import('../utils/fs')
+
+				const configPath = join(ctx.cwd, 'build.config.ts')
+				const exists = fileExists(configPath)
+
+				return {
+					passed: exists,
+					message: exists ? 'build.config.ts exists' : 'Missing build.config.ts for bunup',
+					fix: async () => {
+						const defaultConfig = `import { defineConfig } from 'bunup'
 
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -29,71 +34,57 @@ export default defineConfig({
   clean: true,
 })
 `
-				writeFileSync(configPath, defaultConfig, 'utf-8')
+						writeFileSync(configPath, defaultConfig, 'utf-8')
+					},
+				}
 			},
-		}
-	},
-}
+		},
 
-export const exportsValidCheck: Check = {
-	name: 'build/exports-valid',
-	category: 'build',
-	description: 'Check if package.json exports are properly configured',
-	fixable: false,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const pkg = ctx.packageJson
-		const exports = pkg?.exports
-
-		if (!exports) {
-			return {
-				name: 'build/exports-valid',
-				category: 'build',
-				passed: false,
-				message: 'package.json missing exports field',
-				severity: ctx.severity,
-				fixable: false,
-			}
-		}
-
-		// Check if exports has proper structure
-		const mainExport =
-			typeof exports === 'object' ? (exports as Record<string, unknown>)['.'] : null
-
-		if (!mainExport) {
-			return {
-				name: 'build/exports-valid',
-				category: 'build',
-				passed: false,
-				message: 'package.json exports missing "." entry',
-				severity: ctx.severity,
-				fixable: false,
-			}
-		}
-
-		const exportObj = mainExport as Record<string, unknown>
-		const hasTypes = 'types' in exportObj
-		const hasImport = 'import' in exportObj
-
-		if (!hasTypes || !hasImport) {
-			return {
-				name: 'build/exports-valid',
-				category: 'build',
-				passed: false,
-				message: `package.json exports["."] missing ${!hasTypes ? 'types' : 'import'}`,
-				severity: ctx.severity,
-				fixable: false,
-			}
-		}
-
-		return {
+		{
 			name: 'build/exports-valid',
-			category: 'build',
-			passed: true,
-			message: 'package.json exports properly configured',
-			severity: ctx.severity,
+			description: 'Check if package.json exports are properly configured',
 			fixable: false,
-		}
-	},
-}
+			async check(ctx) {
+				const pkg = ctx.packageJson
+				const exports = pkg?.exports
 
-export const buildChecks: Check[] = [bunupConfigCheck, exportsValidCheck]
+				if (!exports) {
+					return {
+						passed: false,
+						message: 'package.json missing exports field',
+					}
+				}
+
+				// Check if exports has proper structure
+				const mainExport =
+					typeof exports === 'object' ? (exports as Record<string, unknown>)['.'] : null
+
+				if (!mainExport) {
+					return {
+						passed: false,
+						message: 'package.json exports missing "." entry',
+					}
+				}
+
+				const exportObj = mainExport as Record<string, unknown>
+				const hasTypes = 'types' in exportObj
+				const hasImport = 'import' in exportObj
+
+				if (!hasTypes || !hasImport) {
+					return {
+						passed: false,
+						message: `package.json exports["."] missing ${!hasTypes ? 'types' : 'import'}`,
+					}
+				}
+
+				return {
+					passed: true,
+					message: 'package.json exports properly configured',
+				}
+			},
+		},
+	]
+)
+
+// Export for backward compatibility
+export const buildChecks: Check[] = buildModule.checks

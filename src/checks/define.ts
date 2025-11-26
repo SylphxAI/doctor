@@ -45,6 +45,11 @@ export interface CheckResultData {
 }
 
 /**
+ * Alias for CheckResultData (more descriptive name)
+ */
+export type CheckReturnValue = CheckResultData
+
+/**
  * Define a single check with less boilerplate
  */
 export function defineCheck(options: DefineCheckOptions): Check {
