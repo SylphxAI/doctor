@@ -11,18 +11,31 @@ export const docsModule: CheckModule = defineCheckModule(
 	[
 		{
 			name: 'docs/vitepress',
-			description: 'Check if VitePress docs exist',
+			description: 'Check if VitePress is configured when docs/ exists',
 			fixable: false,
 			async check(ctx) {
 				const { join } = await import('node:path')
 				const { directoryExists } = await import('../utils/fs')
+
+				// Only check if docs/ folder exists
+				const docsDir = join(ctx.cwd, 'docs')
+				const hasDocsFolder = await directoryExists(docsDir)
+
+				if (!hasDocsFolder) {
+					return {
+						passed: true,
+						message: 'No docs/ folder (skipped)',
+						skipped: true,
+					}
+				}
 
 				const vitepressDir = join(ctx.cwd, 'docs', '.vitepress')
 				const exists = await directoryExists(vitepressDir)
 
 				return {
 					passed: exists,
-					message: exists ? 'VitePress docs exist' : 'Missing VitePress docs (docs/.vitepress/)',
+					message: exists ? 'VitePress docs configured' : 'docs/ exists but VitePress not configured',
+					hint: exists ? undefined : 'Run: bunx vitepress init docs',
 				}
 			},
 		},

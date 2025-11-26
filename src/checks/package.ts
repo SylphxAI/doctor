@@ -321,13 +321,68 @@ export const packageModule: CheckModule = defineCheckModule(
 		},
 
 		{
-			name: 'pkg/scripts-bench',
-			description: 'Check if "bench" script uses bun bench',
+			name: 'pkg/scripts-typecheck',
+			description: 'Check if "typecheck" script uses tsc or turbo',
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
 				const { writeFileSync } = await import('node:fs')
 				const { readPackageJson } = await import('../utils/fs')
+
+				const script = ctx.packageJson?.scripts?.typecheck
+				// Monorepo root: always use turbo (company standard)
+				// Packages: tsc --noEmit
+				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
+
+				const validTypecheck = isMonorepoRoot
+					? script?.includes('turbo')
+					: script?.includes('tsc')
+
+				const defaultScript = isMonorepoRoot ? 'turbo typecheck' : 'tsc --noEmit'
+
+				if (!script) {
+					return {
+						passed: false,
+						message: 'Missing "typecheck" script in package.json',
+						hint: `Add "typecheck": "${defaultScript}" to package.json scripts`,
+						fix: async () => {
+							const pkgPath = join(ctx.cwd, 'package.json')
+							const currentPkg = readPackageJson(ctx.cwd) ?? {}
+							currentPkg.scripts = currentPkg.scripts ?? {}
+							currentPkg.scripts.typecheck = defaultScript
+							writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+						},
+					}
+				}
+
+				return {
+					passed: validTypecheck,
+					message: validTypecheck
+						? `typecheck script: "${script}"`
+						: `typecheck script uses "${script}" (expected "${defaultScript}")`,
+					hint: validTypecheck ? undefined : `Use "${defaultScript}"`,
+				}
+			},
+		},
+
+		{
+			name: 'pkg/scripts-bench',
+			description: 'Check if "bench" script uses bun bench (when bench files exist)',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { writeFileSync } = await import('node:fs')
+				const { readPackageJson, findFiles } = await import('../utils/fs')
+
+				// Skip if no benchmark files exist
+				const benchFiles = await findFiles(ctx.cwd, /\.bench\.(ts|tsx|js|jsx)$/)
+				if (benchFiles.length === 0) {
+					return {
+						passed: true,
+						message: 'No benchmark files (skipped)',
+						skipped: true,
+					}
+				}
 
 				const script = ctx.packageJson?.scripts?.bench
 				const usesBunBench = script?.startsWith('bun bench')
@@ -335,7 +390,7 @@ export const packageModule: CheckModule = defineCheckModule(
 				if (!script) {
 					return {
 						passed: false,
-						message: 'Missing "bench" script in package.json',
+						message: 'Missing "bench" script (but .bench.ts files exist)',
 						hint: 'Add "bench": "bun bench" to package.json scripts',
 						fix: async () => {
 							const pkgPath = join(ctx.cwd, 'package.json')

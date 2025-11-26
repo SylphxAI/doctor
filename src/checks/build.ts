@@ -18,6 +18,16 @@ export const buildModule: CheckModule = defineCheckModule(
 				const { writeFileSync } = await import('node:fs')
 				const { fileExists } = await import('../utils/fs')
 
+				// Skip for monorepo root - turbo handles build orchestration
+				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
+				if (isMonorepoRoot) {
+					return {
+						passed: true,
+						message: 'Skipped for monorepo root (turbo orchestrates builds)',
+						skipped: true,
+					}
+				}
+
 				const configPath = join(ctx.cwd, 'build.config.ts')
 				const exists = fileExists(configPath)
 

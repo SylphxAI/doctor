@@ -88,30 +88,7 @@ coverage/
 			severity: 'info',
 		}),
 
-		createFileCheck({
-			name: 'files/progress',
-			fileName: 'progress.md',
-			fixable: true,
-			fixContent: `# Progress
-
-## Current Status
-
-🚧 In Development
-
-## Completed
-
-- [ ] Initial setup
-
-## In Progress
-
-- [ ] Core features
-
-## Planned
-
-- [ ] Documentation
-- [ ] Tests
-`,
-		}),
+		// Note: files/progress removed - too opinionated
 
 		createFileCheck({
 			name: 'files/biome-config',
