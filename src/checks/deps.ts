@@ -251,29 +251,30 @@ export const depsModule: CheckModule = defineCheckModule(
 					return { passed: true, message }
 				}
 
-				// Group by location for fix
-				const byPath = new Map<string, string[]>()
+				// Group by location for display and fix
+				const byLocation = new Map<string, { names: string[]; path: string }>()
 				for (const f of found) {
-					const list = byPath.get(f.path) ?? []
-					list.push(f.name)
-					byPath.set(f.path, list)
+					const entry = byLocation.get(f.location) ?? { names: [], path: f.path }
+					entry.names.push(f.name)
+					byLocation.set(f.location, entry)
 				}
 
-				const hint = found
-					.slice(0, 3)
-					.map((p) => `${p.name} → ${p.alternative}`)
-					.join(', ')
-				const moreCount = found.length > 3 ? ` (+${found.length - 3} more)` : ''
-				const locationCount = byPath.size > 1 ? ` in ${byPath.size} packages` : ''
+				// Build hint showing which packages have which banned deps
+				const hintParts: string[] = []
+				for (const [location, { names }] of byLocation) {
+					hintParts.push(`${location}: ${names.join(', ')}`)
+				}
+				const hint = hintParts.slice(0, 3).join('; ')
+				const moreCount = hintParts.length > 3 ? ` (+${hintParts.length - 3} more locations)` : ''
 
 				return {
 					passed: false,
-					message: `Found ${found.length} banned package(s)${locationCount}`,
-					hint: `Replace: ${hint}${moreCount}`,
+					message: `Found ${found.length} banned package(s) in ${byLocation.size} package(s)`,
+					hint: `${hint}${moreCount}`,
 					fix: async () => {
 						const { exec } = await import('../utils/exec')
-						for (const [path, pkgs] of byPath) {
-							await exec('bun', ['remove', ...pkgs], path)
+						for (const [, { names, path }] of byLocation) {
+							await exec('bun', ['remove', ...names], path)
 						}
 					},
 				}
