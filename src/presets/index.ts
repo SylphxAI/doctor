@@ -32,6 +32,7 @@ const initPreset: PresetConfig = {
 	// Dependencies
 	'deps/outdated': 'off',
 	'deps/security': 'off',
+	'deps/banned': 'warn',
 
 	// Testing
 	'test/has-tests': 'off',
@@ -116,6 +117,7 @@ const devPreset: PresetConfig = {
 	// Dependencies
 	'deps/outdated': 'warn',
 	'deps/security': 'warn',
+	'deps/banned': 'error',
 
 	// Testing
 	'test/has-tests': 'warn',
@@ -198,6 +200,7 @@ const stablePreset: PresetConfig = {
 	// Dependencies
 	'deps/outdated': 'error',
 	'deps/security': 'error',
+	'deps/banned': 'error',
 
 	// Testing
 	'test/has-tests': 'error',

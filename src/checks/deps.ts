@@ -175,6 +175,103 @@ export const depsModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'deps/banned',
+			description: 'Check for packages that should not be installed',
+			fixable: true,
+			async check(ctx) {
+				const pkg = ctx.packageJson
+				if (!pkg) {
+					return {
+						passed: true,
+						message: 'No package.json found',
+						skipped: true,
+					}
+				}
+
+				// Banned packages with their alternatives
+				const bannedPackages: Record<string, string> = {
+					// Linting/Formatting - use biome
+					eslint: 'biome',
+					prettier: 'biome',
+					'@typescript-eslint/parser': 'biome',
+					'@typescript-eslint/eslint-plugin': 'biome',
+					'eslint-config-prettier': 'biome',
+					'eslint-plugin-prettier': 'biome',
+
+					// Build tools - use bunup
+					esbuild: 'bunup',
+					tsup: 'bunup',
+					rollup: 'bunup',
+					webpack: 'bunup',
+					parcel: 'bunup',
+					'@rollup/plugin-node-resolve': 'bunup',
+					'@rollup/plugin-commonjs': 'bunup',
+					'rollup-plugin-dts': 'bunup',
+
+					// Testing - use bun test
+					jest: 'bun test',
+					vitest: 'bun test',
+					mocha: 'bun test',
+					chai: 'bun test',
+					'ts-jest': 'bun test',
+					'@types/jest': 'bun test',
+
+					// Git hooks - use lefthook
+					husky: 'lefthook',
+					'simple-git-hooks': 'lefthook',
+					'lint-staged': 'lefthook',
+
+					// TypeScript execution - use bun
+					'ts-node': 'bun',
+					tsx: 'bun',
+					'ts-node-dev': 'bun --watch',
+
+					// Package managers - use bun
+					npm: 'bun (remove npm)',
+					yarn: 'bun (remove yarn)',
+					pnpm: 'bun (remove pnpm)',
+				}
+
+				const allDeps = {
+					...pkg.dependencies,
+					...pkg.devDependencies,
+				}
+
+				const found: { name: string; alternative: string }[] = []
+
+				for (const [banned, alternative] of Object.entries(bannedPackages)) {
+					if (banned in allDeps) {
+						found.push({ name: banned, alternative })
+					}
+				}
+
+				if (found.length === 0) {
+					return {
+						passed: true,
+						message: 'No banned packages found',
+					}
+				}
+
+				const hint = found
+					.slice(0, 3)
+					.map((p) => `${p.name} → ${p.alternative}`)
+					.join(', ')
+				const moreCount = found.length > 3 ? ` (+${found.length - 3} more)` : ''
+
+				return {
+					passed: false,
+					message: `Found ${found.length} banned package(s)`,
+					hint: `Replace: ${hint}${moreCount}`,
+					fix: async () => {
+						const { exec } = await import('../utils/exec')
+						const toRemove = found.map((p) => p.name)
+						await exec('bun', ['remove', ...toRemove], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )
 
