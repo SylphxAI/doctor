@@ -252,10 +252,16 @@ export const packageModule: CheckModule = defineCheckModule(
 				const validBuild = isMonorepoRoot
 					? hasTurbo
 						? script?.includes('turbo')
-						: script?.includes('bunup') || script?.includes('tsc') || script?.includes('bun build')
+						: script?.includes('bun run --filter') ||
+							script?.includes('turbo') ||
+							script?.includes('bunup')
 					: script?.includes('bunup') || script?.includes('tsc') || script?.includes('bun build')
 
-				const defaultScript = isMonorepoRoot && hasTurbo ? 'turbo build' : 'bunup'
+				const defaultScript = isMonorepoRoot
+					? hasTurbo
+						? 'turbo build'
+						: "bun run --filter '*' build"
+					: 'bunup'
 
 				if (!script) {
 					return {
@@ -298,15 +304,19 @@ export const packageModule: CheckModule = defineCheckModule(
 				const hasTurbo = fileExists(join(ctx.cwd, 'turbo.json'))
 
 				// Monorepo root with turbo should use turbo test
-				// Monorepo root without turbo can use bun test
+				// Monorepo root without turbo can use bun run --filter or turbo test
 				// Individual packages should use bun test
 				const validTest = isMonorepoRoot
 					? hasTurbo
 						? script?.includes('turbo')
-						: script?.startsWith('bun test')
+						: script?.includes('bun run --filter') || script?.includes('turbo')
 					: script?.startsWith('bun test')
 
-				const defaultScript = isMonorepoRoot && hasTurbo ? 'turbo test' : 'bun test'
+				const defaultScript = isMonorepoRoot
+					? hasTurbo
+						? 'turbo test'
+						: "bun run --filter '*' test"
+					: 'bun test'
 
 				if (!script) {
 					return {
