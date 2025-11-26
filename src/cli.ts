@@ -45,6 +45,12 @@ const checkCommand = defineCommand({
 		const preCommit = args['pre-commit']
 		const prePush = args['pre-push']
 
+		// Pre-push mode: only show hint, no checks (pre-commit already did that)
+		if (prePush) {
+			console.log(pc.dim('💡 Release? Check: gh pr list --head bump/release'))
+			process.exit(0)
+		}
+
 		// Load config to get preset
 		const config = await loadConfig(cwd)
 		const preset = (args.preset as PresetName) ?? config.preset ?? 'dev'
@@ -57,20 +63,14 @@ const checkCommand = defineCommand({
 		const report = await runChecks({
 			cwd,
 			fix: args.fix && !args['dry-run'],
-			preCommit: preCommit || prePush, // Both modes skip warnings
+			preCommit,
 			preset,
 			config,
 		})
 
 		// Output report
-		if (preCommit || prePush) {
+		if (preCommit) {
 			console.log(formatPreCommitReport(report))
-
-			// Show release hint in pre-push mode
-			if (prePush && report.failed === 0) {
-				console.log('')
-				console.log(pc.dim('💡 Release? Check: gh pr list --head bump/release'))
-			}
 		} else {
 			console.log(formatReport(report, preset))
 
@@ -111,7 +111,7 @@ const checkCommand = defineCommand({
 		}
 
 		// Exit with appropriate code
-		const exitCode = getExitCode(report, preCommit || prePush)
+		const exitCode = getExitCode(report, preCommit)
 		process.exit(exitCode)
 	},
 })
