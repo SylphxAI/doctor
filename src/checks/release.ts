@@ -32,29 +32,6 @@ export const releaseModule: CheckModule = defineCheckModule(
 			async check(ctx) {
 				const { exec } = await import('../utils/exec')
 
-				// Check if there are uncommitted changes to package.json version
-				const diffResult = await exec('git', ['diff', '--cached', 'package.json'], ctx.cwd)
-
-				if (diffResult.exitCode !== 0) {
-					return {
-						passed: true,
-						message: 'No staged package.json changes',
-					}
-				}
-
-				const diff = diffResult.stdout
-
-				// Check if version line is being changed
-				const versionChangePattern = /^\+\s*"version":\s*"/m
-				const hasVersionChange = versionChangePattern.test(diff)
-
-				if (!hasVersionChange) {
-					return {
-						passed: true,
-						message: 'No manual version changes detected',
-					}
-				}
-
 				// Check if this is from CI (env var check)
 				const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
 
@@ -65,10 +42,39 @@ export const releaseModule: CheckModule = defineCheckModule(
 					}
 				}
 
+				// Check all staged package.json files (root + packages/*)
+				const diffResult = await exec(
+					'git',
+					['diff', '--cached', '--name-only', '--', '**/package.json'],
+					ctx.cwd
+				)
+
+				if (diffResult.exitCode !== 0 || !diffResult.stdout.trim()) {
+					return {
+						passed: true,
+						message: 'No staged package.json changes',
+					}
+				}
+
+				const changedFiles = diffResult.stdout.trim().split('\n').filter(Boolean)
+
+				// Check each changed package.json for version changes
+				for (const file of changedFiles) {
+					const fileDiff = await exec('git', ['diff', '--cached', file], ctx.cwd)
+
+					const versionChangePattern = /^\+\s*"version":\s*"/m
+					if (versionChangePattern.test(fileDiff.stdout)) {
+						return {
+							passed: false,
+							message: `Manual version change detected in ${file}`,
+							hint: `Version changes should only be done by automated release workflow. Revert with: git checkout ${file}`,
+						}
+					}
+				}
+
 				return {
-					passed: false,
-					message: 'Manual version change detected in package.json',
-					hint: 'Version changes should only be done by automated release workflow. Revert with: git checkout package.json',
+					passed: true,
+					message: 'No manual version changes detected',
 				}
 			},
 		},
