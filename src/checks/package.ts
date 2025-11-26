@@ -234,7 +234,7 @@ export const packageModule: CheckModule = defineCheckModule(
 
 		{
 			name: 'pkg/scripts-lint',
-			description: 'Check if "lint" script uses biome or turbo',
+			description: 'Check if "lint" script uses biome',
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
@@ -242,10 +242,8 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { readPackageJson } = await import('../utils/fs')
 
 				const script = ctx.packageJson?.scripts?.lint
-				// Monorepo root: always use turbo (company standard)
-				// Packages: biome check
-				const isRoot = isMonorepoRoot(ctx)
-				const defaultScript = isRoot ? 'turbo lint' : 'biome check .'
+				// Always use biome check - fast enough without turbo caching
+				const defaultScript = 'biome check .'
 
 				if (!script) {
 					return {
@@ -262,14 +260,14 @@ export const packageModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				const validLint = isRoot ? script.includes('turbo') : script.includes('biome')
+				const usesBiome = script.includes('biome')
 
 				return {
-					passed: validLint,
-					message: validLint
+					passed: usesBiome,
+					message: usesBiome
 						? `lint script: "${script}"`
-						: `lint script uses "${script}" (expected "${defaultScript}")`,
-					hint: validLint ? undefined : `Use "${defaultScript}"`,
+						: `lint script should use biome (found "${script}")`,
+					hint: usesBiome ? undefined : `Use "${defaultScript}"`,
 				}
 			},
 		},
