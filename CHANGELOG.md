@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.13.2 (2025-11-26)
+
+### 🐛 Bug Fixes
+
+- **reporter:** only show error/warn hints in Quick Actions ([2c643e4](https://github.com/SylphxAI/doctor/commit/2c643e4143ea0e18d01eaf2734d73f05f8d55b4d))
+
 ## 1.13.1 (2025-11-26)
 
 ### 🐛 Bug Fixes
