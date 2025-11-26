@@ -1,4 +1,4 @@
-export type Severity = 'error' | 'warn' | 'off'
+export type Severity = 'error' | 'warn' | 'info' | 'off'
 
 export type PresetName = 'init' | 'dev' | 'stable'
 

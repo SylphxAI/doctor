@@ -77,26 +77,42 @@ export const outdatedDepsCheck: Check = {
 
 		const minorUpdates = outdated.filter((pkg) => !majorUpdates.includes(pkg))
 
-		let message = `${outdated.length} outdated package(s)`
-		if (majorUpdates.length > 0) {
-			message += ` (${majorUpdates.length} major)`
+		// Build hints
+		const minorHint = minorUpdates.length > 0
+			? `bun update ${minorUpdates.map((p) => p.name).join(' ')}`
+			: undefined
+
+		const majorHint = majorUpdates.length > 0
+			? `Major updates available: ${majorUpdates.map((p) => `${p.name}@${p.latest}`).join(', ')}`
+			: undefined
+
+		// If only major updates, show as info (not blocking)
+		if (minorUpdates.length === 0 && majorUpdates.length > 0) {
+			return {
+				name: 'deps/outdated',
+				category: 'deps',
+				passed: false,
+				message: `${majorUpdates.length} major update(s) available`,
+				severity: 'info',
+				fixable: false,
+				hint: majorHint,
+			}
 		}
 
-		// Build hint showing what needs updating
-		const topOutdated = outdated.slice(0, 3).map((p) => `${p.name}: ${p.current} → ${p.latest}`)
-		const hint =
-			outdated.length <= 3
-				? `Run: bun update ${outdated.map((p) => p.name).join(' ')}`
-				: `${topOutdated.join(', ')}... Run: bun update`
+		// Minor updates exist - show as warning/error based on preset
+		let message = `${minorUpdates.length} outdated package(s)`
+		if (majorUpdates.length > 0) {
+			message += ` + ${majorUpdates.length} major`
+		}
 
 		return {
 			name: 'deps/outdated',
 			category: 'deps',
 			passed: false,
 			message,
-			severity: majorUpdates.length > 0 ? 'warn' : ctx.severity,
+			severity: ctx.severity,
 			fixable: true,
-			hint,
+			hint: minorHint,
 			fix: async () => {
 				// Only update minor/patch by default (safer)
 				if (minorUpdates.length > 0) {
