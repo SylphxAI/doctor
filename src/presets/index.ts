@@ -6,14 +6,13 @@ const initPreset: PresetConfig = {
 	'files/license': 'warn',
 	'files/gitignore': 'error',
 	'files/changelog': 'off',
-	'files/progress': 'off',
+	'files/progress': 'warn',
 	'files/biome-config': 'error',
 	'files/turbo-config': 'warn',
 
 	// Config
 	'config/biome-extends': 'warn',
 	'config/tsconfig-extends': 'warn',
-	'config/turbo-pipeline': 'off',
 
 	// Package.json
 	'pkg/name': 'error',
@@ -25,6 +24,7 @@ const initPreset: PresetConfig = {
 	'pkg/scripts-format': 'error',
 	'pkg/scripts-build': 'warn',
 	'pkg/scripts-test': 'off',
+	'pkg/scripts-typecheck': 'warn',
 	'pkg/scripts-bench': 'off',
 	'pkg/scripts-coverage': 'off',
 	'pkg/exports': 'off',
@@ -44,7 +44,6 @@ const initPreset: PresetConfig = {
 	'format/biome-format': 'error',
 
 	// Build
-	'build/bunup-config': 'off',
 	'build/exports-valid': 'off',
 
 	// Runtime
@@ -86,14 +85,13 @@ const devPreset: PresetConfig = {
 	'files/license': 'error',
 	'files/gitignore': 'error',
 	'files/changelog': 'warn',
-	'files/progress': 'warn',
+	'files/progress': 'error',
 	'files/biome-config': 'error',
 	'files/turbo-config': 'error',
 
 	// Config
 	'config/biome-extends': 'error',
 	'config/tsconfig-extends': 'error',
-	'config/turbo-pipeline': 'warn',
 
 	// Package.json
 	'pkg/name': 'error',
@@ -105,6 +103,7 @@ const devPreset: PresetConfig = {
 	'pkg/scripts-format': 'error',
 	'pkg/scripts-build': 'error',
 	'pkg/scripts-test': 'warn',
+	'pkg/scripts-typecheck': 'error',
 	'pkg/scripts-bench': 'off',
 	'pkg/scripts-coverage': 'off',
 	'pkg/exports': 'warn',
@@ -124,7 +123,6 @@ const devPreset: PresetConfig = {
 	'format/biome-format': 'error',
 
 	// Build
-	'build/bunup-config': 'error',
 	'build/exports-valid': 'warn',
 
 	// Runtime
@@ -150,14 +148,12 @@ const devPreset: PresetConfig = {
 	'github/topics': 'warn',
 
 	// Monorepo
+	'monorepo/root-private': 'error',
+	'monorepo/workspace-protocol': 'warn',
+	'monorepo/consistent-versions': 'warn',
+	'monorepo/turbo-tasks': 'error',
 	'monorepo/packages-readme': 'warn',
 	'monorepo/packages-license': 'warn',
-	'monorepo/packages-description': 'warn',
-	'monorepo/packages-type-module': 'warn',
-	'monorepo/packages-exports': 'warn',
-	'monorepo/packages-build': 'warn',
-	'monorepo/packages-test': 'off',
-	'monorepo/packages-bench': 'off',
 }
 
 const stablePreset: PresetConfig = {
@@ -173,7 +169,6 @@ const stablePreset: PresetConfig = {
 	// Config
 	'config/biome-extends': 'error',
 	'config/tsconfig-extends': 'error',
-	'config/turbo-pipeline': 'error',
 
 	// Package.json
 	'pkg/name': 'error',
@@ -185,6 +180,7 @@ const stablePreset: PresetConfig = {
 	'pkg/scripts-format': 'error',
 	'pkg/scripts-build': 'error',
 	'pkg/scripts-test': 'error',
+	'pkg/scripts-typecheck': 'error',
 	'pkg/scripts-bench': 'warn',
 	'pkg/scripts-coverage': 'error',
 	'pkg/exports': 'error',
@@ -204,7 +200,6 @@ const stablePreset: PresetConfig = {
 	'format/biome-format': 'error',
 
 	// Build
-	'build/bunup-config': 'error',
 	'build/exports-valid': 'error',
 
 	// Runtime
@@ -230,14 +225,12 @@ const stablePreset: PresetConfig = {
 	'github/topics': 'error',
 
 	// Monorepo
+	'monorepo/root-private': 'error',
+	'monorepo/workspace-protocol': 'error',
+	'monorepo/consistent-versions': 'error',
+	'monorepo/turbo-tasks': 'error',
 	'monorepo/packages-readme': 'error',
 	'monorepo/packages-license': 'error',
-	'monorepo/packages-description': 'error',
-	'monorepo/packages-type-module': 'error',
-	'monorepo/packages-exports': 'error',
-	'monorepo/packages-build': 'error',
-	'monorepo/packages-test': 'warn',
-	'monorepo/packages-bench': 'off',
 }
 
 export const presets: Record<PresetName, PresetConfig> = {

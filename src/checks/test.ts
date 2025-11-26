@@ -44,13 +44,20 @@ export const testModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				const result = await exec('bun', ['test'], ctx.cwd)
+				// Monorepo root uses turbo test, packages use bun test
+				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
+				const testCmd = isMonorepoRoot ? 'turbo' : 'bun'
+				const testArgs = isMonorepoRoot ? ['test'] : ['test']
+
+				const result = await exec(testCmd, testArgs, ctx.cwd)
 				const passed = result.exitCode === 0
+
+				const hintCmd = isMonorepoRoot ? 'turbo test' : 'bun test'
 
 				return {
 					passed,
 					message: passed ? 'All tests passed' : 'Tests failed',
-					hint: passed ? undefined : 'Run "bun test" to see failing tests',
+					hint: passed ? undefined : `Run "${hintCmd}" to see failing tests`,
 				}
 			},
 		},
@@ -75,7 +82,12 @@ export const testModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				const result = await exec('bun', ['test', '--coverage'], ctx.cwd)
+				// Monorepo root uses turbo test, packages use bun test
+				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
+				const testCmd = isMonorepoRoot ? 'turbo' : 'bun'
+				const testArgs = isMonorepoRoot ? ['test', '--', '--coverage'] : ['test', '--coverage']
+
+				const result = await exec(testCmd, testArgs, ctx.cwd)
 
 				// Parse coverage from output (simplified - actual implementation would parse properly)
 				const coverageMatch = result.stdout.match(/(\d+(?:\.\d+)?)\s*%/)
