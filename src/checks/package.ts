@@ -398,7 +398,7 @@ export const packageModule: CheckModule = defineCheckModule(
 
 		{
 			name: 'pkg/scripts-typecheck',
-			description: 'Check if "typecheck" script uses tsc or turbo',
+			description: 'Check if "typecheck" script uses tsc',
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
@@ -406,10 +406,9 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { readPackageJson } = await import('../utils/fs')
 
 				const script = ctx.packageJson?.scripts?.typecheck
-				// Monorepo root: always use turbo (company standard)
-				// Packages: tsc --noEmit
-				const isRoot = isMonorepoRoot(ctx)
-				const defaultScript = isRoot ? 'turbo typecheck' : 'tsc --noEmit'
+				// Always use tsc --noEmit directly
+				// tsc has built-in incremental caching, turbo adds no benefit
+				const defaultScript = 'tsc --noEmit'
 
 				if (!script) {
 					return {
@@ -426,14 +425,14 @@ export const packageModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				const validTypecheck = isRoot ? script.includes('turbo') : script.includes('tsc')
+				const usesTsc = script.includes('tsc')
 
 				return {
-					passed: validTypecheck,
-					message: validTypecheck
+					passed: usesTsc,
+					message: usesTsc
 						? `typecheck script: "${script}"`
-						: `typecheck script uses "${script}" (expected "${defaultScript}")`,
-					hint: validTypecheck ? undefined : `Use "${defaultScript}"`,
+						: `typecheck script should use tsc (found "${script}")`,
+					hint: usesTsc ? undefined : `Use "${defaultScript}"`,
 				}
 			},
 		},
