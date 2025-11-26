@@ -47,12 +47,12 @@ export const hasWorkflowCheck: Check = {
 	},
 }
 
-const SHARED_ACTION = 'SylphxAI/actions/publish'
+const SHARED_WORKFLOW = 'SylphxAI/.github/.github/workflows/release.yml'
 
 export const publishWorkflowCheck: Check = {
 	name: 'ci/publish-workflow',
 	category: 'ci',
-	description: 'Check if using shared publish workflow',
+	description: 'Check if using shared release workflow',
 	fixable: true,
 	async run(ctx: CheckContext): Promise<CheckResult> {
 		const workflowDir = join(ctx.cwd, '.github', 'workflows')
@@ -69,6 +69,7 @@ export const publishWorkflowCheck: Check = {
 				message: 'Missing release workflow (.github/workflows/release.yml)',
 				severity: ctx.severity,
 				fixable: true,
+				hint: 'Run with --fix to create release workflow using shared workflow',
 				fix: async () => {
 					mkdirSync(workflowDir, { recursive: true })
 					writeFileSync(releasePath, defaultReleaseWorkflow, 'utf-8')
@@ -76,22 +77,48 @@ export const publishWorkflowCheck: Check = {
 			}
 		}
 
-		// Check if it uses the shared action
+		// Check if it uses the shared reusable workflow
 		const content = readFile(releasePath) || readFile(releaseYamlPath) || ''
-		const usesShared = content.includes(SHARED_ACTION)
+		const usesSharedWorkflow = content.includes(SHARED_WORKFLOW)
+		const usesSecretsInherit = content.includes('secrets: inherit')
+
+		if (!usesSharedWorkflow) {
+			return {
+				name: 'ci/publish-workflow',
+				category: 'ci',
+				passed: false,
+				message: 'Release workflow not using shared reusable workflow',
+				severity: ctx.severity,
+				fixable: true,
+				hint: `Use: uses: ${SHARED_WORKFLOW}@main`,
+				fix: async () => {
+					writeFileSync(releasePath, defaultReleaseWorkflow, 'utf-8')
+				},
+			}
+		}
+
+		if (!usesSecretsInherit) {
+			return {
+				name: 'ci/publish-workflow',
+				category: 'ci',
+				passed: false,
+				message: 'Release workflow missing secrets: inherit',
+				severity: ctx.severity,
+				fixable: true,
+				hint: 'Add: secrets: inherit',
+				fix: async () => {
+					writeFileSync(releasePath, defaultReleaseWorkflow, 'utf-8')
+				},
+			}
+		}
 
 		return {
 			name: 'ci/publish-workflow',
 			category: 'ci',
-			passed: usesShared,
-			message: usesShared
-				? 'Using shared publish action'
-				: `Release workflow not using shared action (${SHARED_ACTION})`,
+			passed: true,
+			message: 'Using shared release workflow with secrets: inherit',
 			severity: ctx.severity,
-			fixable: true,
-			fix: async () => {
-				writeFileSync(releasePath, defaultReleaseWorkflow, 'utf-8')
-			},
+			fixable: false,
 		}
 	},
 }
@@ -136,26 +163,10 @@ on:
   push:
     branches: [main]
 
-concurrency:
-  group: \${{ github.workflow }}-\${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: SylphxAI/actions/publish@v1
-        with:
-          npm-token: \${{ secrets.NPM_TOKEN }}
-          github-token: \${{ secrets.GITHUB_TOKEN }}
+    uses: SylphxAI/.github/.github/workflows/release.yml@main
+    secrets: inherit
 `
 
 export const ciChecks: Check[] = [hasWorkflowCheck, publishWorkflowCheck]
