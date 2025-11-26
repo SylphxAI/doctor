@@ -330,19 +330,19 @@ function createPackagesScriptCheck(name: string, scriptName: string, description
 	}
 }
 
-export const packagesBuildCheck = createPackagesScriptCheck(
+export const packagesBuildCheck: Check = createPackagesScriptCheck(
 	'monorepo/packages-build',
 	'build',
 	'Check if all packages have build script'
 )
 
-export const packagesTestCheck = createPackagesScriptCheck(
+export const packagesTestCheck: Check = createPackagesScriptCheck(
 	'monorepo/packages-test',
 	'test',
 	'Check if all packages have test script'
 )
 
-export const packagesBenchCheck = createPackagesScriptCheck(
+export const packagesBenchCheck: Check = createPackagesScriptCheck(
 	'monorepo/packages-bench',
 	'bench',
 	'Check if all packages have bench script'

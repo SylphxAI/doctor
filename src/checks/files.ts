@@ -36,9 +36,9 @@ function createFileCheck(
 	}
 }
 
-export const readmeCheck = createFileCheck('files/readme', 'README.md', false)
+export const readmeCheck: Check = createFileCheck('files/readme', 'README.md', false)
 
-export const licenseCheck = createFileCheck(
+export const licenseCheck: Check = createFileCheck(
 	'files/license',
 	'LICENSE',
 	true,
@@ -66,7 +66,7 @@ SOFTWARE.
 `
 )
 
-export const progressCheck = createFileCheck(
+export const progressCheck: Check = createFileCheck(
 	'files/progress',
 	'progress.md',
 	true,
@@ -91,7 +91,7 @@ export const progressCheck = createFileCheck(
 `
 )
 
-export const biomeConfigCheck = createFileCheck(
+export const biomeConfigCheck: Check = createFileCheck(
 	'files/biome-config',
 	'biome.json',
 	true,

@@ -56,13 +56,13 @@ function createScriptCheck(name: string, scriptName: string, defaultScript: stri
 	}
 }
 
-export const pkgNameCheck = createPackageFieldCheck(
+export const pkgNameCheck: Check = createPackageFieldCheck(
 	'pkg/name',
 	'name',
 	'Check if package.json has name'
 )
 
-export const pkgDescriptionCheck = createPackageFieldCheck(
+export const pkgDescriptionCheck: Check = createPackageFieldCheck(
 	'pkg/description',
 	'description',
 	'Check if package.json has description'
@@ -96,22 +96,26 @@ export const pkgTypeModuleCheck: Check = {
 	},
 }
 
-export const pkgExportsCheck = createPackageFieldCheck(
+export const pkgExportsCheck: Check = createPackageFieldCheck(
 	'pkg/exports',
 	'exports',
 	'Check if package.json has exports'
 )
 
-export const scriptsLintCheck = createScriptCheck('pkg/scripts-lint', 'lint', 'biome check .')
-export const scriptsFormatCheck = createScriptCheck(
+export const scriptsLintCheck: Check = createScriptCheck(
+	'pkg/scripts-lint',
+	'lint',
+	'biome check .'
+)
+export const scriptsFormatCheck: Check = createScriptCheck(
 	'pkg/scripts-format',
 	'format',
 	'biome format --write .'
 )
-export const scriptsBuildCheck = createScriptCheck('pkg/scripts-build', 'build', 'bunup')
-export const scriptsTestCheck = createScriptCheck('pkg/scripts-test', 'test', 'bun test')
-export const scriptsBenchCheck = createScriptCheck('pkg/scripts-bench', 'bench', 'bun bench')
-export const scriptsCoverageCheck = createScriptCheck(
+export const scriptsBuildCheck: Check = createScriptCheck('pkg/scripts-build', 'build', 'bunup')
+export const scriptsTestCheck: Check = createScriptCheck('pkg/scripts-test', 'test', 'bun test')
+export const scriptsBenchCheck: Check = createScriptCheck('pkg/scripts-bench', 'bench', 'bun bench')
+export const scriptsCoverageCheck: Check = createScriptCheck(
 	'pkg/scripts-coverage',
 	'test:coverage',
 	'bun test --coverage'
