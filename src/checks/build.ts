@@ -11,19 +11,20 @@ export const buildModule: CheckModule = defineCheckModule(
 	[
 		{
 			name: 'build/bunup-config',
-			description: 'Check if build.config.ts exists for bunup',
+			description: 'Check if build.config.ts exists when using bunup',
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
 				const { writeFileSync } = await import('node:fs')
 				const { fileExists } = await import('../utils/fs')
 
-				// Skip for monorepo root - turbo handles build orchestration
-				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
-				if (isMonorepoRoot) {
+				const buildScript = ctx.packageJson?.scripts?.build ?? ''
+
+				// Only check if build script uses bunup
+				if (!buildScript.includes('bunup')) {
 					return {
 						passed: true,
-						message: 'Skipped for monorepo root (turbo orchestrates builds)',
+						message: 'Build script does not use bunup (skipped)',
 						skipped: true,
 					}
 				}
