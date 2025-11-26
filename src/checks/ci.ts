@@ -143,8 +143,7 @@ concurrency:
 jobs:
   release:
     uses: SylphxAI/.github/.github/workflows/publish-npm.yml@main
-    secrets:
-      NPM_TOKEN: \${{ secrets.NPM_TOKEN }}
+    secrets: inherit
 `
 
 export const ciChecks: Check[] = [hasWorkflowCheck, publishWorkflowCheck]
