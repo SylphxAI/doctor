@@ -197,9 +197,9 @@ export function formatReport(report: CheckReport, preset: PresetName): string {
 			if (counts.length > 0) {
 				lines.push(`  ${label}: ${counts.join(', ')}`)
 
-				// Show specific commands for each category
+				// Show hints only for errors and warnings (not info)
 				for (const result of summary.results) {
-					if (result.hint) {
+					if (result.hint && (result.severity === 'error' || result.severity === 'warn')) {
 						lines.push(pc.dim(`    → ${result.hint}`))
 					}
 				}
