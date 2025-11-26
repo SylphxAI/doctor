@@ -1,5 +1,15 @@
 # sylphx-doctor
 
+## 1.11.0 (2025-11-26)
+
+### ✨ Features
+
+- **deps:** add banned packages check ([d8b7055](https://github.com/SylphxAI/doctor/commit/d8b70559bf791f2754daf208da2db492fc0f5d0d))
+
+### 🐛 Bug Fixes
+
+- **deps:** banned packages always error regardless of preset ([9ced8b5](https://github.com/SylphxAI/doctor/commit/9ced8b5f2d9162229a48f4de92b6449905c3eb94))
+
 ## 1.10.0 (2025-11-26)
 
 ### ✨ Features
