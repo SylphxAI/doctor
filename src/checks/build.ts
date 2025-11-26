@@ -9,77 +9,7 @@ export const buildModule: CheckModule = defineCheckModule(
 		description: 'Check build configuration',
 	},
 	[
-		{
-			name: 'build/bunup-config',
-			description: 'Check if build.config.ts exists when using bunup',
-			fixable: true,
-			async check(ctx) {
-				const { join, dirname } = await import('node:path')
-				const { writeFileSync } = await import('node:fs')
-				const { fileExists } = await import('../utils/fs')
-
-				const buildScript = ctx.packageJson?.scripts?.build ?? ''
-
-				// Only check if build script uses bunup
-				if (!buildScript.includes('bunup')) {
-					return {
-						passed: true,
-						message: 'Build script does not use bunup (skipped)',
-						skipped: true,
-					}
-				}
-
-				const localConfig = join(ctx.cwd, 'build.config.ts')
-				const localConfigJs = join(ctx.cwd, 'build.config.js')
-				const bunupConfig = join(ctx.cwd, 'bunup.config.ts')
-				const bunupConfigJs = join(ctx.cwd, 'bunup.config.js')
-
-				// Check local config (build.config.ts or bunup.config.ts)
-				const hasLocalConfig =
-					fileExists(localConfig) ||
-					fileExists(localConfigJs) ||
-					fileExists(bunupConfig) ||
-					fileExists(bunupConfigJs)
-
-				if (hasLocalConfig) {
-					return {
-						passed: true,
-						message: 'bunup config exists',
-					}
-				}
-
-				// If in workspace, check root for config (workspace mode)
-				if (ctx.workspaceRoot && ctx.workspaceRoot !== ctx.cwd) {
-					const rootConfig = join(ctx.workspaceRoot, 'bunup.config.ts')
-					const rootConfigJs = join(ctx.workspaceRoot, 'bunup.config.js')
-					const rootBuildConfig = join(ctx.workspaceRoot, 'build.config.ts')
-
-					if (fileExists(rootConfig) || fileExists(rootConfigJs) || fileExists(rootBuildConfig)) {
-						return {
-							passed: true,
-							message: 'Using workspace root bunup config',
-						}
-					}
-				}
-
-				return {
-					passed: false,
-					message: 'Missing bunup config (build.config.ts or bunup.config.ts)',
-					fix: async () => {
-						const defaultConfig = `import { defineConfig } from 'bunup'
-
-export default defineConfig({
-  entry: ['src/index.ts'],
-  dts: true,
-  format: ['esm'],
-  clean: true,
-})
-`
-						writeFileSync(bunupConfig, defaultConfig, 'utf-8')
-					},
-				}
-			},
-		},
+		// Note: bunup config check removed - bunup works fine with defaults
 
 		{
 			name: 'build/exports-valid',
