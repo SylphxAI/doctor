@@ -1,54 +1,12 @@
-import type { Check, CheckContext } from '../types'
+import type { Check } from '../types'
 import type { CheckModule, CheckReturnValue } from './define'
 import { defineCheckModule } from './define'
 
-interface PackageJson {
-	name?: string
-	description?: string
-	workspaces?: string[]
-	type?: string
-	exports?: unknown
-	scripts?: Record<string, string>
-}
-
-async function getPackageDirs(cwd: string): Promise<string[]> {
-	const { join } = await import('node:path')
-	const { directoryExists, fileExists } = await import('../utils/fs')
-
-	const packageDirs: string[] = []
-
-	// Check for common monorepo package directories
-	const commonDirs = ['packages', 'apps', 'libs', 'services', 'tools']
-
-	for (const dir of commonDirs) {
-		const dirPath = join(cwd, dir)
-		if (await directoryExists(dirPath)) {
-			// Read subdirectories
-			const { readdir } = await import('node:fs/promises')
-			try {
-				const entries = await readdir(dirPath, { withFileTypes: true })
-				for (const entry of entries) {
-					if (entry.isDirectory() && !entry.name.startsWith('.')) {
-						const pkgJsonPath = join(dirPath, entry.name, 'package.json')
-						if (fileExists(pkgJsonPath)) {
-							packageDirs.push(join(dirPath, entry.name))
-						}
-					}
-				}
-			} catch {
-				// Directory doesn't exist or can't be read
-			}
-		}
-	}
-
-	return packageDirs
-}
-
 /** Helper to create a skipped result for non-monorepos */
-function skipResult(): CheckReturnValue {
+function skipResult(message = 'Not a monorepo'): CheckReturnValue {
 	return {
 		passed: true,
-		message: 'Not a monorepo',
+		message,
 		skipped: true,
 	}
 }
@@ -62,6 +20,34 @@ export const monorepoModule: CheckModule = defineCheckModule(
 	},
 	[
 		{
+			name: 'monorepo/root-private',
+			description: 'Check if root package.json has "private": true',
+			fixable: true,
+			async check(ctx) {
+				if (!ctx.isMonorepo) return skipResult()
+
+				const isPrivate = ctx.packageJson?.private === true
+				return {
+					passed: isPrivate,
+					message: isPrivate
+						? 'Root package.json has "private": true'
+						: 'Root package.json should have "private": true',
+					hint: 'Add "private": true to root package.json',
+					fix: async () => {
+						const { join } = await import('node:path')
+						const { writeFileSync } = await import('node:fs')
+						const { readPackageJson } = await import('../utils/fs')
+
+						const pkgPath = join(ctx.cwd, 'package.json')
+						const pkg = readPackageJson(ctx.cwd) ?? {}
+						pkg.private = true
+						writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf-8')
+					},
+				}
+			},
+		},
+
+		{
 			name: 'monorepo/packages-readme',
 			description: 'Check if all packages in monorepo have README.md',
 			fixable: false,
@@ -70,14 +56,12 @@ export const monorepoModule: CheckModule = defineCheckModule(
 				const { fileExists } = await import('../utils/fs')
 
 				if (!ctx.isMonorepo) return skipResult()
-
-				const packageDirs = await getPackageDirs(ctx.cwd)
-				if (packageDirs.length === 0) return skipResult()
+				if (ctx.workspacePackages.length === 0) return skipResult('No workspace packages found')
 
 				const missing: string[] = []
-				for (const pkgDir of packageDirs) {
-					if (!fileExists(join(pkgDir, 'README.md'))) {
-						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
+				for (const pkg of ctx.workspacePackages) {
+					if (!fileExists(join(pkg.path, 'README.md'))) {
+						missing.push(pkg.relativePath)
 					}
 				}
 
@@ -85,7 +69,7 @@ export const monorepoModule: CheckModule = defineCheckModule(
 					passed: missing.length === 0,
 					message:
 						missing.length === 0
-							? `All ${packageDirs.length} packages have README.md`
+							? `All ${ctx.workspacePackages.length} packages have README.md`
 							: `Missing README.md in: ${missing.join(', ')}`,
 				}
 			},
@@ -93,7 +77,7 @@ export const monorepoModule: CheckModule = defineCheckModule(
 
 		{
 			name: 'monorepo/packages-license',
-			description: 'Check if all packages in monorepo have LICENSE',
+			description: 'Check if root has LICENSE (shared by all packages)',
 			fixable: false,
 			async check(ctx) {
 				const { join } = await import('node:path')
@@ -101,222 +85,152 @@ export const monorepoModule: CheckModule = defineCheckModule(
 
 				if (!ctx.isMonorepo) return skipResult()
 
-				const packageDirs = await getPackageDirs(ctx.cwd)
-				if (packageDirs.length === 0) return skipResult()
-
 				// Root LICENSE is enough for all packages
-				if (fileExists(join(ctx.cwd, 'LICENSE'))) {
+				const hasRootLicense = fileExists(join(ctx.cwd, 'LICENSE'))
+				return {
+					passed: hasRootLicense,
+					message: hasRootLicense
+						? `Root LICENSE exists (${ctx.workspacePackages.length} packages inherit)`
+						: 'Missing root LICENSE file',
+					hint: hasRootLicense ? undefined : 'Create a LICENSE file in the root directory',
+				}
+			},
+		},
+
+		{
+			name: 'monorepo/workspace-protocol',
+			description: 'Check if internal dependencies use workspace:* protocol',
+			fixable: false,
+			async check(ctx) {
+				if (!ctx.isMonorepo) return skipResult()
+				if (ctx.workspacePackages.length === 0) return skipResult('No workspace packages found')
+
+				const packageNames = new Set(ctx.workspacePackages.map((p) => p.name))
+				const issues: string[] = []
+
+				for (const pkg of ctx.workspacePackages) {
+					const allDeps = {
+						...pkg.packageJson.dependencies,
+						...pkg.packageJson.devDependencies,
+					}
+
+					for (const [depName, version] of Object.entries(allDeps)) {
+						if (packageNames.has(depName) && !version?.startsWith('workspace:')) {
+							issues.push(`${pkg.relativePath}: ${depName}@${version}`)
+						}
+					}
+				}
+
+				return {
+					passed: issues.length === 0,
+					message:
+						issues.length === 0
+							? 'All internal dependencies use workspace:* protocol'
+							: `Should use workspace:* for: ${issues.slice(0, 3).join(', ')}${issues.length > 3 ? ` (+${issues.length - 3} more)` : ''}`,
+					hint: 'Use "workspace:*" for internal package dependencies',
+				}
+			},
+		},
+
+		{
+			name: 'monorepo/consistent-versions',
+			description: 'Check if external dependencies have consistent versions',
+			fixable: false,
+			async check(ctx) {
+				if (!ctx.isMonorepo) return skipResult()
+				if (ctx.workspacePackages.length === 0) return skipResult('No workspace packages found')
+
+				const packageNames = new Set(ctx.workspacePackages.map((p) => p.name))
+				const depVersions = new Map<string, Map<string, string[]>>() // dep -> version -> packages
+
+				for (const pkg of ctx.workspacePackages) {
+					const allDeps = {
+						...pkg.packageJson.dependencies,
+						...pkg.packageJson.devDependencies,
+					}
+
+					for (const [depName, version] of Object.entries(allDeps)) {
+						// Skip internal packages
+						if (packageNames.has(depName) || !version) continue
+
+						let versions = depVersions.get(depName)
+						if (!versions) {
+							versions = new Map()
+							depVersions.set(depName, versions)
+						}
+						let pkgList = versions.get(version)
+						if (!pkgList) {
+							pkgList = []
+							versions.set(version, pkgList)
+						}
+						pkgList.push(pkg.relativePath)
+					}
+				}
+
+				// Find inconsistent versions
+				const inconsistent: string[] = []
+				for (const [depName, versions] of depVersions) {
+					if (versions.size > 1) {
+						const versionList = [...versions.keys()].join(', ')
+						inconsistent.push(`${depName} (${versionList})`)
+					}
+				}
+
+				return {
+					passed: inconsistent.length === 0,
+					message:
+						inconsistent.length === 0
+							? 'All external dependencies have consistent versions'
+							: `Inconsistent versions: ${inconsistent.slice(0, 3).join(', ')}${inconsistent.length > 3 ? ` (+${inconsistent.length - 3} more)` : ''}`,
+					hint: 'Use the same version for shared dependencies across packages',
+				}
+			},
+		},
+
+		{
+			name: 'monorepo/turbo-tasks',
+			description: 'Check if turbo.json has standard tasks',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { fileExists, readJson } = await import('../utils/fs')
+				const { writeFileSync } = await import('node:fs')
+
+				if (!ctx.isMonorepo) return skipResult()
+
+				const configPath = join(ctx.cwd, 'turbo.json')
+				if (!fileExists(configPath)) {
 					return {
-						passed: true,
-						message: `Root LICENSE exists (${packageDirs.length} packages inherit)`,
+						passed: false,
+						message: 'Missing turbo.json for monorepo',
+						hint: 'Run: bunx turbo init',
 					}
 				}
 
-				const missing: string[] = []
-				for (const pkgDir of packageDirs) {
-					if (!fileExists(join(pkgDir, 'LICENSE'))) {
-						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
-					}
+				const config = readJson<{ tasks?: Record<string, unknown> }>(configPath)
+				const requiredTasks = ['build', 'lint', 'test']
+				const missingTasks = requiredTasks.filter((task) => !config?.tasks?.[task])
+
+				if (missingTasks.length === 0) {
+					return { passed: true, message: 'turbo.json has standard tasks' }
 				}
 
 				return {
-					passed: missing.length === 0,
-					message:
-						missing.length === 0
-							? `All ${packageDirs.length} packages have LICENSE`
-							: `Missing LICENSE in: ${missing.join(', ')}`,
-				}
-			},
-		},
-
-		{
-			name: 'monorepo/packages-description',
-			description: 'Check if all packages have description',
-			fixable: false,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { readJson } = await import('../utils/fs')
-
-				if (!ctx.isMonorepo) return skipResult()
-
-				const packageDirs = await getPackageDirs(ctx.cwd)
-				if (packageDirs.length === 0) return skipResult()
-
-				const missing: string[] = []
-				for (const pkgDir of packageDirs) {
-					const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
-					if (!pkg?.name) continue
-					if (!pkg.description) {
-						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
-					}
-				}
-
-				return {
-					passed: missing.length === 0,
-					message:
-						missing.length === 0
-							? `All ${packageDirs.length} packages have description`
-							: `Missing description in: ${missing.join(', ')}`,
-				}
-			},
-		},
-
-		{
-			name: 'monorepo/packages-type-module',
-			description: 'Check if all packages have "type": "module"',
-			fixable: false,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { readJson } = await import('../utils/fs')
-
-				if (!ctx.isMonorepo) return skipResult()
-
-				const packageDirs = await getPackageDirs(ctx.cwd)
-				if (packageDirs.length === 0) return skipResult()
-
-				const missing: string[] = []
-				for (const pkgDir of packageDirs) {
-					const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
-					if (!pkg?.name) continue
-					if (pkg.type !== 'module') {
-						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
-					}
-				}
-
-				return {
-					passed: missing.length === 0,
-					message:
-						missing.length === 0
-							? `All ${packageDirs.length} packages have "type": "module"`
-							: `Missing "type": "module" in: ${missing.join(', ')}`,
-				}
-			},
-		},
-
-		{
-			name: 'monorepo/packages-exports',
-			description: 'Check if all packages have exports',
-			fixable: false,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { readJson } = await import('../utils/fs')
-
-				if (!ctx.isMonorepo) return skipResult()
-
-				const packageDirs = await getPackageDirs(ctx.cwd)
-				if (packageDirs.length === 0) return skipResult()
-
-				const missing: string[] = []
-				for (const pkgDir of packageDirs) {
-					const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
-					if (!pkg?.name) continue
-					if (!pkg.exports) {
-						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
-					}
-				}
-
-				return {
-					passed: missing.length === 0,
-					message:
-						missing.length === 0
-							? `All ${packageDirs.length} packages have exports`
-							: `Missing exports in: ${missing.join(', ')}`,
-				}
-			},
-		},
-
-		{
-			name: 'monorepo/packages-build',
-			description: 'Check if all packages have "build" script',
-			fixable: false,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { readJson } = await import('../utils/fs')
-
-				if (!ctx.isMonorepo) return skipResult()
-
-				const packageDirs = await getPackageDirs(ctx.cwd)
-				if (packageDirs.length === 0) return skipResult()
-
-				const missing: string[] = []
-				for (const pkgDir of packageDirs) {
-					const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
-					if (!pkg?.name) continue
-					if (!pkg.scripts?.build) {
-						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
-					}
-				}
-
-				return {
-					passed: missing.length === 0,
-					message:
-						missing.length === 0
-							? `All ${packageDirs.length} packages have "build" script`
-							: `Missing "build" script in: ${missing.join(', ')}`,
-				}
-			},
-		},
-
-		{
-			name: 'monorepo/packages-test',
-			description: 'Check if all packages have "test" script',
-			fixable: false,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { readJson } = await import('../utils/fs')
-
-				if (!ctx.isMonorepo) return skipResult()
-
-				const packageDirs = await getPackageDirs(ctx.cwd)
-				if (packageDirs.length === 0) return skipResult()
-
-				const missing: string[] = []
-				for (const pkgDir of packageDirs) {
-					const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
-					if (!pkg?.name) continue
-					if (!pkg.scripts?.test) {
-						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
-					}
-				}
-
-				return {
-					passed: missing.length === 0,
-					message:
-						missing.length === 0
-							? `All ${packageDirs.length} packages have "test" script`
-							: `Missing "test" script in: ${missing.join(', ')}`,
-				}
-			},
-		},
-
-		{
-			name: 'monorepo/packages-bench',
-			description: 'Check if all packages have "bench" script',
-			fixable: false,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { readJson } = await import('../utils/fs')
-
-				if (!ctx.isMonorepo) return skipResult()
-
-				const packageDirs = await getPackageDirs(ctx.cwd)
-				if (packageDirs.length === 0) return skipResult()
-
-				const missing: string[] = []
-				for (const pkgDir of packageDirs) {
-					const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
-					if (!pkg?.name) continue
-					if (!pkg.scripts?.bench) {
-						missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
-					}
-				}
-
-				return {
-					passed: missing.length === 0,
-					message:
-						missing.length === 0
-							? `All ${packageDirs.length} packages have "bench" script`
-							: `Missing "bench" script in: ${missing.join(', ')}`,
+					passed: false,
+					message: `turbo.json missing tasks: ${missingTasks.join(', ')}`,
+					hint: `Add tasks to turbo.json: ${missingTasks.join(', ')}`,
+					fix: async () => {
+						const currentConfig = readJson<Record<string, unknown>>(configPath) ?? {}
+						currentConfig.$schema = 'https://turbo.build/schema.json'
+						currentConfig.tasks = {
+							build: { dependsOn: ['^build'], outputs: ['dist/**'] },
+							lint: { dependsOn: ['^lint'] },
+							test: { dependsOn: ['^build'] },
+							typecheck: { dependsOn: ['^typecheck'] },
+							...(currentConfig.tasks as Record<string, unknown>),
+						}
+						writeFileSync(configPath, JSON.stringify(currentConfig, null, 2), 'utf-8')
+					},
 				}
 			},
 		},

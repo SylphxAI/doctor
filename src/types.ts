@@ -16,6 +16,18 @@ export interface CheckResult {
 	hint?: string
 }
 
+/** Info about a package in a monorepo */
+export interface WorkspacePackage {
+	/** Package name from package.json */
+	name: string
+	/** Absolute path to package directory */
+	path: string
+	/** Relative path from root (e.g., "packages/foo") */
+	relativePath: string
+	/** Package.json contents */
+	packageJson: PackageJson
+}
+
 export interface CheckContext {
 	cwd: string
 	packageJson: PackageJson | null
@@ -23,6 +35,10 @@ export interface CheckContext {
 	options?: Record<string, unknown>
 	/** Whether the project is a monorepo (has workspaces or packages/) */
 	isMonorepo: boolean
+	/** List of workspace packages (only for monorepos) */
+	workspacePackages: WorkspacePackage[]
+	/** Workspace patterns from package.json (e.g., ["packages/*"]) */
+	workspacePatterns: string[]
 }
 
 export interface Check {

@@ -1,6 +1,21 @@
-import type { Check } from '../types'
-import type { CheckModule } from './define'
+import type { Check, CheckContext } from '../types'
+import type { CheckModule, CheckReturnValue } from './define'
 import { defineCheckModule } from './define'
+
+/** Helper to skip a check for monorepo root (should be checked per-package) */
+function skipForMonorepoRoot(
+	ctx: CheckContext,
+	message = 'Skipped for monorepo root'
+): CheckReturnValue | null {
+	if (ctx.isMonorepo && ctx.workspacePackages.length > 0) {
+		return {
+			passed: true,
+			message,
+			skipped: true,
+		}
+	}
+	return null
+}
 
 export const packageModule: CheckModule = defineCheckModule(
 	{
@@ -62,6 +77,13 @@ export const packageModule: CheckModule = defineCheckModule(
 			description: 'Check if package.json has keywords',
 			fixable: false,
 			async check(ctx) {
+				// Skip for monorepo root - keywords are for published packages
+				const skip = skipForMonorepoRoot(
+					ctx,
+					'Skipped for monorepo root (check workspace packages)'
+				)
+				if (skip) return skip
+
 				const pkg = ctx.packageJson as Record<string, unknown> | null
 				const keywords = pkg?.keywords as string[] | undefined
 				const hasKeywords = !!(keywords && Array.isArray(keywords) && keywords.length > 0)
@@ -110,6 +132,13 @@ export const packageModule: CheckModule = defineCheckModule(
 			description: 'Check if package.json has exports',
 			fixable: false,
 			async check(ctx) {
+				// Skip for monorepo root - exports are per-package
+				const skip = skipForMonorepoRoot(
+					ctx,
+					'Skipped for monorepo root (check workspace packages)'
+				)
+				if (skip) return skip
+
 				const hasField = ctx.packageJson && 'exports' in ctx.packageJson && ctx.packageJson.exports
 				return {
 					passed: !!hasField,
@@ -209,12 +238,13 @@ export const packageModule: CheckModule = defineCheckModule(
 				return {
 					passed: !!hasScript,
 					message: hasScript ? 'Has "test" script' : 'Missing "test" script in package.json',
-					hint: hasScript ? undefined : 'Add to package.json scripts: "test": "bun test"',
+					// Use "bun run test" instead of "bun test" so per-package bunfig.toml configs are respected
+					hint: hasScript ? undefined : 'Add to package.json scripts: "test": "bun run test"',
 					fix: async () => {
 						const pkgPath = join(ctx.cwd, 'package.json')
 						const currentPkg = readPackageJson(ctx.cwd) ?? {}
 						currentPkg.scripts = currentPkg.scripts ?? {}
-						currentPkg.scripts.test = 'bun test'
+						currentPkg.scripts.test = 'bun run test'
 						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
 					},
 				}
@@ -261,14 +291,15 @@ export const packageModule: CheckModule = defineCheckModule(
 					message: hasScript
 						? 'Has "test:coverage" script'
 						: 'Missing "test:coverage" script in package.json',
+					// Use "bun run test" instead of "bun test" so per-package bunfig.toml configs are respected
 					hint: hasScript
 						? undefined
-						: 'Add to package.json scripts: "test:coverage": "bun test --coverage"',
+						: 'Add to package.json scripts: "test:coverage": "bun run test --coverage"',
 					fix: async () => {
 						const pkgPath = join(ctx.cwd, 'package.json')
 						const currentPkg = readPackageJson(ctx.cwd) ?? {}
 						currentPkg.scripts = currentPkg.scripts ?? {}
-						currentPkg.scripts['test:coverage'] = 'bun test --coverage'
+						currentPkg.scripts['test:coverage'] = 'bun run test --coverage'
 						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
 					},
 				}

@@ -1,5 +1,5 @@
 import pc from 'picocolors'
-import type { CheckReport, CheckResult, PresetName, Severity } from './types'
+import type { CheckReport, CheckResult, PresetName } from './types'
 
 function getIcon(result: CheckResult): string {
 	if (result.passed) return pc.green('✓')
@@ -84,7 +84,9 @@ function getIssueSummaries(report: CheckReport): IssueSummary[] {
 			})
 		}
 
-		const summary = byCategory.get(result.category)!
+		const summary = byCategory.get(result.category)
+		if (!summary) continue
+
 		summary.results.push(result)
 
 		if (result.severity === 'error') summary.errors++

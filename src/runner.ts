@@ -1,8 +1,20 @@
 import { allChecks } from './checks'
 import { loadConfig } from './config'
 import { getSeverity } from './presets'
-import type { Check, CheckContext, CheckReport, CheckResult, DoctorConfig, PresetName } from './types'
-import { isMonorepo, readPackageJson } from './utils/fs'
+import type {
+	Check,
+	CheckContext,
+	CheckReport,
+	CheckResult,
+	DoctorConfig,
+	PresetName,
+} from './types'
+import {
+	discoverWorkspacePackages,
+	getWorkspacePatterns,
+	isMonorepo,
+	readPackageJson,
+} from './utils/fs'
 
 export interface RunOptions {
 	cwd: string
@@ -22,8 +34,10 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 	// Load package.json
 	const packageJson = readPackageJson(cwd)
 
-	// Detect if monorepo
+	// Detect if monorepo and discover packages once
 	const monorepo = await isMonorepo(cwd)
+	const workspacePackages = monorepo ? discoverWorkspacePackages(cwd) : []
+	const workspacePatterns = monorepo ? getWorkspacePatterns(cwd) : []
 
 	// Filter checks based on severity
 	const checksToRun: { check: Check; ctx: CheckContext }[] = []
@@ -43,6 +57,8 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 			severity,
 			options: config.options?.[check.name],
 			isMonorepo: monorepo,
+			workspacePackages,
+			workspacePatterns,
 		}
 
 		checksToRun.push({ check, ctx })

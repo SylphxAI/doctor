@@ -91,7 +91,9 @@ export const runtimeModule: CheckModule = defineCheckModule(
 
 				return {
 					passed: !exists,
-					message: exists ? 'Found pnpm-lock.yaml - should use Bun instead' : 'No pnpm-lock.yaml (good)',
+					message: exists
+						? 'Found pnpm-lock.yaml - should use Bun instead'
+						: 'No pnpm-lock.yaml (good)',
 					fix: async () => {
 						unlinkSync(lockPath)
 					},

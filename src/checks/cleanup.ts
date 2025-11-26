@@ -248,7 +248,9 @@ export const cleanupModule: CheckModule = defineCheckModule(
 					message: exists
 						? 'Found tsconfig.build.json - bunup handles build config'
 						: 'No tsconfig.build.json (good)',
-					hint: exists ? 'Remove tsconfig.build.json - bunup handles TypeScript compilation' : undefined,
+					hint: exists
+						? 'Remove tsconfig.build.json - bunup handles TypeScript compilation'
+						: undefined,
 					fix: async () => {
 						unlinkSync(buildConfig)
 					},

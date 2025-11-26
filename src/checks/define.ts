@@ -159,14 +159,17 @@ export function createFileCheck(options: FileCheckOptions): Omit<DefineCheckOpti
 			return {
 				passed: false,
 				message: missingMessage ?? `Missing ${fileName}`,
-				hint: hint ?? (fixable ? `Run with --fix to create ${fileName}` : `Create ${fileName} manually`),
+				hint:
+					hint ??
+					(fixable ? `Run with --fix to create ${fileName}` : `Create ${fileName} manually`),
 				severity,
-				fix: fixable && content
-					? async () => {
-							const { writeFileSync } = await import('node:fs')
-							writeFileSync(filePath, content, 'utf-8')
-						}
-					: undefined,
+				fix:
+					fixable && content
+						? async () => {
+								const { writeFileSync } = await import('node:fs')
+								writeFileSync(filePath, content, 'utf-8')
+							}
+						: undefined,
 			}
 		},
 	}
@@ -187,7 +190,9 @@ export interface JsonConfigCheckOptions {
 	skipIfMissing?: boolean
 }
 
-export function createJsonConfigCheck(options: JsonConfigCheckOptions): Omit<DefineCheckOptions, 'category'> {
+export function createJsonConfigCheck(
+	options: JsonConfigCheckOptions
+): Omit<DefineCheckOptions, 'category'> {
 	const { name, fileName, validate, fix, hint, skipIfMissing = false } = options
 
 	return {
@@ -252,7 +257,9 @@ export interface CommandCheckOptions {
 	hint?: string
 }
 
-export function createCommandCheck(options: CommandCheckOptions): Omit<DefineCheckOptions, 'category'> {
+export function createCommandCheck(
+	options: CommandCheckOptions
+): Omit<DefineCheckOptions, 'category'> {
 	const { name, command, args = [], expectedExitCode = 0, hint } = options
 
 	return {

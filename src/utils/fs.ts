@@ -1,7 +1,7 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { readdir, stat } from 'node:fs/promises'
-import { join } from 'node:path'
-import type { PackageJson } from '../types'
+import { join, relative } from 'node:path'
+import type { PackageJson, WorkspacePackage } from '../types'
 
 export function fileExists(path: string): boolean {
 	return existsSync(path)
@@ -58,6 +58,113 @@ export async function directoryExists(path: string): Promise<boolean> {
 	} catch {
 		return false
 	}
+}
+
+/**
+ * Expand a workspace glob pattern to actual directories
+ * Supports patterns like "packages/*", "apps/*", etc.
+ */
+function expandWorkspacePattern(cwd: string, pattern: string): string[] {
+	const results: string[] = []
+
+	// Handle simple glob patterns like "packages/*"
+	if (pattern.endsWith('/*')) {
+		const baseDir = join(cwd, pattern.slice(0, -2))
+		try {
+			const entries = readdirSync(baseDir, { withFileTypes: true })
+			for (const entry of entries) {
+				if (entry.isDirectory() && !entry.name.startsWith('.')) {
+					const pkgPath = join(baseDir, entry.name)
+					if (fileExists(join(pkgPath, 'package.json'))) {
+						results.push(pkgPath)
+					}
+				}
+			}
+		} catch {
+			// Directory doesn't exist
+		}
+	} else if (!pattern.includes('*')) {
+		// Direct path like "packages/core"
+		const pkgPath = join(cwd, pattern)
+		if (fileExists(join(pkgPath, 'package.json'))) {
+			results.push(pkgPath)
+		}
+	}
+
+	return results
+}
+
+/**
+ * Get workspace patterns from package.json
+ */
+export function getWorkspacePatterns(cwd: string): string[] {
+	const pkg = readPackageJson(cwd)
+	if (pkg?.workspaces && Array.isArray(pkg.workspaces)) {
+		return pkg.workspaces
+	}
+	return []
+}
+
+/**
+ * Discover all workspace packages in a monorepo
+ * Uses workspaces field from package.json, falls back to common directories
+ */
+export function discoverWorkspacePackages(cwd: string): WorkspacePackage[] {
+	const packages: WorkspacePackage[] = []
+	const seen = new Set<string>()
+
+	// First, try workspaces field
+	const workspacePatterns = getWorkspacePatterns(cwd)
+
+	if (workspacePatterns.length > 0) {
+		for (const pattern of workspacePatterns) {
+			const dirs = expandWorkspacePattern(cwd, pattern)
+			for (const dir of dirs) {
+				if (seen.has(dir)) continue
+				seen.add(dir)
+
+				const pkgJson = readPackageJson(dir)
+				if (pkgJson?.name) {
+					packages.push({
+						name: pkgJson.name,
+						path: dir,
+						relativePath: relative(cwd, dir),
+						packageJson: pkgJson,
+					})
+				}
+			}
+		}
+	} else {
+		// Fallback: check common directories
+		const commonDirs = ['packages', 'apps', 'libs', 'services', 'tools']
+		for (const dir of commonDirs) {
+			const dirPath = join(cwd, dir)
+			try {
+				const entries = readdirSync(dirPath, { withFileTypes: true })
+				for (const entry of entries) {
+					if (entry.isDirectory() && !entry.name.startsWith('.')) {
+						const pkgPath = join(dirPath, entry.name)
+						if (seen.has(pkgPath)) continue
+						seen.add(pkgPath)
+
+						const pkgJson = readPackageJson(pkgPath)
+						if (pkgJson?.name) {
+							packages.push({
+								name: pkgJson.name,
+								path: pkgPath,
+								relativePath: relative(cwd, pkgPath),
+								packageJson: pkgJson,
+							})
+						}
+					}
+				}
+			} catch {
+				// Directory doesn't exist
+			}
+		}
+	}
+
+	return packages
 }
 
 /**
