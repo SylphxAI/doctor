@@ -1,5 +1,16 @@
 # sylphx-doctor
 
+## 1.14.1 (2025-11-26)
+
+### 🐛 Bug Fixes
+
+- **reporter:** display hints with one package per line ([a4107fd](https://github.com/SylphxAI/doctor/commit/a4107fd3b939836878dde043a923688648d4deb4))
+- **deps:** show which packages have banned dependencies in hint ([121dffb](https://github.com/SylphxAI/doctor/commit/121dffb66be5a5aa14c63973748b2254e459230b))
+
+### ♻️ Refactoring
+
+- consolidate formatting utilities and simplify check modules ([9bd676a](https://github.com/SylphxAI/doctor/commit/9bd676af1308c463a580366e94745c8212cdd86e))
+
 ## 1.14.0 (2025-11-26)
 
 ### ✨ Features
