@@ -55,12 +55,15 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 
 		if (result.passed) {
 			passed++
-		} else if (result.severity === 'warn') {
-			warnings++
 		} else {
-			failed++
+			// Count as warning or error
+			if (result.severity === 'warn') {
+				warnings++
+			} else {
+				failed++
+			}
 
-			// Try to fix if requested and fixable
+			// Try to fix if requested and fixable (both warnings and errors)
 			if (fix && result.fixable && result.fix) {
 				try {
 					await result.fix()
@@ -71,7 +74,11 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 						result.passed = true
 						result.message = `${result.message} (fixed)`
 						passed++
-						failed--
+						if (result.severity === 'warn') {
+							warnings--
+						} else {
+							failed--
+						}
 					}
 				} catch (error) {
 					result.message = `${result.message} (fix failed: ${error})`

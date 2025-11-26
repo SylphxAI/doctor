@@ -47,6 +47,8 @@ export const hasWorkflowCheck: Check = {
 	},
 }
 
+const SHARED_WORKFLOW = 'SylphxAI/.github/.github/workflows/publish-npm.yml'
+
 export const publishWorkflowCheck: Check = {
 	name: 'ci/publish-workflow',
 	category: 'ci',
@@ -64,7 +66,7 @@ export const publishWorkflowCheck: Check = {
 				name: 'ci/publish-workflow',
 				category: 'ci',
 				passed: false,
-				message: 'Missing release workflow',
+				message: 'Missing release workflow (.github/workflows/release.yml)',
 				severity: ctx.severity,
 				fixable: true,
 				fix: async () => {
@@ -74,18 +76,17 @@ export const publishWorkflowCheck: Check = {
 			}
 		}
 
-		// Check if it uses the shared workflow (simplified check)
+		// Check if it uses the shared workflow
 		const content = readFile(releasePath) || readFile(releaseYamlPath) || ''
-		const usesShared =
-			content.includes('SylphxAI/') || content.includes('changesets') || content.includes('bunup')
+		const usesShared = content.includes(SHARED_WORKFLOW)
 
 		return {
 			name: 'ci/publish-workflow',
 			category: 'ci',
 			passed: usesShared,
 			message: usesShared
-				? 'Using proper release workflow'
-				: 'Release workflow may not be using shared workflow',
+				? 'Using shared publish workflow'
+				: `Release workflow not using shared workflow (${SHARED_WORKFLOW})`,
 			severity: ctx.severity,
 			fixable: true,
 			fix: async () => {
@@ -141,28 +142,9 @@ concurrency:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Build
-        run: bun run build
-
-      - name: Create Release Pull Request or Publish
-        uses: changesets/action@v1
-        with:
-          publish: bunx changeset publish
-          version: bunx changeset version
-        env:
-          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: \${{ secrets.NPM_TOKEN }}
+    uses: SylphxAI/.github/.github/workflows/publish-npm.yml@main
+    secrets:
+      NPM_TOKEN: \${{ secrets.NPM_TOKEN }}
 `
 
 export const ciChecks: Check[] = [hasWorkflowCheck, publishWorkflowCheck]
