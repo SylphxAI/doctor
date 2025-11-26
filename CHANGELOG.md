@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.13.0 (2025-11-26)
+
+### ✨ Features
+
+- **prepublish:** use local source for perfect solution ([1ac69ef](https://github.com/SylphxAI/doctor/commit/1ac69efc76a2adb7b5b3b404df4df484ed492b41))
+
 ## 1.12.2 (2025-11-26)
 
 ### 🐛 Bug Fixes
