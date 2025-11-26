@@ -192,7 +192,7 @@ export const releaseModule: CheckModule = defineCheckModule(
 
 							const scripts = pkgJson.scripts as Record<string, string>
 							scripts.prepublishOnly =
-								'[ "$CI" = \'true\' ] || [ "$GITHUB_ACTIONS" = \'true\' ] || (echo \'❌ Direct npm publish is blocked. Use automated release workflow.\' && exit 1)'
+								'[ "$CI" = \'true\' ] || [ "$GITHUB_ACTIONS" = \'true\' ] || (echo \'❌ Direct npm publish is blocked.\' && echo \'→ Check for release PR: gh pr list\' && echo \'→ Merge the release PR to publish\' && exit 1)'
 
 							await writeFile(pkgPath, JSON.stringify(pkgJson, null, 2), 'utf-8')
 						},
