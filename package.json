@@ -23,7 +23,7 @@
     "test": "bun test",
     "test:coverage": "bun test --coverage",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "node dist/cli.js prepublish"
+    "prepublishOnly": "[ \"$CI\" = true ] || bunx @sylphx/doctor prepublish"
   },
   "dependencies": {
     "citty": "^0.1.6",
