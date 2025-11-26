@@ -1,5 +1,12 @@
 # sylphx-doctor
 
+## 1.12.1 (2025-11-26)
+
+### 🐛 Bug Fixes
+
+- **release:** accept local CLI path for self-publishing ([a91d69a](https://github.com/SylphxAI/doctor/commit/a91d69ac24b862331cce232faa03ef8c3f53f85b))
+- **prepublish:** use local CLI to avoid chicken-egg problem ([9160c52](https://github.com/SylphxAI/doctor/commit/9160c523b1b22559545db3092e1e7743a29528f5))
+
 ## 1.12.0 (2025-11-26)
 
 ### ✨ Features
