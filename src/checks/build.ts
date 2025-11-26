@@ -72,16 +72,17 @@ export const buildModule: CheckModule = defineCheckModule(
 						}
 					}
 
-					const hint = issues
-						.slice(0, 3)
-						.map((i) => `${i.location}: ${i.issue}`)
-						.join(', ')
-					const moreCount = issues.length > 3 ? ` (+${issues.length - 3} more)` : ''
+					// Format hint - one package per line
+					const maxShow = 5
+					const lines = issues.slice(0, maxShow).map((i) => `${i.location}: ${i.issue}`)
+					if (issues.length > maxShow) {
+						lines.push(`(+${issues.length - maxShow} more)`)
+					}
 
 					return {
 						passed: false,
 						message: `${issues.length} package(s) with invalid exports`,
-						hint: `${hint}${moreCount}`,
+						hint: lines.join('\n'),
 					}
 				}
 

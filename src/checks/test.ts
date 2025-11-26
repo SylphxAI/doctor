@@ -8,14 +8,12 @@ interface PackageIssue {
 	issue: string
 }
 
-/** Format issues list for display */
-function formatIssues(issues: PackageIssue[], maxShow = 3): string {
-	const hint = issues
-		.slice(0, maxShow)
-		.map((i) => `${i.location}: ${i.issue}`)
-		.join(', ')
-	const moreCount = issues.length > maxShow ? ` (+${issues.length - maxShow} more)` : ''
-	return `${hint}${moreCount}`
+/** Format issues list for display - one package per line */
+function formatIssues(issues: PackageIssue[], maxShow = 5): string {
+	const lines = issues.slice(0, maxShow).map((i) => `${i.location}: ${i.issue}`)
+	const moreCount = issues.length > maxShow ? `(+${issues.length - maxShow} more)` : ''
+	if (moreCount) lines.push(moreCount)
+	return lines.join('\n')
 }
 
 export const testModule: CheckModule = defineCheckModule(

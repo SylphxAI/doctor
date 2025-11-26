@@ -259,18 +259,21 @@ export const depsModule: CheckModule = defineCheckModule(
 					byLocation.set(f.location, entry)
 				}
 
-				// Build hint showing which packages have which banned deps
-				const hintParts: string[] = []
+				// Build hint showing which packages have which banned deps - one per line
+				const lines: string[] = []
 				for (const [location, { names }] of byLocation) {
-					hintParts.push(`${location}: ${names.join(', ')}`)
+					lines.push(`${location}: ${names.join(', ')}`)
 				}
-				const hint = hintParts.slice(0, 3).join('; ')
-				const moreCount = hintParts.length > 3 ? ` (+${hintParts.length - 3} more locations)` : ''
+				const maxShow = 5
+				const displayLines = lines.slice(0, maxShow)
+				if (lines.length > maxShow) {
+					displayLines.push(`(+${lines.length - maxShow} more)`)
+				}
 
 				return {
 					passed: false,
 					message: `Found ${found.length} banned package(s) in ${byLocation.size} package(s)`,
-					hint: `${hint}${moreCount}`,
+					hint: displayLines.join('\n'),
 					fix: async () => {
 						const { exec } = await import('../utils/exec')
 						for (const [, { names, path }] of byLocation) {

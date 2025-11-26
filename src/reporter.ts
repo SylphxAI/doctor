@@ -37,7 +37,12 @@ export function formatResult(result: CheckResult): string {
 	const message = colorFn(result.message)
 
 	// Add hint on new line if present and check failed
-	const hint = !result.passed && result.hint ? `\n      ${pc.dim('→')} ${pc.cyan(result.hint)}` : ''
+	// Handle multi-line hints by prefixing each line with arrow
+	let hint = ''
+	if (!result.passed && result.hint) {
+		const hintLines = result.hint.split('\n')
+		hint = hintLines.map((line) => `\n      ${pc.dim('→')} ${pc.cyan(line)}`).join('')
+	}
 
 	return `  ${icon} ${message}${fixable}${hint}`
 }
