@@ -17,7 +17,7 @@ export function isMonorepoRoot(ctx: CheckContext): boolean {
  */
 export async function forEachPackage(
 	ctx: CheckContext,
-	callback: (pkg: WorkspacePackage) => Promise<boolean | void> | boolean | void
+	callback: (pkg: WorkspacePackage) => Promise<boolean | undefined> | boolean | undefined
 ): Promise<void> {
 	for (const pkg of ctx.workspacePackages) {
 		const result = await callback(pkg)

@@ -34,7 +34,9 @@ export const docsModule: CheckModule = defineCheckModule(
 
 				return {
 					passed: exists,
-					message: exists ? 'VitePress docs configured' : 'docs/ exists but VitePress not configured',
+					message: exists
+						? 'VitePress docs configured'
+						: 'docs/ exists but VitePress not configured',
 					hint: exists ? undefined : 'Run: bunx vitepress init docs',
 				}
 			},

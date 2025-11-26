@@ -1,21 +1,26 @@
-import type { Check, CheckContext } from '../types'
+import type { Check, CheckContext, WorkspacePackage } from '../types'
 import { isMonorepoRoot } from '../utils/context'
-import type { CheckModule, CheckReturnValue } from './define'
+import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
-/** Helper to skip a check for monorepo root (should be checked per-package) */
-function skipForMonorepoRoot(
-	ctx: CheckContext,
-	message = 'Skipped for monorepo root'
-): CheckReturnValue | null {
-	if (isMonorepoRoot(ctx)) {
-		return {
-			passed: true,
-			message,
-			skipped: true,
-		}
-	}
-	return null
+interface PackageIssue {
+	location: string
+	issue: string
+}
+
+/** Format issues list for display */
+function formatIssues(issues: PackageIssue[], maxShow = 3): string {
+	const hint = issues
+		.slice(0, maxShow)
+		.map((i) => `${i.location}: ${i.issue}`)
+		.join(', ')
+	const moreCount = issues.length > maxShow ? ` (+${issues.length - maxShow} more)` : ''
+	return `${hint}${moreCount}`
+}
+
+/** Get public packages only (non-private) */
+function getPublicPackages(ctx: CheckContext): WorkspacePackage[] {
+	return ctx.workspacePackages.filter((pkg) => !pkg.packageJson.private)
 }
 
 export const packageModule: CheckModule = defineCheckModule(
@@ -78,13 +83,41 @@ export const packageModule: CheckModule = defineCheckModule(
 			description: 'Check if package.json has keywords',
 			fixable: false,
 			async check(ctx) {
-				// Skip for monorepo root - keywords are for published packages
-				const skip = skipForMonorepoRoot(
-					ctx,
-					'Skipped for monorepo root (check workspace packages)'
-				)
-				if (skip) return skip
+				// For monorepo root, check all public workspace packages
+				if (isMonorepoRoot(ctx)) {
+					const publicPackages = getPublicPackages(ctx)
+					if (publicPackages.length === 0) {
+						return {
+							passed: true,
+							message: 'No public packages to check',
+							skipped: true,
+						}
+					}
 
+					const issues: PackageIssue[] = []
+					for (const pkg of publicPackages) {
+						const keywords = pkg.packageJson.keywords as string[] | undefined
+						const hasKeywords = !!(keywords && Array.isArray(keywords) && keywords.length > 0)
+						if (!hasKeywords) {
+							issues.push({ location: pkg.relativePath, issue: 'missing keywords' })
+						}
+					}
+
+					if (issues.length === 0) {
+						return {
+							passed: true,
+							message: `All ${publicPackages.length} public package(s) have keywords`,
+						}
+					}
+
+					return {
+						passed: false,
+						message: `${issues.length} package(s) missing keywords`,
+						hint: formatIssues(issues),
+					}
+				}
+
+				// Single package - check root
 				const pkg = ctx.packageJson as Record<string, unknown> | null
 				const keywords = pkg?.keywords as string[] | undefined
 				const hasKeywords = !!(keywords && Array.isArray(keywords) && keywords.length > 0)
@@ -108,7 +141,44 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { join } = await import('node:path')
 				const { writeFileSync } = await import('node:fs')
 				const { readPackageJson } = await import('../utils/fs')
+				const { getAllPackages } = await import('../utils/context')
 
+				// For monorepo, check all packages including root
+				if (isMonorepoRoot(ctx)) {
+					const allPackages = getAllPackages(ctx)
+					const issues: PackageIssue[] = []
+
+					for (const pkg of allPackages) {
+						if (pkg.packageJson.type !== 'module') {
+							issues.push({ location: pkg.relativePath, issue: 'missing type: module' })
+						}
+					}
+
+					if (issues.length === 0) {
+						return {
+							passed: true,
+							message: `All ${allPackages.length} package(s) have "type": "module"`,
+						}
+					}
+
+					return {
+						passed: false,
+						message: `${issues.length} package(s) missing "type": "module"`,
+						hint: formatIssues(issues),
+						fix: async () => {
+							for (const pkg of allPackages) {
+								if (pkg.packageJson.type !== 'module') {
+									const pkgPath = join(pkg.path, 'package.json')
+									const currentPkg = readPackageJson(pkg.path) ?? {}
+									currentPkg.type = 'module'
+									writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+								}
+							}
+						},
+					}
+				}
+
+				// Single package - check root
 				const pkg = ctx.packageJson
 				const isModule = pkg?.type === 'module'
 
@@ -133,13 +203,40 @@ export const packageModule: CheckModule = defineCheckModule(
 			description: 'Check if package.json has exports',
 			fixable: false,
 			async check(ctx) {
-				// Skip for monorepo root - exports are per-package
-				const skip = skipForMonorepoRoot(
-					ctx,
-					'Skipped for monorepo root (check workspace packages)'
-				)
-				if (skip) return skip
+				// For monorepo root, check all public workspace packages
+				if (isMonorepoRoot(ctx)) {
+					const publicPackages = getPublicPackages(ctx)
+					if (publicPackages.length === 0) {
+						return {
+							passed: true,
+							message: 'No public packages to check',
+							skipped: true,
+						}
+					}
 
+					const issues: PackageIssue[] = []
+					for (const pkg of publicPackages) {
+						const hasExports = 'exports' in pkg.packageJson && pkg.packageJson.exports
+						if (!hasExports) {
+							issues.push({ location: pkg.relativePath, issue: 'missing exports' })
+						}
+					}
+
+					if (issues.length === 0) {
+						return {
+							passed: true,
+							message: `All ${publicPackages.length} public package(s) have exports`,
+						}
+					}
+
+					return {
+						passed: false,
+						message: `${issues.length} package(s) missing exports`,
+						hint: formatIssues(issues),
+					}
+				}
+
+				// Single package - check root
 				const hasField = ctx.packageJson && 'exports' in ctx.packageJson && ctx.packageJson.exports
 				return {
 					passed: !!hasField,
@@ -162,11 +259,6 @@ export const packageModule: CheckModule = defineCheckModule(
 				// Monorepo root: always use turbo (company standard)
 				// Packages: biome check
 				const isRoot = isMonorepoRoot(ctx)
-
-				const validLint = isRoot
-					? script?.includes('turbo')
-					: script?.includes('biome')
-
 				const defaultScript = isRoot ? 'turbo lint' : 'biome check .'
 
 				if (!script) {
@@ -183,6 +275,8 @@ export const packageModule: CheckModule = defineCheckModule(
 						},
 					}
 				}
+
+				const validLint = isRoot ? script.includes('turbo') : script.includes('biome')
 
 				return {
 					passed: validLint,
@@ -204,7 +298,6 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { readPackageJson } = await import('../utils/fs')
 
 				const script = ctx.packageJson?.scripts?.format
-				const usesBiome = script?.includes('biome')
 
 				if (!script) {
 					return {
@@ -220,6 +313,8 @@ export const packageModule: CheckModule = defineCheckModule(
 						},
 					}
 				}
+
+				const usesBiome = script.includes('biome')
 
 				return {
 					passed: usesBiome,
@@ -244,11 +339,6 @@ export const packageModule: CheckModule = defineCheckModule(
 				// Monorepo root: always use turbo (company standard)
 				// Packages: bunup, tsc, bun build
 				const isRoot = isMonorepoRoot(ctx)
-
-				const validBuild = isRoot
-					? script?.includes('turbo')
-					: script?.includes('bunup') || script?.includes('tsc') || script?.includes('bun build')
-
 				const defaultScript = isRoot ? 'turbo build' : 'bunup'
 
 				if (!script) {
@@ -265,6 +355,10 @@ export const packageModule: CheckModule = defineCheckModule(
 						},
 					}
 				}
+
+				const validBuild = isRoot
+					? script.includes('turbo')
+					: script.includes('bunup') || script.includes('tsc') || script.includes('bun build')
 
 				return {
 					passed: validBuild,
@@ -289,11 +383,6 @@ export const packageModule: CheckModule = defineCheckModule(
 				// Monorepo root: always use turbo (company standard)
 				// Packages: bun test
 				const isRoot = isMonorepoRoot(ctx)
-
-				const validTest = isRoot
-					? script?.includes('turbo')
-					: script?.startsWith('bun test')
-
 				const defaultScript = isRoot ? 'turbo test' : 'bun test'
 
 				if (!script) {
@@ -310,6 +399,8 @@ export const packageModule: CheckModule = defineCheckModule(
 						},
 					}
 				}
+
+				const validTest = isRoot ? script.includes('turbo') : script.startsWith('bun test')
 
 				return {
 					passed: validTest,
@@ -334,11 +425,6 @@ export const packageModule: CheckModule = defineCheckModule(
 				// Monorepo root: always use turbo (company standard)
 				// Packages: tsc --noEmit
 				const isRoot = isMonorepoRoot(ctx)
-
-				const validTypecheck = isRoot
-					? script?.includes('turbo')
-					: script?.includes('tsc')
-
 				const defaultScript = isRoot ? 'turbo typecheck' : 'tsc --noEmit'
 
 				if (!script) {
@@ -355,6 +441,8 @@ export const packageModule: CheckModule = defineCheckModule(
 						},
 					}
 				}
+
+				const validTypecheck = isRoot ? script.includes('turbo') : script.includes('tsc')
 
 				return {
 					passed: validTypecheck,
@@ -386,7 +474,6 @@ export const packageModule: CheckModule = defineCheckModule(
 				}
 
 				const script = ctx.packageJson?.scripts?.bench
-				const usesBunBench = script?.startsWith('bun bench')
 
 				if (!script) {
 					return {
@@ -402,6 +489,8 @@ export const packageModule: CheckModule = defineCheckModule(
 						},
 					}
 				}
+
+				const usesBunBench = script.startsWith('bun bench')
 
 				return {
 					passed: usesBunBench,
@@ -422,20 +511,53 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { writeFileSync } = await import('node:fs')
 				const { readPackageJson } = await import('../utils/fs')
 
-				const script = ctx.packageJson?.scripts?.['test:coverage']
-				// Must use "bun test --coverage" directly, NOT "bun run test --coverage"
-				const usesBunTestCoverage = script?.includes('bun test') && script?.includes('--coverage')
+				// For monorepo root, check all workspace packages
+				if (isMonorepoRoot(ctx)) {
+					const issues: PackageIssue[] = []
+					const packagesToFix: WorkspacePackage[] = []
 
-				// For monorepo root, test:coverage is less common (turbo doesn't aggregate coverage well)
-				// Skip this check for monorepo root
-				const isRoot = isMonorepoRoot(ctx)
-				if (isRoot) {
+					for (const pkg of ctx.workspacePackages) {
+						const script = pkg.packageJson.scripts?.['test:coverage']
+						const usesBunTestCoverage =
+							script?.includes('bun test') && script?.includes('--coverage')
+
+						if (!script) {
+							issues.push({ location: pkg.relativePath, issue: 'missing test:coverage script' })
+							packagesToFix.push(pkg)
+						} else if (!usesBunTestCoverage) {
+							issues.push({
+								location: pkg.relativePath,
+								issue: `invalid script: "${script}"`,
+							})
+							packagesToFix.push(pkg)
+						}
+					}
+
+					if (issues.length === 0) {
+						return {
+							passed: true,
+							message: `All ${ctx.workspacePackages.length} package(s) have valid test:coverage script`,
+						}
+					}
+
 					return {
-						passed: true,
-						message: 'Skipped for monorepo root (coverage is per-package)',
-						skipped: true,
+						passed: false,
+						message: `${issues.length} package(s) with invalid test:coverage script`,
+						hint: formatIssues(issues),
+						fix: async () => {
+							for (const pkg of packagesToFix) {
+								const pkgPath = join(pkg.path, 'package.json')
+								const currentPkg = readPackageJson(pkg.path) ?? {}
+								currentPkg.scripts = currentPkg.scripts ?? {}
+								currentPkg.scripts['test:coverage'] = 'bun test --coverage'
+								writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+							}
+						},
 					}
 				}
+
+				// Single package - check root
+				const script = ctx.packageJson?.scripts?.['test:coverage']
 
 				if (!script) {
 					return {
@@ -451,6 +573,8 @@ export const packageModule: CheckModule = defineCheckModule(
 						},
 					}
 				}
+
+				const usesBunTestCoverage = script.includes('bun test') && script.includes('--coverage')
 
 				return {
 					passed: usesBunTestCoverage,
