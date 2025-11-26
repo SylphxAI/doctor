@@ -77,6 +77,10 @@ const initPreset: PresetConfig = {
 	'monorepo/packages-build': 'off',
 	'monorepo/packages-test': 'off',
 	'monorepo/packages-bench': 'off',
+
+	// Release (enforce automated workflow)
+	'release/no-manual-version': 'error',
+	'release/no-release-commit': 'error',
 }
 
 const devPreset: PresetConfig = {
@@ -154,6 +158,10 @@ const devPreset: PresetConfig = {
 	'monorepo/turbo-tasks': 'error',
 	'monorepo/packages-readme': 'warn',
 	'monorepo/packages-license': 'warn',
+
+	// Release (enforce automated workflow)
+	'release/no-manual-version': 'error',
+	'release/no-release-commit': 'error',
 }
 
 const stablePreset: PresetConfig = {
@@ -231,6 +239,10 @@ const stablePreset: PresetConfig = {
 	'monorepo/turbo-tasks': 'error',
 	'monorepo/packages-readme': 'error',
 	'monorepo/packages-license': 'error',
+
+	// Release (enforce automated workflow)
+	'release/no-manual-version': 'error',
+	'release/no-release-commit': 'error',
 }
 
 export const presets: Record<PresetName, PresetConfig> = {

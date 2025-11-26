@@ -14,6 +14,7 @@ import { githubModule } from './github'
 import { hooksModule } from './hooks'
 import { monorepoModule } from './monorepo'
 import { packageModule } from './package'
+import { releaseModule } from './release'
 import { runtimeModule } from './runtime'
 import { testModule } from './test'
 
@@ -35,6 +36,7 @@ export const checkModules: CheckModule[] = [
 	hooksModule,
 	githubModule,
 	monorepoModule,
+	releaseModule,
 ]
 
 /**
@@ -86,6 +88,7 @@ export {
 	hooksModule,
 	githubModule,
 	monorepoModule,
+	releaseModule,
 }
 
 // Re-export legacy check arrays for backward compatibility
@@ -100,6 +103,7 @@ export { githubChecks } from './github'
 export { hooksChecks } from './hooks'
 export { monorepoChecks } from './monorepo'
 export { packageChecks } from './package'
+export { releaseChecks } from './release'
 export { runtimeChecks } from './runtime'
 export { testChecks } from './test'
 

@@ -57,6 +57,7 @@ const categoryLabels: Record<string, string> = {
 	hooks: '🪝 Git Hooks',
 	github: '🐙 GitHub',
 	monorepo: '📦 Monorepo',
+	release: '🚀 Release',
 }
 
 interface IssueSummary {
