@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.14.2 (2025-11-26)
+
+### 🐛 Bug Fixes
+
+- use '.' instead of 'root' for monorepo root path ([68bbafc](https://github.com/SylphxAI/doctor/commit/68bbafc1388750adec2a48006269c07412afa1ba))
+
 ## 1.14.1 (2025-11-26)
 
 ### 🐛 Bug Fixes
