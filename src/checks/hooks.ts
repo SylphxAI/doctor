@@ -2,7 +2,7 @@ import type { Check } from '../types'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
-const defaultLefthookConfig = `# Managed by sylphx-doctor
+const defaultLefthookConfig = `# Managed by @sylphx/doctor
 # https://github.com/evilmartians/lefthook
 
 pre-commit:
@@ -18,7 +18,7 @@ pre-commit:
       run: bunx biome check {staged_files}
 
     doctor:
-      run: bunx sylphx-doctor check --pre-commit
+      run: bunx @sylphx/doctor check --pre-commit
 `
 
 export const hooksModule: CheckModule = defineCheckModule(
@@ -91,14 +91,14 @@ export const hooksModule: CheckModule = defineCheckModule(
 
 				const content = readFile(lefthookPath) || readFile(lefthookYamlPath) || ''
 				const hasPreCommit = content.includes('pre-commit')
-				const hasDoctor = content.includes('sylphx-doctor')
+				const hasDoctor = content.includes('@sylphx/doctor') || content.includes('sylphx-doctor')
 
 				return {
 					passed: hasPreCommit,
 					message: hasPreCommit
 						? hasDoctor
-							? 'lefthook.yml configured with sylphx-doctor'
-							: 'lefthook.yml configured (consider adding sylphx-doctor)'
+							? 'lefthook.yml configured with @sylphx/doctor'
+							: 'lefthook.yml configured (consider adding @sylphx/doctor)'
 						: 'lefthook.yml missing pre-commit hook',
 					fix: async () => {
 						writeFileSync(lefthookPath, defaultLefthookConfig, 'utf-8')
