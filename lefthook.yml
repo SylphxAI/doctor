@@ -14,4 +14,4 @@ pre-commit:
       run: bunx biome check {staged_files}
 
     doctor:
-      run: bunx sylphx-doctor check --pre-commit
+      run: bunx @sylphx/doctor check --pre-commit
