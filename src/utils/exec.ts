@@ -11,7 +11,6 @@ export async function exec(command: string, args: string[], cwd: string): Promis
 		const proc = spawn(command, args, {
 			cwd,
 			stdio: ['pipe', 'pipe', 'pipe'],
-			shell: true,
 		})
 
 		let stdout = ''
