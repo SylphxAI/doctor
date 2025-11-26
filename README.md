@@ -56,6 +56,12 @@ sylphx-doctor upgrade
 sylphx-doctor upgrade --target=stable
 ```
 
+> **💡 Auto-suggestion**: When all checks pass, sylphx-doctor automatically checks if you're ready for the next preset level and shows a suggestion like:
+> ```
+> 🎉 Ready to upgrade to dev preset!
+>    Run: sylphx-doctor upgrade or update your config manually
+> ```
+
 ## Presets
 
 | Preset | Description | Use when |
