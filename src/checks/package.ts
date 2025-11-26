@@ -155,18 +155,24 @@ export const packageModule: CheckModule = defineCheckModule(
 			async check(ctx) {
 				const { join } = await import('node:path')
 				const { writeFileSync } = await import('node:fs')
-				const { readPackageJson } = await import('../utils/fs')
+				const { readPackageJson, fileExists } = await import('../utils/fs')
 
 				const script = ctx.packageJson?.scripts?.lint
-				// For monorepo root: turbo lint is valid
+				// For monorepo root with turbo: turbo lint is preferred
+				// For monorepo root without turbo: biome check . is fine
 				// For packages: biome check is expected
 				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
+				const hasTurbo = fileExists(join(ctx.cwd, 'turbo.json'))
+
 				const validLint = isMonorepoRoot
-					? script?.includes('turbo') || script?.includes('biome')
+					? hasTurbo
+						? script?.includes('turbo')
+						: script?.includes('biome')
 					: script?.includes('biome')
 
+				const defaultScript = isMonorepoRoot && hasTurbo ? 'turbo lint' : 'biome check .'
+
 				if (!script) {
-					const defaultScript = isMonorepoRoot ? 'turbo lint' : 'biome check .'
 					return {
 						passed: false,
 						message: 'Missing "lint" script in package.json',
@@ -185,12 +191,8 @@ export const packageModule: CheckModule = defineCheckModule(
 					passed: validLint,
 					message: validLint
 						? `lint script: "${script}"`
-						: `lint script uses "${script}" (expected biome${isMonorepoRoot ? ' or turbo' : ''})`,
-					hint: validLint
-						? undefined
-						: isMonorepoRoot
-							? 'Use "turbo lint" or "biome check ."'
-							: 'Use "biome check ."',
+						: `lint script uses "${script}" (expected "${defaultScript}")`,
+					hint: validLint ? undefined : `Use "${defaultScript}"`,
 				}
 			},
 		},
@@ -239,18 +241,23 @@ export const packageModule: CheckModule = defineCheckModule(
 			async check(ctx) {
 				const { join } = await import('node:path')
 				const { writeFileSync } = await import('node:fs')
-				const { readPackageJson } = await import('../utils/fs')
+				const { readPackageJson, fileExists } = await import('../utils/fs')
 
 				const script = ctx.packageJson?.scripts?.build
-				// For monorepo root: turbo build is valid
-				// For packages: bunup, tsc, etc.
+				// For monorepo root with turbo: turbo build is preferred
+				// For packages: bunup, tsc, bun build
 				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
+				const hasTurbo = fileExists(join(ctx.cwd, 'turbo.json'))
+
 				const validBuild = isMonorepoRoot
-					? script?.includes('turbo') || script?.includes('bunup')
+					? hasTurbo
+						? script?.includes('turbo')
+						: script?.includes('bunup') || script?.includes('tsc') || script?.includes('bun build')
 					: script?.includes('bunup') || script?.includes('tsc') || script?.includes('bun build')
 
+				const defaultScript = isMonorepoRoot && hasTurbo ? 'turbo build' : 'bunup'
+
 				if (!script) {
-					const defaultScript = isMonorepoRoot ? 'turbo build' : 'bunup'
 					return {
 						passed: false,
 						message: 'Missing "build" script in package.json',
@@ -267,12 +274,10 @@ export const packageModule: CheckModule = defineCheckModule(
 
 				return {
 					passed: validBuild,
-					message: validBuild ? `build script: "${script}"` : `build script uses "${script}"`,
-					hint: validBuild
-						? undefined
-						: isMonorepoRoot
-							? 'Use "turbo build" or "bunup"'
-							: 'Use "bunup" or "bun build"',
+					message: validBuild
+						? `build script: "${script}"`
+						: `build script uses "${script}" (expected "${defaultScript}")`,
+					hint: validBuild ? undefined : `Use "${defaultScript}"`,
 				}
 			},
 		},
@@ -284,18 +289,26 @@ export const packageModule: CheckModule = defineCheckModule(
 			async check(ctx) {
 				const { join } = await import('node:path')
 				const { writeFileSync } = await import('node:fs')
-				const { readPackageJson } = await import('../utils/fs')
+				const { readPackageJson, fileExists } = await import('../utils/fs')
 
 				const script = ctx.packageJson?.scripts?.test
-				// For monorepo root: turbo test is valid
+				// For monorepo root: turbo test is preferred (runs all packages)
 				// For packages: bun test is expected
 				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
+				const hasTurbo = fileExists(join(ctx.cwd, 'turbo.json'))
+
+				// Monorepo root with turbo should use turbo test
+				// Monorepo root without turbo can use bun test
+				// Individual packages should use bun test
 				const validTest = isMonorepoRoot
-					? script?.includes('turbo') || script?.startsWith('bun test')
+					? hasTurbo
+						? script?.includes('turbo')
+						: script?.startsWith('bun test')
 					: script?.startsWith('bun test')
 
+				const defaultScript = isMonorepoRoot && hasTurbo ? 'turbo test' : 'bun test'
+
 				if (!script) {
-					const defaultScript = isMonorepoRoot ? 'turbo test' : 'bun test'
 					return {
 						passed: false,
 						message: 'Missing "test" script in package.json',
@@ -314,12 +327,8 @@ export const packageModule: CheckModule = defineCheckModule(
 					passed: validTest,
 					message: validTest
 						? `test script: "${script}"`
-						: `test script uses "${script}" (expected bun test${isMonorepoRoot ? ' or turbo' : ''})`,
-					hint: validTest
-						? undefined
-						: isMonorepoRoot
-							? 'Use "turbo test" or "bun test"'
-							: 'Use "bun test"',
+						: `test script uses "${script}" (expected "${defaultScript}")`,
+					hint: validTest ? undefined : `Use "${defaultScript}"`,
 				}
 			},
 		},
