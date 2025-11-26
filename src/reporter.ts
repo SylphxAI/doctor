@@ -52,6 +52,7 @@ export function formatReport(report: CheckReport, preset: PresetName): string {
 		ci: '🔄 CI/CD',
 		hooks: '🪝 Git Hooks',
 		github: '🐙 GitHub',
+		monorepo: '📦 Monorepo',
 	}
 
 	// Print results by category

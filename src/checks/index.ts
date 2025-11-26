@@ -7,6 +7,7 @@ import { fileChecks } from './files'
 import { formatChecks } from './format'
 import { githubChecks } from './github'
 import { hooksChecks } from './hooks'
+import { monorepoChecks } from './monorepo'
 import { packageChecks } from './package'
 import { runtimeChecks } from './runtime'
 import { testChecks } from './test'
@@ -23,6 +24,7 @@ export const allChecks: Check[] = [
 	...ciChecks,
 	...hooksChecks,
 	...githubChecks,
+	...monorepoChecks,
 ]
 
 export const checksByName: Map<string, Check> = new Map(
@@ -42,6 +44,7 @@ export {
 	formatChecks,
 	githubChecks,
 	hooksChecks,
+	monorepoChecks,
 	packageChecks,
 	runtimeChecks,
 	testChecks,
