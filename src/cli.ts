@@ -6,7 +6,7 @@ import pc from 'picocolors'
 import { version } from '../package.json'
 import { loadConfig } from './config'
 import { formatPreCommitReport, formatReport } from './reporter'
-import { getExitCode, runChecks } from './runner'
+import { checkUpgradeReadiness, getExitCode, runChecks } from './runner'
 import type { PresetName } from './types'
 
 const checkCommand = defineCommand({
@@ -61,6 +61,41 @@ const checkCommand = defineCommand({
 			console.log(formatPreCommitReport(report))
 		} else {
 			console.log(formatReport(report, preset))
+
+			// Check upgrade readiness when all checks pass
+			if (report.failed === 0 && report.warnings === 0) {
+				const upgrade = await checkUpgradeReadiness({
+					cwd,
+					preset,
+					config,
+				})
+
+				if (upgrade.nextPreset) {
+					if (upgrade.ready) {
+						// Ready to upgrade!
+						console.log(
+							pc.bold(pc.green(`🎉 Ready to upgrade to ${pc.cyan(upgrade.nextPreset)} preset!`))
+						)
+						console.log(
+							pc.dim(`   Run: ${pc.cyan('sylphx-doctor upgrade')} or update your config manually`)
+						)
+						console.log()
+					} else if (upgrade.nextScore >= 80) {
+						// Close to ready
+						console.log(
+							pc.yellow(
+								`💡 ${upgrade.blockers} issue(s) away from ${pc.cyan(upgrade.nextPreset)} preset (${upgrade.nextScore}% ready)`
+							)
+						)
+						console.log(
+							pc.dim(
+								`   Run: ${pc.cyan(`sylphx-doctor upgrade --target ${upgrade.nextPreset}`)} to preview`
+							)
+						)
+						console.log()
+					}
+				}
+			}
 		}
 
 		// Exit with appropriate code
