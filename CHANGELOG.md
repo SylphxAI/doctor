@@ -1,5 +1,20 @@
 # sylphx-doctor
 
+## 1.5.0 (2025-11-26)
+
+### ✨ Features
+
+- **checks:** add cleanup module to detect legacy/deprecated files ([03d6f63](https://github.com/SylphxAI/doctor/commit/03d6f635801037d7786c59447fe96e290ea0b69a))
+
+### ⚡️ Performance
+
+- **runner:** run all checks in parallel with Promise.all ([dd8e873](https://github.com/SylphxAI/doctor/commit/dd8e873252be75b21bb57d895e440c328c1df691))
+
+### 🔧 Chores
+
+- **release:** @sylphx/doctor@1.4.0 ([b761ff7](https://github.com/SylphxAI/doctor/commit/b761ff7d09283d912d31df8f64065a6c9b02ff13))
+- **release:** @sylphx/doctor@1.3.0 ([d879157](https://github.com/SylphxAI/doctor/commit/d8791577e461cfd3c03a77afdd885012f3c2b443))
+
 ## 1.4.0 (2025-11-26)
 
 ### ✨ Features
