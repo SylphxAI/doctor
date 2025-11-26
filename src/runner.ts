@@ -1,7 +1,7 @@
 import { allChecks } from './checks'
 import { loadConfig } from './config'
 import { getSeverity } from './presets'
-import type { CheckContext, CheckReport, CheckResult, DoctorConfig, PresetName } from './types'
+import type { Check, CheckContext, CheckReport, CheckResult, DoctorConfig, PresetName } from './types'
 import { isMonorepo, readPackageJson } from './utils/fs'
 
 export interface RunOptions {
@@ -25,26 +25,18 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 	// Detect if monorepo
 	const monorepo = await isMonorepo(cwd)
 
-	const results: CheckResult[] = []
-	let passed = 0
-	let failed = 0
-	let warnings = 0
+	// Filter checks based on severity
+	const checksToRun: { check: Check; ctx: CheckContext }[] = []
 
 	for (const check of allChecks) {
-		// Get severity for this check based on preset and overrides
 		const severity = getSeverity(check.name, preset, config.rules)
 
 		// Skip if severity is 'off'
-		if (severity === 'off') {
-			continue
-		}
+		if (severity === 'off') continue
 
 		// In pre-commit mode, skip warnings
-		if (preCommit && severity === 'warn') {
-			continue
-		}
+		if (preCommit && severity === 'warn') continue
 
-		// Create context for this check
 		const ctx: CheckContext = {
 			cwd,
 			packageJson,
@@ -53,50 +45,67 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 			isMonorepo: monorepo,
 		}
 
-		// Run the check
-		const result = await check.run(ctx)
-		results.push(result)
+		checksToRun.push({ check, ctx })
+	}
 
+	// Run all checks in parallel
+	const results = await Promise.all(
+		checksToRun.map(async ({ check, ctx }) => {
+			const result = await check.run(ctx)
+			return { check, ctx, result }
+		})
+	)
+
+	// Process results and apply fixes sequentially (fixes may have side effects)
+	let passed = 0
+	let failed = 0
+	let warnings = 0
+	const finalResults: CheckResult[] = []
+
+	for (const { check, ctx, result } of results) {
 		if (result.passed) {
 			passed++
-		} else {
-			// Count as warning or error
-			if (result.severity === 'warn') {
-				warnings++
-			} else {
-				failed++
-			}
+			finalResults.push(result)
+			continue
+		}
 
-			// Try to fix if requested and fixable (both warnings and errors)
-			if (fix && result.fixable && result.fix) {
-				try {
-					await result.fix()
-					// Re-run check to verify fix worked
-					const recheck = await check.run(ctx)
-					if (recheck.passed) {
-						// Update result
-						result.passed = true
-						result.message = `${result.message} (fixed)`
-						passed++
-						if (result.severity === 'warn') {
-							warnings--
-						} else {
-							failed--
-						}
+		// Count as warning or error
+		if (result.severity === 'warn') {
+			warnings++
+		} else {
+			failed++
+		}
+
+		// Try to fix if requested and fixable
+		if (fix && result.fixable && result.fix) {
+			try {
+				await result.fix()
+				// Re-run check to verify fix worked
+				const recheck = await check.run(ctx)
+				if (recheck.passed) {
+					result.passed = true
+					result.message = `${result.message} (fixed)`
+					passed++
+					if (result.severity === 'warn') {
+						warnings--
+					} else {
+						failed--
 					}
-				} catch (error) {
-					result.message = `${result.message} (fix failed: ${error})`
 				}
+			} catch (error) {
+				result.message = `${result.message} (fix failed: ${error})`
 			}
 		}
+
+		finalResults.push(result)
 	}
 
 	return {
-		total: results.length,
+		total: finalResults.length,
 		passed,
 		failed,
 		warnings,
-		results,
+		results: finalResults,
 	}
 }
 
