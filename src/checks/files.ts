@@ -1,50 +1,26 @@
-import { writeFileSync } from 'node:fs'
-import { join } from 'node:path'
-import type { Check, CheckContext, CheckResult } from '../types'
-import { fileExists } from '../utils/fs'
+import type { Check } from '../types'
+import type { CheckModule } from './define'
+import { createFileCheck, defineCheckModule } from './define'
 
-function createFileCheck(
-	name: string,
-	fileName: string,
-	fixable: boolean,
-	fixContent?: string,
-	hint?: string
-): Check {
-	return {
-		name,
+export const filesModule: CheckModule = defineCheckModule(
+	{
 		category: 'files',
-		description: `Check if ${fileName} exists`,
-		fixable,
-		async run(ctx: CheckContext): Promise<CheckResult> {
-			const filePath = join(ctx.cwd, fileName)
-			const exists = fileExists(filePath)
+		label: '📁 Files',
+		description: 'Check for required project files',
+	},
+	[
+		createFileCheck({
+			name: 'files/readme',
+			fileName: 'README.md',
+			fixable: false,
+			hint: 'Create a README.md to document your project',
+		}),
 
-			return {
-				name,
-				category: 'files',
-				passed: exists,
-				message: exists ? `${fileName} exists` : `Missing ${fileName}`,
-				severity: ctx.severity,
-				fixable,
-				hint: exists ? undefined : hint ?? (fixable ? `Run with --fix to create ${fileName}` : `Create ${fileName} manually`),
-				fix:
-					fixable && fixContent
-						? async () => {
-								writeFileSync(filePath, fixContent, 'utf-8')
-							}
-						: undefined,
-			}
-		},
-	}
-}
-
-export const readmeCheck: Check = createFileCheck('files/readme', 'README.md', false)
-
-export const licenseCheck: Check = createFileCheck(
-	'files/license',
-	'LICENSE',
-	true,
-	`MIT License
+		createFileCheck({
+			name: 'files/license',
+			fileName: 'LICENSE',
+			fixable: true,
+			fixContent: () => `MIT License
 
 Copyright (c) ${new Date().getFullYear()} SylphxAI
 
@@ -65,125 +41,14 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-`
-)
+`,
+		}),
 
-export const progressCheck: Check = createFileCheck(
-	'files/progress',
-	'progress.md',
-	true,
-	`# Progress
-
-## Current Status
-
-🚧 In Development
-
-## Completed
-
-- [ ] Initial setup
-
-## In Progress
-
-- [ ] Core features
-
-## Planned
-
-- [ ] Documentation
-- [ ] Tests
-`
-)
-
-export const biomeConfigCheck: Check = createFileCheck(
-	'files/biome-config',
-	'biome.json',
-	true,
-	JSON.stringify(
-		{
-			$schema: 'https://biomejs.dev/schemas/1.9.4/schema.json',
-			extends: ['@sylphx/biome-config'],
-		},
-		null,
-		2
-	)
-)
-
-export const turboConfigCheck: Check = {
-	name: 'files/turbo-config',
-	category: 'files',
-	description: 'Check if turbo.json exists (monorepo only)',
-	fixable: true,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const filePath = join(ctx.cwd, 'turbo.json')
-		const exists = fileExists(filePath)
-
-		// Smart detection:
-		// - If turbo.json exists -> validate it (even for single repos using turbo for caching)
-		// - If not exists + monorepo -> require it
-		// - If not exists + single repo -> skip
-		if (!exists && !ctx.isMonorepo) {
-			return {
-				name: 'files/turbo-config',
-				category: 'files',
-				passed: true,
-				message: 'Not a monorepo, turbo.json not required',
-				severity: ctx.severity,
-				fixable: false,
-				skipped: true,
-			}
-		}
-
-		return {
-			name: 'files/turbo-config',
-			category: 'files',
-			passed: exists,
-			message: exists ? 'turbo.json exists' : 'Missing turbo.json (monorepo)',
-			severity: ctx.severity,
-			fixable: true,
-			hint: exists ? undefined : 'Run: bunx turbo init',
-			fix: async () => {
-				const defaultConfig = {
-					$schema: 'https://turbo.build/schema.json',
-					tasks: {
-						build: {
-							dependsOn: ['^build'],
-							outputs: ['dist/**'],
-						},
-						lint: {
-							dependsOn: ['^lint'],
-						},
-						test: {
-							dependsOn: ['^build'],
-						},
-						typecheck: {
-							dependsOn: ['^typecheck'],
-						},
-					},
-				}
-				writeFileSync(filePath, JSON.stringify(defaultConfig, null, 2), 'utf-8')
-			},
-		}
-	},
-}
-
-export const gitignoreCheck: Check = {
-	name: 'files/gitignore',
-	category: 'files',
-	description: 'Check if .gitignore exists',
-	fixable: true,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const filePath = join(ctx.cwd, '.gitignore')
-		const exists = fileExists(filePath)
-
-		return {
+		createFileCheck({
 			name: 'files/gitignore',
-			category: 'files',
-			passed: exists,
-			message: exists ? '.gitignore exists' : 'Missing .gitignore',
-			severity: ctx.severity,
+			fileName: '.gitignore',
 			fixable: true,
-			hint: exists ? undefined : 'Run with --fix or create .gitignore manually',
-			fix: async () => {
-				const content = `# Dependencies
+			fixContent: `# Dependencies
 node_modules/
 
 # Build outputs
@@ -211,42 +76,80 @@ npm-debug.log*
 
 # Coverage
 coverage/
-`
-				writeFileSync(filePath, content, 'utf-8')
-			},
-		}
-	},
-}
+`,
+		}),
 
-export const changelogCheck: Check = {
-	name: 'files/changelog',
-	category: 'files',
-	description: 'Check if CHANGELOG.md exists',
-	fixable: false,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const filePath = join(ctx.cwd, 'CHANGELOG.md')
-		const exists = fileExists(filePath)
-
-		return {
+		createFileCheck({
 			name: 'files/changelog',
-			category: 'files',
-			passed: exists,
-			message: exists
-				? 'CHANGELOG.md exists'
-				: 'Missing CHANGELOG.md (auto-generated on release)',
-			severity: ctx.severity,
+			fileName: 'CHANGELOG.md',
 			fixable: false,
-			hint: exists ? undefined : 'CHANGELOG.md will be created automatically when you make your first release',
-		}
-	},
-}
+			hint: 'CHANGELOG.md will be created automatically when you make your first release',
+			missingMessage: 'Missing CHANGELOG.md (auto-generated on release)',
+		}),
 
-export const fileChecks: Check[] = [
-	readmeCheck,
-	licenseCheck,
-	gitignoreCheck,
-	changelogCheck,
-	progressCheck,
-	biomeConfigCheck,
-	turboConfigCheck,
-]
+		createFileCheck({
+			name: 'files/progress',
+			fileName: 'progress.md',
+			fixable: true,
+			fixContent: `# Progress
+
+## Current Status
+
+🚧 In Development
+
+## Completed
+
+- [ ] Initial setup
+
+## In Progress
+
+- [ ] Core features
+
+## Planned
+
+- [ ] Documentation
+- [ ] Tests
+`,
+		}),
+
+		createFileCheck({
+			name: 'files/biome-config',
+			fileName: 'biome.json',
+			fixable: true,
+			fixContent: JSON.stringify(
+				{
+					$schema: 'https://biomejs.dev/schemas/1.9.4/schema.json',
+					extends: ['@sylphx/biome-config'],
+				},
+				null,
+				2
+			),
+			hint: 'Run: bun add -D @sylphx/biome-config',
+		}),
+
+		createFileCheck({
+			name: 'files/turbo-config',
+			fileName: 'turbo.json',
+			fixable: true,
+			condition: (ctx) => ctx.isMonorepo,
+			fixContent: JSON.stringify(
+				{
+					$schema: 'https://turbo.build/schema.json',
+					tasks: {
+						build: { dependsOn: ['^build'], outputs: ['dist/**'] },
+						lint: { dependsOn: ['^lint'] },
+						test: { dependsOn: ['^build'] },
+						typecheck: { dependsOn: ['^typecheck'] },
+					},
+				},
+				null,
+				2
+			),
+			hint: 'Run: bunx turbo init',
+			missingMessage: 'Missing turbo.json (monorepo)',
+		}),
+	]
+)
+
+// Export for backward compatibility
+export const fileChecks: Check[] = filesModule.checks

@@ -1,127 +1,8 @@
-import { mkdirSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import type { Check, CheckContext, CheckResult } from '../types'
-import { directoryExists, fileExists, readFile } from '../utils/fs'
-
-export const hasWorkflowCheck: Check = {
-	name: 'ci/has-workflow',
-	category: 'ci',
-	description: 'Check if CI workflow exists',
-	fixable: true,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const workflowDir = join(ctx.cwd, '.github', 'workflows')
-		const hasDir = await directoryExists(workflowDir)
-
-		if (!hasDir) {
-			return {
-				name: 'ci/has-workflow',
-				category: 'ci',
-				passed: false,
-				message: 'No .github/workflows directory',
-				severity: ctx.severity,
-				fixable: true,
-				fix: async () => {
-					const ciPath = join(workflowDir, 'ci.yml')
-					mkdirSync(dirname(ciPath), { recursive: true })
-					writeFileSync(ciPath, defaultCiWorkflow, 'utf-8')
-				},
-			}
-		}
-
-		const ciPath = join(workflowDir, 'ci.yml')
-		const ciYamlPath = join(workflowDir, 'ci.yaml')
-		const exists = fileExists(ciPath) || fileExists(ciYamlPath)
-
-		return {
-			name: 'ci/has-workflow',
-			category: 'ci',
-			passed: exists,
-			message: exists ? 'CI workflow exists' : 'Missing CI workflow (.github/workflows/ci.yml)',
-			severity: ctx.severity,
-			fixable: true,
-			fix: async () => {
-				mkdirSync(workflowDir, { recursive: true })
-				writeFileSync(ciPath, defaultCiWorkflow, 'utf-8')
-			},
-		}
-	},
-}
+import type { Check } from '../types'
+import type { CheckModule } from './define'
+import { createFileCheck, defineCheckModule } from './define'
 
 const SHARED_WORKFLOW = 'SylphxAI/.github/.github/workflows/release.yml'
-
-export const publishWorkflowCheck: Check = {
-	name: 'ci/publish-workflow',
-	category: 'ci',
-	description: 'Check if using shared release workflow',
-	fixable: true,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const workflowDir = join(ctx.cwd, '.github', 'workflows')
-		const releasePath = join(workflowDir, 'release.yml')
-		const releaseYamlPath = join(workflowDir, 'release.yaml')
-
-		const exists = fileExists(releasePath) || fileExists(releaseYamlPath)
-
-		if (!exists) {
-			return {
-				name: 'ci/publish-workflow',
-				category: 'ci',
-				passed: false,
-				message: 'Missing release workflow (.github/workflows/release.yml)',
-				severity: ctx.severity,
-				fixable: true,
-				hint: 'Run with --fix to create release workflow using shared workflow',
-				fix: async () => {
-					mkdirSync(workflowDir, { recursive: true })
-					writeFileSync(releasePath, defaultReleaseWorkflow, 'utf-8')
-				},
-			}
-		}
-
-		// Check if it uses the shared reusable workflow
-		const content = readFile(releasePath) || readFile(releaseYamlPath) || ''
-		const usesSharedWorkflow = content.includes(SHARED_WORKFLOW)
-		const usesSecretsInherit = content.includes('secrets: inherit')
-
-		if (!usesSharedWorkflow) {
-			return {
-				name: 'ci/publish-workflow',
-				category: 'ci',
-				passed: false,
-				message: 'Release workflow not using shared reusable workflow',
-				severity: ctx.severity,
-				fixable: true,
-				hint: `Use: uses: ${SHARED_WORKFLOW}@main`,
-				fix: async () => {
-					writeFileSync(releasePath, defaultReleaseWorkflow, 'utf-8')
-				},
-			}
-		}
-
-		if (!usesSecretsInherit) {
-			return {
-				name: 'ci/publish-workflow',
-				category: 'ci',
-				passed: false,
-				message: 'Release workflow missing secrets: inherit',
-				severity: ctx.severity,
-				fixable: true,
-				hint: 'Add: secrets: inherit',
-				fix: async () => {
-					writeFileSync(releasePath, defaultReleaseWorkflow, 'utf-8')
-				},
-			}
-		}
-
-		return {
-			name: 'ci/publish-workflow',
-			category: 'ci',
-			passed: true,
-			message: 'Using shared release workflow with secrets: inherit',
-			severity: ctx.severity,
-			fixable: false,
-		}
-	},
-}
 
 const defaultCiWorkflow = `name: CI
 
@@ -169,4 +50,84 @@ jobs:
     secrets: inherit
 `
 
-export const ciChecks: Check[] = [hasWorkflowCheck, publishWorkflowCheck]
+export const ciModule: CheckModule = defineCheckModule(
+	{
+		category: 'ci',
+		label: '🔄 CI/CD',
+		description: 'Check CI/CD configuration',
+	},
+	[
+		createFileCheck({
+			name: 'ci/has-workflow',
+			fileName: '.github/workflows/ci.yml',
+			fixable: true,
+			fixContent: defaultCiWorkflow,
+			hint: 'Run with --fix to create CI workflow',
+			missingMessage: 'Missing CI workflow (.github/workflows/ci.yml)',
+			existsMessage: 'CI workflow exists',
+		}),
+
+		{
+			name: 'ci/publish-workflow',
+			description: 'Check if using shared release workflow',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { mkdirSync, writeFileSync } = await import('node:fs')
+				const { fileExists, readFile } = await import('../utils/fs')
+
+				const workflowDir = join(ctx.cwd, '.github', 'workflows')
+				const releasePath = join(workflowDir, 'release.yml')
+				const releaseYamlPath = join(workflowDir, 'release.yaml')
+
+				const exists = fileExists(releasePath) || fileExists(releaseYamlPath)
+
+				if (!exists) {
+					return {
+						passed: false,
+						message: 'Missing release workflow (.github/workflows/release.yml)',
+						hint: 'Run with --fix to create release workflow using shared workflow',
+						fix: async () => {
+							mkdirSync(workflowDir, { recursive: true })
+							writeFileSync(releasePath, defaultReleaseWorkflow, 'utf-8')
+						},
+					}
+				}
+
+				const content = readFile(releasePath) || readFile(releaseYamlPath) || ''
+				const usesSharedWorkflow = content.includes(SHARED_WORKFLOW)
+				const usesSecretsInherit = content.includes('secrets: inherit')
+
+				if (!usesSharedWorkflow) {
+					return {
+						passed: false,
+						message: 'Release workflow not using shared reusable workflow',
+						hint: `Use: uses: ${SHARED_WORKFLOW}@main`,
+						fix: async () => {
+							writeFileSync(releasePath, defaultReleaseWorkflow, 'utf-8')
+						},
+					}
+				}
+
+				if (!usesSecretsInherit) {
+					return {
+						passed: false,
+						message: 'Release workflow missing secrets: inherit',
+						hint: 'Add: secrets: inherit',
+						fix: async () => {
+							writeFileSync(releasePath, defaultReleaseWorkflow, 'utf-8')
+						},
+					}
+				}
+
+				return {
+					passed: true,
+					message: 'Using shared release workflow with secrets: inherit',
+				}
+			},
+		},
+	]
+)
+
+// Export for backward compatibility
+export const ciChecks: Check[] = ciModule.checks
