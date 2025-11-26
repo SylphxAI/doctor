@@ -22,7 +22,7 @@ describe('readJson', () => {
 	test('reads and parses JSON file', () => {
 		const pkg = readJson<{ name: string }>(join(cwd, 'package.json'))
 		expect(pkg).not.toBeNull()
-		expect(pkg?.name).toBe('sylphx-doctor')
+		expect(pkg?.name).toBe('@sylphx/doctor')
 	})
 
 	test('returns null for non-existing file', () => {
@@ -41,7 +41,7 @@ describe('readPackageJson', () => {
 	test('reads package.json from cwd', () => {
 		const pkg = readPackageJson(cwd)
 		expect(pkg).not.toBeNull()
-		expect(pkg?.name).toBe('sylphx-doctor')
+		expect(pkg?.name).toBe('@sylphx/doctor')
 		expect(pkg?.version).toBeDefined()
 	})
 
@@ -54,7 +54,7 @@ describe('readFile', () => {
 	test('reads file content', () => {
 		const content = readFile(join(cwd, 'package.json'))
 		expect(content).not.toBeNull()
-		expect(content).toContain('sylphx-doctor')
+		expect(content).toContain('@sylphx/doctor')
 	})
 
 	test('returns null for non-existing file', () => {

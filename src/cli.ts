@@ -77,7 +77,7 @@ const checkCommand = defineCommand({
 							pc.bold(pc.green(`🎉 Ready to upgrade to ${pc.cyan(upgrade.nextPreset)} preset!`))
 						)
 						console.log(
-							pc.dim(`   Run: ${pc.cyan('sylphx-doctor upgrade')} or update your config manually`)
+							pc.dim(`   Run: ${pc.cyan('doctor upgrade')} or update your config manually`)
 						)
 						console.log()
 					} else if (upgrade.nextScore >= 80) {
@@ -89,7 +89,7 @@ const checkCommand = defineCommand({
 						)
 						console.log(
 							pc.dim(
-								`   Run: ${pc.cyan(`sylphx-doctor upgrade --target ${upgrade.nextPreset}`)} to preview`
+								`   Run: ${pc.cyan(`doctor upgrade --target ${upgrade.nextPreset}`)} to preview`
 							)
 						)
 						console.log()
@@ -129,13 +129,13 @@ const initCommand = defineCommand({
 		const { execSync } = await import('node:child_process')
 
 		console.log()
-		consola.start('Initializing sylphx-doctor...')
+		consola.start('Initializing @sylphx/doctor...')
 		console.log()
 
 		// 1. Create config file
 		const configPath = join(cwd, 'sylphx-doctor.config.ts')
 		if (!existsSync(configPath)) {
-			const configContent = `import { defineConfig } from 'sylphx-doctor'
+			const configContent = `import { defineConfig } from '@sylphx/doctor'
 
 export default defineConfig({
   preset: '${preset}',
@@ -190,15 +190,15 @@ export default defineConfig({
 			// Add doctor scripts
 			pkg.scripts = pkg.scripts || {}
 			if (!pkg.scripts.doctor) {
-				pkg.scripts.doctor = 'sylphx-doctor check'
+				pkg.scripts.doctor = 'doctor check'
 				modified = true
 			}
 			if (!pkg.scripts['doctor:check']) {
-				pkg.scripts['doctor:check'] = 'sylphx-doctor check --pre-commit'
+				pkg.scripts['doctor:check'] = 'doctor check --pre-commit'
 				modified = true
 			}
 			if (!pkg.scripts['doctor:fix']) {
-				pkg.scripts['doctor:fix'] = 'sylphx-doctor check --fix'
+				pkg.scripts['doctor:fix'] = 'doctor check --fix'
 				modified = true
 			}
 
@@ -213,14 +213,14 @@ export default defineConfig({
 		// 4. Install dependencies
 		consola.start('Installing dependencies...')
 		try {
-			execSync('bun add -D sylphx-doctor lefthook', {
+			execSync('bun add -D @sylphx/doctor lefthook', {
 				cwd,
 				stdio: 'pipe',
 			})
-			consola.success('Installed sylphx-doctor and lefthook')
+			consola.success('Installed @sylphx/doctor and lefthook')
 		} catch {
 			consola.warn('Failed to install dependencies, run manually:')
-			console.log(pc.dim('  bun add -D sylphx-doctor lefthook'))
+			console.log(pc.dim('  bun add -D @sylphx/doctor lefthook'))
 		}
 
 		// 5. Setup git hooks (if .git exists)

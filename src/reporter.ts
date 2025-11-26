@@ -107,7 +107,7 @@ export function formatReport(report: CheckReport, preset: PresetName): string {
 
 	// Header
 	lines.push('')
-	lines.push(pc.bold('🩺 sylphx-doctor check'))
+	lines.push(pc.bold('🩺 doctor check'))
 	lines.push(pc.dim(`   Preset: ${preset}`))
 	lines.push('')
 
