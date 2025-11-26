@@ -1,4 +1,5 @@
 import type { Check } from '../types'
+import { isCI } from '../utils/env'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
@@ -32,10 +33,7 @@ export const releaseModule: CheckModule = defineCheckModule(
 			async check(ctx) {
 				const { exec } = await import('../utils/exec')
 
-				// Check if this is from CI (env var check)
-				const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
-
-				if (isCI) {
+				if (isCI()) {
 					return {
 						passed: true,
 						message: 'Version change allowed (CI environment)',
@@ -114,10 +112,7 @@ export const releaseModule: CheckModule = defineCheckModule(
 
 					// Check if last commit is a release commit (for pre-push)
 					if (isReleaseCommit(lastCommitMsg)) {
-						const isCI =
-							process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
-
-						if (isCI) {
+						if (isCI()) {
 							return {
 								passed: true,
 								message: 'Release commit allowed (CI environment)',
@@ -148,9 +143,7 @@ export const releaseModule: CheckModule = defineCheckModule(
 
 				// Check for release commit patterns
 				if (isReleaseCommit(commitMsg)) {
-					const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
-
-					if (isCI) {
+					if (isCI()) {
 						return {
 							passed: true,
 							message: 'Release commit allowed (CI environment)',

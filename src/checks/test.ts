@@ -1,4 +1,5 @@
 import type { Check } from '../types'
+import { isMonorepoRoot } from '../utils/context'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
@@ -45,14 +46,14 @@ export const testModule: CheckModule = defineCheckModule(
 				}
 
 				// Monorepo root uses turbo test, packages use bun test
-				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
-				const testCmd = isMonorepoRoot ? 'turbo' : 'bun'
-				const testArgs = isMonorepoRoot ? ['test'] : ['test']
+				const isRoot = isMonorepoRoot(ctx)
+				const testCmd = isRoot ? 'turbo' : 'bun'
+				const testArgs = isRoot ? ['test'] : ['test']
 
 				const result = await exec(testCmd, testArgs, ctx.cwd)
 				const passed = result.exitCode === 0
 
-				const hintCmd = isMonorepoRoot ? 'turbo test' : 'bun test'
+				const hintCmd = isRoot ? 'turbo test' : 'bun test'
 
 				return {
 					passed,
@@ -83,9 +84,9 @@ export const testModule: CheckModule = defineCheckModule(
 				}
 
 				// Monorepo root uses turbo test, packages use bun test
-				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
-				const testCmd = isMonorepoRoot ? 'turbo' : 'bun'
-				const testArgs = isMonorepoRoot ? ['test', '--', '--coverage'] : ['test', '--coverage']
+				const isRoot = isMonorepoRoot(ctx)
+				const testCmd = isRoot ? 'turbo' : 'bun'
+				const testArgs = isRoot ? ['test', '--', '--coverage'] : ['test', '--coverage']
 
 				const result = await exec(testCmd, testArgs, ctx.cwd)
 

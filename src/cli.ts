@@ -339,9 +339,9 @@ const prepublishCommand = defineCommand({
 		description: 'Guard against direct npm publish (use in prepublishOnly script)',
 	},
 	async run() {
-		const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+		const { isCI } = await import('./utils/env')
 
-		if (isCI) {
+		if (isCI()) {
 			// In CI, allow publish
 			process.exit(0)
 		}
