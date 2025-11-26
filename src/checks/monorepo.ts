@@ -41,45 +41,45 @@ async function getPackageDirs(cwd: string): Promise<string[]> {
 	return packageDirs
 }
 
+/** Helper to create a skipped result for non-monorepos */
+function skipResult(name: string, ctx: CheckContext): CheckResult {
+	return {
+		name,
+		category: 'monorepo',
+		passed: true,
+		message: 'Not a monorepo',
+		severity: ctx.severity,
+		fixable: false,
+		skipped: true,
+	}
+}
+
 export const packagesReadmeCheck: Check = {
 	name: 'monorepo/packages-readme',
 	category: 'monorepo',
 	description: 'Check if all packages in monorepo have README.md',
 	fixable: false,
 	async run(ctx: CheckContext): Promise<CheckResult> {
+		if (!ctx.isMonorepo) return skipResult('monorepo/packages-readme', ctx)
+
 		const packageDirs = await getPackageDirs(ctx.cwd)
+		if (packageDirs.length === 0) return skipResult('monorepo/packages-readme', ctx)
 
-		if (packageDirs.length === 0) {
-			return {
-				name: 'monorepo/packages-readme',
-				category: 'monorepo',
-				passed: true,
-				message: 'No packages found (not a monorepo or no packages)',
-				severity: ctx.severity,
-				fixable: false,
-			}
-		}
-
-		const missingReadme: string[] = []
-
+		const missing: string[] = []
 		for (const pkgDir of packageDirs) {
-			const readmePath = join(pkgDir, 'README.md')
-			if (!fileExists(readmePath)) {
-				// Get relative path for cleaner output
-				const relativePath = pkgDir.replace(`${ctx.cwd}/`, '')
-				missingReadme.push(relativePath)
+			if (!fileExists(join(pkgDir, 'README.md'))) {
+				missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
 			}
 		}
-
-		const passed = missingReadme.length === 0
 
 		return {
 			name: 'monorepo/packages-readme',
 			category: 'monorepo',
-			passed,
-			message: passed
-				? `All ${packageDirs.length} packages have README.md`
-				: `Missing README.md in: ${missingReadme.join(', ')}`,
+			passed: missing.length === 0,
+			message:
+				missing.length === 0
+					? `All ${packageDirs.length} packages have README.md`
+					: `Missing README.md in: ${missing.join(', ')}`,
 			severity: ctx.severity,
 			fixable: false,
 		}
@@ -92,23 +92,13 @@ export const packagesLicenseCheck: Check = {
 	description: 'Check if all packages in monorepo have LICENSE',
 	fixable: false,
 	async run(ctx: CheckContext): Promise<CheckResult> {
+		if (!ctx.isMonorepo) return skipResult('monorepo/packages-license', ctx)
+
 		const packageDirs = await getPackageDirs(ctx.cwd)
+		if (packageDirs.length === 0) return skipResult('monorepo/packages-license', ctx)
 
-		if (packageDirs.length === 0) {
-			return {
-				name: 'monorepo/packages-license',
-				category: 'monorepo',
-				passed: true,
-				message: 'No packages found (not a monorepo or no packages)',
-				severity: ctx.severity,
-				fixable: false,
-			}
-		}
-
-		// Check if root has LICENSE (packages can inherit)
-		const rootHasLicense = fileExists(join(ctx.cwd, 'LICENSE'))
-
-		if (rootHasLicense) {
+		// Root LICENSE is enough for all packages
+		if (fileExists(join(ctx.cwd, 'LICENSE'))) {
 			return {
 				name: 'monorepo/packages-license',
 				category: 'monorepo',
@@ -119,210 +109,59 @@ export const packagesLicenseCheck: Check = {
 			}
 		}
 
-		const missingLicense: string[] = []
-
+		const missing: string[] = []
 		for (const pkgDir of packageDirs) {
-			const licensePath = join(pkgDir, 'LICENSE')
-			if (!fileExists(licensePath)) {
-				const relativePath = pkgDir.replace(`${ctx.cwd}/`, '')
-				missingLicense.push(relativePath)
+			if (!fileExists(join(pkgDir, 'LICENSE'))) {
+				missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
 			}
 		}
-
-		const passed = missingLicense.length === 0
 
 		return {
 			name: 'monorepo/packages-license',
 			category: 'monorepo',
-			passed,
-			message: passed
-				? `All ${packageDirs.length} packages have LICENSE`
-				: `Missing LICENSE in: ${missingLicense.join(', ')}`,
+			passed: missing.length === 0,
+			message:
+				missing.length === 0
+					? `All ${packageDirs.length} packages have LICENSE`
+					: `Missing LICENSE in: ${missing.join(', ')}`,
 			severity: ctx.severity,
 			fixable: false,
 		}
 	},
 }
 
-export const packagesDescriptionCheck: Check = {
-	name: 'monorepo/packages-description',
-	category: 'monorepo',
-	description: 'Check if all packages have description in package.json',
-	fixable: false,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const packageDirs = await getPackageDirs(ctx.cwd)
-
-		if (packageDirs.length === 0) {
-			return {
-				name: 'monorepo/packages-description',
-				category: 'monorepo',
-				passed: true,
-				message: 'No packages found',
-				severity: ctx.severity,
-				fixable: false,
-			}
-		}
-
-		const missingDesc: string[] = []
-
-		for (const pkgDir of packageDirs) {
-			const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
-			if (!pkg?.name) continue // Skip if no name (not a valid package)
-
-			if (!pkg.description) {
-				const relativePath = pkgDir.replace(`${ctx.cwd}/`, '')
-				missingDesc.push(relativePath)
-			}
-		}
-
-		const passed = missingDesc.length === 0
-
-		return {
-			name: 'monorepo/packages-description',
-			category: 'monorepo',
-			passed,
-			message: passed
-				? `All ${packageDirs.length} packages have description`
-				: `Missing description in: ${missingDesc.join(', ')}`,
-			severity: ctx.severity,
-			fixable: false,
-		}
-	},
-}
-
-export const packagesTypeModuleCheck: Check = {
-	name: 'monorepo/packages-type-module',
-	category: 'monorepo',
-	description: 'Check if all packages have "type": "module"',
-	fixable: false,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const packageDirs = await getPackageDirs(ctx.cwd)
-
-		if (packageDirs.length === 0) {
-			return {
-				name: 'monorepo/packages-type-module',
-				category: 'monorepo',
-				passed: true,
-				message: 'No packages found',
-				severity: ctx.severity,
-				fixable: false,
-			}
-		}
-
-		const missing: string[] = []
-
-		for (const pkgDir of packageDirs) {
-			const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
-			if (!pkg?.name) continue
-
-			if (pkg.type !== 'module') {
-				const relativePath = pkgDir.replace(`${ctx.cwd}/`, '')
-				missing.push(relativePath)
-			}
-		}
-
-		const passed = missing.length === 0
-
-		return {
-			name: 'monorepo/packages-type-module',
-			category: 'monorepo',
-			passed,
-			message: passed
-				? `All ${packageDirs.length} packages have "type": "module"`
-				: `Missing "type": "module" in: ${missing.join(', ')}`,
-			severity: ctx.severity,
-			fixable: false,
-		}
-	},
-}
-
-export const packagesExportsCheck: Check = {
-	name: 'monorepo/packages-exports',
-	category: 'monorepo',
-	description: 'Check if all packages have exports field',
-	fixable: false,
-	async run(ctx: CheckContext): Promise<CheckResult> {
-		const packageDirs = await getPackageDirs(ctx.cwd)
-
-		if (packageDirs.length === 0) {
-			return {
-				name: 'monorepo/packages-exports',
-				category: 'monorepo',
-				passed: true,
-				message: 'No packages found',
-				severity: ctx.severity,
-				fixable: false,
-			}
-		}
-
-		const missing: string[] = []
-
-		for (const pkgDir of packageDirs) {
-			const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
-			if (!pkg?.name) continue
-
-			if (!pkg.exports) {
-				const relativePath = pkgDir.replace(`${ctx.cwd}/`, '')
-				missing.push(relativePath)
-			}
-		}
-
-		const passed = missing.length === 0
-
-		return {
-			name: 'monorepo/packages-exports',
-			category: 'monorepo',
-			passed,
-			message: passed
-				? `All ${packageDirs.length} packages have exports`
-				: `Missing exports in: ${missing.join(', ')}`,
-			severity: ctx.severity,
-			fixable: false,
-		}
-	},
-}
-
-function createPackagesScriptCheck(name: string, scriptName: string, description: string): Check {
+function createPackageFieldCheck(
+	name: string,
+	fieldName: string,
+	checker: (pkg: PackageJson) => boolean,
+	successMsg: (count: number) => string,
+	failMsg: (missing: string[]) => string
+): Check {
 	return {
 		name,
 		category: 'monorepo',
-		description,
+		description: `Check if all packages have ${fieldName}`,
 		fixable: false,
 		async run(ctx: CheckContext): Promise<CheckResult> {
-			const packageDirs = await getPackageDirs(ctx.cwd)
+			if (!ctx.isMonorepo) return skipResult(name, ctx)
 
-			if (packageDirs.length === 0) {
-				return {
-					name,
-					category: 'monorepo',
-					passed: true,
-					message: 'No packages found',
-					severity: ctx.severity,
-					fixable: false,
-				}
-			}
+			const packageDirs = await getPackageDirs(ctx.cwd)
+			if (packageDirs.length === 0) return skipResult(name, ctx)
 
 			const missing: string[] = []
-
 			for (const pkgDir of packageDirs) {
 				const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'))
 				if (!pkg?.name) continue
-
-				if (!pkg.scripts?.[scriptName]) {
-					const relativePath = pkgDir.replace(`${ctx.cwd}/`, '')
-					missing.push(relativePath)
+				if (!checker(pkg)) {
+					missing.push(pkgDir.replace(`${ctx.cwd}/`, ''))
 				}
 			}
-
-			const passed = missing.length === 0
 
 			return {
 				name,
 				category: 'monorepo',
-				passed,
-				message: passed
-					? `All ${packageDirs.length} packages have "${scriptName}" script`
-					: `Missing "${scriptName}" script in: ${missing.join(', ')}`,
+				passed: missing.length === 0,
+				message: missing.length === 0 ? successMsg(packageDirs.length) : failMsg(missing),
 				severity: ctx.severity,
 				fixable: false,
 			}
@@ -330,22 +169,50 @@ function createPackagesScriptCheck(name: string, scriptName: string, description
 	}
 }
 
-export const packagesBuildCheck: Check = createPackagesScriptCheck(
-	'monorepo/packages-build',
-	'build',
-	'Check if all packages have build script'
+export const packagesDescriptionCheck: Check = createPackageFieldCheck(
+	'monorepo/packages-description',
+	'description',
+	(pkg) => !!pkg.description,
+	(count) => `All ${count} packages have description`,
+	(missing) => `Missing description in: ${missing.join(', ')}`
 )
 
-export const packagesTestCheck: Check = createPackagesScriptCheck(
-	'monorepo/packages-test',
-	'test',
-	'Check if all packages have test script'
+export const packagesTypeModuleCheck: Check = createPackageFieldCheck(
+	'monorepo/packages-type-module',
+	'"type": "module"',
+	(pkg) => pkg.type === 'module',
+	(count) => `All ${count} packages have "type": "module"`,
+	(missing) => `Missing "type": "module" in: ${missing.join(', ')}`
 )
+
+export const packagesExportsCheck: Check = createPackageFieldCheck(
+	'monorepo/packages-exports',
+	'exports',
+	(pkg) => !!pkg.exports,
+	(count) => `All ${count} packages have exports`,
+	(missing) => `Missing exports in: ${missing.join(', ')}`
+)
+
+function createPackagesScriptCheck(name: string, scriptName: string): Check {
+	return createPackageFieldCheck(
+		name,
+		`"${scriptName}" script`,
+		(pkg) => !!pkg.scripts?.[scriptName],
+		(count) => `All ${count} packages have "${scriptName}" script`,
+		(missing) => `Missing "${scriptName}" script in: ${missing.join(', ')}`
+	)
+}
+
+export const packagesBuildCheck: Check = createPackagesScriptCheck(
+	'monorepo/packages-build',
+	'build'
+)
+
+export const packagesTestCheck: Check = createPackagesScriptCheck('monorepo/packages-test', 'test')
 
 export const packagesBenchCheck: Check = createPackagesScriptCheck(
 	'monorepo/packages-bench',
-	'bench',
-	'Check if all packages have bench script'
+	'bench'
 )
 
 export const monorepoChecks: Check[] = [

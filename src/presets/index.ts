@@ -4,6 +4,8 @@ const initPreset: PresetConfig = {
 	// Files
 	'files/readme': 'error',
 	'files/license': 'warn',
+	'files/gitignore': 'error',
+	'files/changelog': 'off',
 	'files/progress': 'off',
 	'files/biome-config': 'error',
 	'files/turbo-config': 'warn',
@@ -16,6 +18,8 @@ const initPreset: PresetConfig = {
 	// Package.json
 	'pkg/name': 'error',
 	'pkg/description': 'error',
+	'pkg/repository': 'off',
+	'pkg/keywords': 'off',
 	'pkg/type-module': 'error',
 	'pkg/scripts-lint': 'error',
 	'pkg/scripts-format': 'error',
@@ -76,6 +80,8 @@ const devPreset: PresetConfig = {
 	// Files
 	'files/readme': 'error',
 	'files/license': 'error',
+	'files/gitignore': 'error',
+	'files/changelog': 'warn',
 	'files/progress': 'warn',
 	'files/biome-config': 'error',
 	'files/turbo-config': 'error',
@@ -88,6 +94,8 @@ const devPreset: PresetConfig = {
 	// Package.json
 	'pkg/name': 'error',
 	'pkg/description': 'error',
+	'pkg/repository': 'warn',
+	'pkg/keywords': 'warn',
 	'pkg/type-module': 'error',
 	'pkg/scripts-lint': 'error',
 	'pkg/scripts-format': 'error',
@@ -148,6 +156,8 @@ const stablePreset: PresetConfig = {
 	// Files
 	'files/readme': 'error',
 	'files/license': 'error',
+	'files/gitignore': 'error',
+	'files/changelog': 'error',
 	'files/progress': 'error',
 	'files/biome-config': 'error',
 	'files/turbo-config': 'error',
@@ -160,6 +170,8 @@ const stablePreset: PresetConfig = {
 	// Package.json
 	'pkg/name': 'error',
 	'pkg/description': 'error',
+	'pkg/repository': 'error',
+	'pkg/keywords': 'error',
 	'pkg/type-module': 'error',
 	'pkg/scripts-lint': 'error',
 	'pkg/scripts-format': 'error',

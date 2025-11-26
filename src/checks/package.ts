@@ -121,9 +121,54 @@ export const scriptsCoverageCheck: Check = createScriptCheck(
 	'bun test --coverage'
 )
 
+export const pkgRepositoryCheck: Check = {
+	name: 'pkg/repository',
+	category: 'pkg',
+	description: 'Check if package.json has repository field',
+	fixable: false,
+	async run(ctx: CheckContext): Promise<CheckResult> {
+		const pkg = ctx.packageJson
+		const hasRepo = !!(pkg?.repository || (pkg as Record<string, unknown>)?.repository)
+
+		return {
+			name: 'pkg/repository',
+			category: 'pkg',
+			passed: hasRepo,
+			message: hasRepo ? 'package.json has "repository"' : 'package.json missing "repository"',
+			severity: ctx.severity,
+			fixable: false,
+		}
+	},
+}
+
+export const pkgKeywordsCheck: Check = {
+	name: 'pkg/keywords',
+	category: 'pkg',
+	description: 'Check if package.json has keywords',
+	fixable: false,
+	async run(ctx: CheckContext): Promise<CheckResult> {
+		const pkg = ctx.packageJson as Record<string, unknown> | null
+		const keywords = pkg?.keywords as string[] | undefined
+		const hasKeywords = !!(keywords && Array.isArray(keywords) && keywords.length > 0)
+
+		return {
+			name: 'pkg/keywords',
+			category: 'pkg',
+			passed: hasKeywords,
+			message: hasKeywords
+				? `package.json has ${keywords?.length} keywords`
+				: 'package.json missing "keywords"',
+			severity: ctx.severity,
+			fixable: false,
+		}
+	},
+}
+
 export const packageChecks: Check[] = [
 	pkgNameCheck,
 	pkgDescriptionCheck,
+	pkgRepositoryCheck,
+	pkgKeywordsCheck,
 	pkgTypeModuleCheck,
 	pkgExportsCheck,
 	scriptsLintCheck,

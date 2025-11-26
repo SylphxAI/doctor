@@ -57,10 +57,20 @@ export function formatReport(report: CheckReport, preset: PresetName): string {
 
 	// Print results by category
 	for (const [category, results] of byCategory) {
+		// Skip categories where ALL results are skipped (not applicable)
+		const allSkipped = results.every((r) => r.skipped)
+		if (allSkipped) {
+			continue
+		}
+
 		const label = categoryLabels[category] ?? category
 		lines.push(pc.bold(label))
 
 		for (const result of results) {
+			// Don't show individual skipped results
+			if (result.skipped) {
+				continue
+			}
 			lines.push(formatResult(result))
 		}
 

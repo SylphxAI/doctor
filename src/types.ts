@@ -10,6 +10,8 @@ export interface CheckResult {
 	severity: Severity
 	fixable: boolean
 	fix?: () => Promise<void>
+	/** If true, this check was skipped (not applicable to this project) */
+	skipped?: boolean
 }
 
 export interface CheckContext {
