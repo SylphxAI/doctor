@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.6.1 (2025-11-26)
+
+### 🐛 Bug Fixes
+
+- **pkg:** prefer turbo scripts for monorepo root with turbo.json ([713fce6](https://github.com/SylphxAI/doctor/commit/713fce6440921d6e74725a90d96eeb902b40f8fc))
+
 ## 1.6.0 (2025-11-26)
 
 ### ✨ Features
