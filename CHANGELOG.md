@@ -1,5 +1,15 @@
 # sylphx-doctor
 
+## 1.12.0 (2025-11-26)
+
+### ✨ Features
+
+- **deps:** check banned packages in all workspace packages ([8186c75](https://github.com/SylphxAI/doctor/commit/8186c75984f8e688419d55826007980b18c54e0f))
+
+### ♻️ Refactoring
+
+- **deps:** use getAllPackages helper for banned check ([74d34be](https://github.com/SylphxAI/doctor/commit/74d34beb3e331335c07f0eff81060786e02c354c))
+
 ## 1.11.0 (2025-11-26)
 
 ### ✨ Features
