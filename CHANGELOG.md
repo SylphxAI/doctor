@@ -1,5 +1,17 @@
 # sylphx-doctor
 
+## 1.14.4 (2025-11-26)
+
+### 🐛 Bug Fixes
+
+- **pkg:** typecheck script should always use tsc, not turbo ([cb783a3](https://github.com/SylphxAI/doctor/commit/cb783a3be93fcca2cb1386794dc8ff2119b10f2b))
+- **pkg:** lint script should always use biome, not turbo ([4b52412](https://github.com/SylphxAI/doctor/commit/4b5241271d99f85a0420ebcc152d834008d3e0ca))
+
+### 📚 Documentation
+
+- **pkg:** add detailed comments explaining script choices ([6c9242d](https://github.com/SylphxAI/doctor/commit/6c9242de3544e3a9917493d3ead43112696beef6))
+- **pkg:** clarify why turbo is needed for test/build in monorepos ([afa4676](https://github.com/SylphxAI/doctor/commit/afa4676b2c9e93d69282a1f6584a6f5c2f36581f))
+
 ## 1.14.3 (2025-11-26)
 
 ### 🐛 Bug Fixes
