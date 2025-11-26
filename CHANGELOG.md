@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.9.1 (2025-11-26)
+
+### 🐛 Bug Fixes
+
+- use turbo test for monorepo and update presets ([4d47e70](https://github.com/SylphxAI/doctor/commit/4d47e703f120a452788574f3784efc61a8c70f7b))
+
 ## 1.9.0 (2025-11-26)
 
 ### ✨ Features
