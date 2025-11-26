@@ -1,6 +1,6 @@
 {
   "name": "@sylphx/doctor",
-  "version": "1.14.3",
+  "version": "1.14.4",
   "description": "CLI tool to check and enforce project standards across SylphxAI repositories",
   "type": "module",
   "exports": {
