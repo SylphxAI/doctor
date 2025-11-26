@@ -333,6 +333,36 @@ const upgradeCommand = defineCommand({
 	},
 })
 
+const prepublishCommand = defineCommand({
+	meta: {
+		name: 'prepublish',
+		description: 'Guard against direct npm publish (use in prepublishOnly script)',
+	},
+	async run() {
+		const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+
+		if (isCI) {
+			// In CI, allow publish
+			process.exit(0)
+		}
+
+		// Not in CI, block and show instructions
+		console.log()
+		console.log(pc.red('❌ Direct npm publish is blocked.'))
+		console.log()
+		console.log(pc.bold('To release a new version:'))
+		console.log(pc.dim('  1. Push your changes to main branch'))
+		console.log(pc.dim('  2. CI will automatically create a release PR'))
+		console.log(pc.dim('  3. Merge the release PR to publish'))
+		console.log()
+		console.log(pc.bold('Check for existing release PR:'))
+		console.log(pc.cyan('  gh pr list'))
+		console.log()
+
+		process.exit(1)
+	},
+})
+
 const main = defineCommand({
 	meta: {
 		name: 'sylphx-doctor',
@@ -343,6 +373,7 @@ const main = defineCommand({
 		check: checkCommand,
 		init: initCommand,
 		upgrade: upgradeCommand,
+		prepublish: prepublishCommand,
 	},
 })
 

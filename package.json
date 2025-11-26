@@ -23,7 +23,7 @@
     "test": "bun test",
     "test:coverage": "bun test --coverage",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "[ \"$CI\" = 'true' ] || [ \"$GITHUB_ACTIONS\" = 'true' ] || (echo '❌ Direct npm publish is blocked.' && echo '→ Check for release PR: gh pr list' && echo '→ Merge the release PR to publish' && exit 1)"
+    "prepublishOnly": "bunx @sylphx/doctor prepublish"
   },
   "dependencies": {
     "citty": "^0.1.6",

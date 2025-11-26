@@ -191,25 +191,25 @@ export const releaseModule: CheckModule = defineCheckModule(
 							}
 
 							const scripts = pkgJson.scripts as Record<string, string>
-							scripts.prepublishOnly =
-								'[ "$CI" = \'true\' ] || [ "$GITHUB_ACTIONS" = \'true\' ] || (echo \'❌ Direct npm publish is blocked.\' && echo \'→ Check for release PR: gh pr list\' && echo \'→ Merge the release PR to publish\' && exit 1)'
+							scripts.prepublishOnly = 'bunx @sylphx/doctor prepublish'
 
 							await writeFile(pkgPath, JSON.stringify(pkgJson, null, 2), 'utf-8')
 						},
 					}
 				}
 
-				// Check if prepublishOnly has CI check
+				// Check if prepublishOnly uses doctor prepublish or has CI check
+				const usesDoctorPrepublish = prepublishOnly.includes('doctor prepublish')
 				const hasCICheck =
 					prepublishOnly.includes('$CI') ||
 					prepublishOnly.includes('GITHUB_ACTIONS') ||
 					prepublishOnly.includes('CI=')
 
-				if (!hasCICheck) {
+				if (!usesDoctorPrepublish && !hasCICheck) {
 					return {
 						passed: false,
-						message: 'prepublishOnly script does not check for CI environment',
-						hint: 'prepublishOnly should block publishing unless in CI',
+						message: 'prepublishOnly script does not block direct publish',
+						hint: 'Use: "prepublishOnly": "bunx @sylphx/doctor prepublish"',
 					}
 				}
 
