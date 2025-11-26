@@ -47,7 +47,7 @@ export const hasWorkflowCheck: Check = {
 	},
 }
 
-const SHARED_WORKFLOW = 'SylphxAI/.github/.github/workflows/publish-npm.yml'
+const SHARED_ACTION = 'SylphxAI/actions/publish'
 
 export const publishWorkflowCheck: Check = {
 	name: 'ci/publish-workflow',
@@ -76,17 +76,17 @@ export const publishWorkflowCheck: Check = {
 			}
 		}
 
-		// Check if it uses the shared workflow
+		// Check if it uses the shared action
 		const content = readFile(releasePath) || readFile(releaseYamlPath) || ''
-		const usesShared = content.includes(SHARED_WORKFLOW)
+		const usesShared = content.includes(SHARED_ACTION)
 
 		return {
 			name: 'ci/publish-workflow',
 			category: 'ci',
 			passed: usesShared,
 			message: usesShared
-				? 'Using shared publish workflow'
-				: `Release workflow not using shared workflow (${SHARED_WORKFLOW})`,
+				? 'Using shared publish action'
+				: `Release workflow not using shared action (${SHARED_ACTION})`,
 			severity: ctx.severity,
 			fixable: true,
 			fix: async () => {
@@ -140,10 +140,22 @@ concurrency:
   group: \${{ github.workflow }}-\${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   release:
-    uses: SylphxAI/.github/.github/workflows/publish-npm.yml@main
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: SylphxAI/actions/publish@v1
+        with:
+          npm-token: \${{ secrets.NPM_TOKEN }}
+          github-token: \${{ secrets.GITHUB_TOKEN }}
 `
 
 export const ciChecks: Check[] = [hasWorkflowCheck, publishWorkflowCheck]
