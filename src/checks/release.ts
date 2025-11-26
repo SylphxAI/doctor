@@ -200,7 +200,8 @@ export const releaseModule: CheckModule = defineCheckModule(
 				// Check if prepublishOnly uses doctor prepublish or has CI check
 				const usesDoctorPrepublish =
 					prepublishOnly.includes('doctor prepublish') ||
-					prepublishOnly.includes('cli.js prepublish') // local CLI for self-publishing
+					prepublishOnly.includes('cli.ts prepublish') || // bun src/cli.ts prepublish
+					prepublishOnly.includes('cli.js prepublish') // node dist/cli.js prepublish
 				const hasCICheck =
 					prepublishOnly.includes('$CI') ||
 					prepublishOnly.includes('GITHUB_ACTIONS') ||
