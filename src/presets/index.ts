@@ -32,7 +32,7 @@ const initPreset: PresetConfig = {
 	// Dependencies
 	'deps/outdated': 'off',
 	'deps/security': 'off',
-	'deps/banned': 'warn',
+	'deps/banned': 'error',
 
 	// Testing
 	'test/has-tests': 'off',
