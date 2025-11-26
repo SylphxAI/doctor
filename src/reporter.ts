@@ -205,7 +205,11 @@ export function formatReport(report: CheckReport, preset: PresetName): string {
 				// Show hints only for errors and warnings (not info)
 				for (const result of summary.results) {
 					if (result.hint && (result.severity === 'error' || result.severity === 'warn')) {
-						lines.push(pc.dim(`    → ${result.hint}`))
+						// Handle multi-line hints
+						const hintLines = result.hint.split('\n')
+						for (const hintLine of hintLines) {
+							lines.push(pc.dim(`    → ${hintLine}`))
+						}
 					}
 				}
 				lines.push('')
