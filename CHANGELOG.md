@@ -1,5 +1,25 @@
 # sylphx-doctor
 
+## 1.10.0 (2025-11-26)
+
+### ✨ Features
+
+- **release:** check version changes in all package.json files (monorepo support) ([de8dd70](https://github.com/SylphxAI/doctor/commit/de8dd7097a0e6516c4b68d4371fe48cc0028a269))
+- **cli:** add prepublish command for centralized publish blocking ([d2e2c0e](https://github.com/SylphxAI/doctor/commit/d2e2c0e16e3e60e96c952d3d3459aff1076ee470))
+- **release:** add prepublishOnly check and block direct npm publish ([927514c](https://github.com/SylphxAI/doctor/commit/927514ca49ffe4725c3fa082ae1fd87411e01523))
+- **release:** add checks to enforce automated release workflow ([33ce7a5](https://github.com/SylphxAI/doctor/commit/33ce7a599ae75d28360166deafca6afa042c67ce))
+
+### 🐛 Bug Fixes
+
+- **package:** use isRoot variable correctly after refactoring ([61701ab](https://github.com/SylphxAI/doctor/commit/61701ab9ce78753333ee2bda8ceb7ef3f1919a0f))
+- **hooks:** use correct package name @sylphx/doctor in lefthook ([45a127d](https://github.com/SylphxAI/doctor/commit/45a127dd7925ca532c41d2a1fcfc4343513be096))
+- **release:** improve prepublishOnly error message with actionable steps ([6320043](https://github.com/SylphxAI/doctor/commit/63200438f10b3ebd389b6120b36a8d32cded0d89))
+
+### ♻️ Refactoring
+
+- extract common utilities (isCI, isMonorepoRoot) ([e5e03dd](https://github.com/SylphxAI/doctor/commit/e5e03ddfe54b0750b7c705ce325aa14339a32686))
+- **release:** use async writeFile instead of sync ([c101e9c](https://github.com/SylphxAI/doctor/commit/c101e9c33ccb6cfd0608e57f220883c961d348f7))
+
 ## 1.9.0 (2025-11-26)
 
 ### ✨ Features
