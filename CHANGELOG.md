@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.14.5 (2025-11-26)
+
+### 🐛 Bug Fixes
+
+- **pkg:** typecheck must use turbo in monorepo root ([4bca2d6](https://github.com/SylphxAI/doctor/commit/4bca2d654632a7ccc0c8124052338e63444567a4))
+
 ## 1.14.4 (2025-11-26)
 
 ### 🐛 Bug Fixes
