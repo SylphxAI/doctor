@@ -1,4 +1,3 @@
-import type { Check } from '../types'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
@@ -259,6 +258,3 @@ export const cleanupModule: CheckModule = defineCheckModule(
 		},
 	]
 )
-
-// Export for backward compatibility
-export const cleanupChecks: Check[] = cleanupModule.checks

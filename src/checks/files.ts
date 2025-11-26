@@ -1,4 +1,3 @@
-import type { Check } from '../types'
 import type { CheckModule } from './define'
 import { createFileCheck, defineCheckModule } from './define'
 
@@ -147,6 +146,3 @@ coverage/
 		}),
 	]
 )
-
-// Export for backward compatibility
-export const fileChecks: Check[] = filesModule.checks

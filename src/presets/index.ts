@@ -1,7 +1,11 @@
-import type { PresetConfig, PresetName } from '../types'
+import type { PresetConfig, PresetName, Severity } from '../types'
 
-const initPreset: PresetConfig = {
-	// Files
+/**
+ * Base preset - all checks with their default severity
+ * Most lenient, suitable for new projects
+ */
+const basePreset: PresetConfig = {
+	// Files - essential project files
 	'files/readme': 'error',
 	'files/license': 'warn',
 	'files/gitignore': 'error',
@@ -10,11 +14,11 @@ const initPreset: PresetConfig = {
 	'files/biome-config': 'error',
 	'files/turbo-config': 'warn',
 
-	// Config
+	// Config - configuration validation
 	'config/biome-extends': 'warn',
 	'config/tsconfig-extends': 'warn',
 
-	// Package.json
+	// Package.json - metadata and scripts
 	'pkg/name': 'error',
 	'pkg/description': 'error',
 	'pkg/repository': 'off',
@@ -70,205 +74,164 @@ const initPreset: PresetConfig = {
 	'github/topics': 'off',
 
 	// Monorepo
+	'monorepo/root-private': 'off',
+	'monorepo/workspace-protocol': 'off',
+	'monorepo/consistent-versions': 'off',
+	'monorepo/turbo-tasks': 'off',
 	'monorepo/packages-readme': 'off',
 	'monorepo/packages-license': 'off',
-	'monorepo/packages-description': 'off',
-	'monorepo/packages-type-module': 'off',
-	'monorepo/packages-exports': 'off',
-	'monorepo/packages-build': 'off',
-	'monorepo/packages-test': 'off',
-	'monorepo/packages-bench': 'off',
 
-	// Release (enforce automated workflow)
+	// Release (always enforced)
 	'release/no-manual-version': 'error',
 	'release/no-release-commit': 'error',
 	'release/no-direct-publish': 'error',
 }
 
-const devPreset: PresetConfig = {
-	// Files
-	'files/readme': 'error',
+/**
+ * Create a preset by extending a base with overrides
+ */
+function extendPreset(base: PresetConfig, overrides: Partial<PresetConfig>): PresetConfig {
+	return { ...base, ...overrides } as PresetConfig
+}
+
+/**
+ * Init preset - for new projects just getting started
+ * Based on basePreset with minimal requirements
+ */
+const initPreset: PresetConfig = basePreset
+
+/**
+ * Dev preset - for active development
+ * Stricter than init, enables more checks
+ */
+const devPreset: PresetConfig = extendPreset(basePreset, {
+	// Files - stricter
 	'files/license': 'error',
-	'files/gitignore': 'error',
 	'files/changelog': 'warn',
 	'files/progress': 'error',
-	'files/biome-config': 'error',
 	'files/turbo-config': 'error',
 
-	// Config
+	// Config - require shared configs
 	'config/biome-extends': 'error',
 	'config/tsconfig-extends': 'error',
 
-	// Package.json
-	'pkg/name': 'error',
-	'pkg/description': 'error',
+	// Package.json - more complete metadata
 	'pkg/repository': 'warn',
 	'pkg/keywords': 'warn',
-	'pkg/type-module': 'error',
-	'pkg/scripts-lint': 'error',
-	'pkg/scripts-format': 'error',
 	'pkg/scripts-build': 'error',
 	'pkg/scripts-test': 'warn',
 	'pkg/scripts-typecheck': 'error',
-	'pkg/scripts-bench': 'off',
-	'pkg/scripts-coverage': 'off',
 	'pkg/exports': 'warn',
 
-	// Dependencies
+	// Dependencies - monitor health
 	'deps/outdated': 'warn',
 	'deps/security': 'warn',
-	'deps/banned': 'error',
 
-	// Testing
+	// Testing - require tests
 	'test/has-tests': 'warn',
 	'test/passes': 'error',
-	'test/coverage-threshold': 'off',
-	'bench/has-files': 'off',
-
-	// Formatting
-	'format/biome-check': 'error',
-	'format/biome-format': 'error',
 
 	// Build
 	'build/exports-valid': 'warn',
 
-	// Runtime
-	'runtime/bun-lock': 'error',
-	'runtime/no-npm-lock': 'error',
-	'runtime/no-yarn-lock': 'error',
-
-	// Docs
-	'docs/vitepress': 'off',
-	'docs/vercel-config': 'off',
-
-	// CI/CD
+	// CI/CD - require automation
 	'ci/has-workflow': 'error',
 	'ci/publish-workflow': 'warn',
 
-	// Hooks
-	'hooks/pre-commit': 'error',
-	'hooks/lefthook-config': 'error',
-
-	// GitHub
+	// GitHub - better discoverability
 	'github/description': 'error',
 	'github/website': 'warn',
 	'github/topics': 'warn',
 
-	// Monorepo
+	// Monorepo - proper structure
 	'monorepo/root-private': 'error',
 	'monorepo/workspace-protocol': 'warn',
 	'monorepo/consistent-versions': 'warn',
 	'monorepo/turbo-tasks': 'error',
 	'monorepo/packages-readme': 'warn',
 	'monorepo/packages-license': 'warn',
+})
 
-	// Release (enforce automated workflow)
-	'release/no-manual-version': 'error',
-	'release/no-release-commit': 'error',
-	'release/no-direct-publish': 'error',
-}
-
-const stablePreset: PresetConfig = {
-	// Files
-	'files/readme': 'error',
-	'files/license': 'error',
-	'files/gitignore': 'error',
+/**
+ * Stable preset - for production-ready projects
+ * Strictest level, all best practices enforced
+ */
+const stablePreset: PresetConfig = extendPreset(devPreset, {
+	// Files - all required
 	'files/changelog': 'error',
-	'files/progress': 'error',
-	'files/biome-config': 'error',
-	'files/turbo-config': 'error',
 
-	// Config
-	'config/biome-extends': 'error',
-	'config/tsconfig-extends': 'error',
-
-	// Package.json
-	'pkg/name': 'error',
-	'pkg/description': 'error',
+	// Package.json - complete metadata
 	'pkg/repository': 'error',
 	'pkg/keywords': 'error',
-	'pkg/type-module': 'error',
-	'pkg/scripts-lint': 'error',
-	'pkg/scripts-format': 'error',
-	'pkg/scripts-build': 'error',
 	'pkg/scripts-test': 'error',
-	'pkg/scripts-typecheck': 'error',
 	'pkg/scripts-bench': 'warn',
 	'pkg/scripts-coverage': 'error',
 	'pkg/exports': 'error',
 
-	// Dependencies
+	// Dependencies - strict
 	'deps/outdated': 'error',
 	'deps/security': 'error',
-	'deps/banned': 'error',
 
-	// Testing
+	// Testing - comprehensive
 	'test/has-tests': 'error',
-	'test/passes': 'error',
 	'test/coverage-threshold': 'error',
 	'bench/has-files': 'warn',
-
-	// Formatting
-	'format/biome-check': 'error',
-	'format/biome-format': 'error',
 
 	// Build
 	'build/exports-valid': 'error',
 
-	// Runtime
-	'runtime/bun-lock': 'error',
-	'runtime/no-npm-lock': 'error',
-	'runtime/no-yarn-lock': 'error',
-
-	// Docs
+	// Docs - require documentation
 	'docs/vitepress': 'warn',
 	'docs/vercel-config': 'warn',
 
 	// CI/CD
-	'ci/has-workflow': 'error',
 	'ci/publish-workflow': 'error',
 
-	// Hooks
-	'hooks/pre-commit': 'error',
-	'hooks/lefthook-config': 'error',
-
-	// GitHub
-	'github/description': 'error',
+	// GitHub - complete presence
 	'github/website': 'error',
 	'github/topics': 'error',
 
-	// Monorepo
-	'monorepo/root-private': 'error',
+	// Monorepo - strict consistency
 	'monorepo/workspace-protocol': 'error',
 	'monorepo/consistent-versions': 'error',
-	'monorepo/turbo-tasks': 'error',
 	'monorepo/packages-readme': 'error',
 	'monorepo/packages-license': 'error',
+})
 
-	// Release (enforce automated workflow)
-	'release/no-manual-version': 'error',
-	'release/no-release-commit': 'error',
-	'release/no-direct-publish': 'error',
-}
-
+/**
+ * All presets
+ */
 export const presets: Record<PresetName, PresetConfig> = {
 	init: initPreset,
 	dev: devPreset,
 	stable: stablePreset,
 }
 
+/**
+ * Get a preset by name
+ */
 export function getPreset(name: PresetName): PresetConfig {
 	return presets[name]
 }
 
+/**
+ * Get severity for a check, with optional overrides
+ */
 export function getSeverity(
 	checkName: string,
 	preset: PresetName,
 	overrides?: Partial<Record<string, Severity>>
 ): Severity {
 	const presetConfig = getPreset(preset)
-	const severity = overrides?.[checkName] ?? presetConfig[checkName] ?? 'off'
-	return severity as Severity
+	return (overrides?.[checkName] ?? presetConfig[checkName] ?? 'off') as Severity
 }
 
-type Severity = import('../types').Severity
+/**
+ * Get the next preset level (for upgrade suggestions)
+ */
+export function getNextPreset(current: PresetName): PresetName | null {
+	const levels: PresetName[] = ['init', 'dev', 'stable']
+	const index = levels.indexOf(current)
+	if (index >= levels.length - 1) return null
+	return levels[index + 1] as PresetName
+}

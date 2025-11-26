@@ -1,14 +1,10 @@
-import type { Check, PackageJson } from '../types'
+import type { PackageJson } from '../types'
 import { isMonorepoRoot } from '../utils/context'
+import { type PackageIssue, formatPackageIssues } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
-interface ExportsIssue {
-	location: string
-	issue: string
-}
-
-function checkExports(pkg: PackageJson, location: string): ExportsIssue | null {
+function checkExports(pkg: PackageJson, location: string): PackageIssue | null {
 	const exports = pkg?.exports
 
 	if (!exports) {
@@ -53,7 +49,7 @@ export const buildModule: CheckModule = defineCheckModule(
 				// Skip for monorepo root - exports are per-package
 				if (isMonorepoRoot(ctx)) {
 					// Check all workspace packages instead
-					const issues: ExportsIssue[] = []
+					const issues: PackageIssue[] = []
 
 					for (const pkg of ctx.workspacePackages) {
 						// Skip private packages
@@ -72,17 +68,10 @@ export const buildModule: CheckModule = defineCheckModule(
 						}
 					}
 
-					// Format hint - one package per line
-					const maxShow = 5
-					const lines = issues.slice(0, maxShow).map((i) => `${i.location}: ${i.issue}`)
-					if (issues.length > maxShow) {
-						lines.push(`(+${issues.length - maxShow} more)`)
-					}
-
 					return {
 						passed: false,
 						message: `${issues.length} package(s) with invalid exports`,
-						hint: lines.join('\n'),
+						hint: formatPackageIssues(issues),
 					}
 				}
 
@@ -109,6 +98,3 @@ export const buildModule: CheckModule = defineCheckModule(
 		},
 	]
 )
-
-// Export for backward compatibility
-export const buildChecks: Check[] = buildModule.checks

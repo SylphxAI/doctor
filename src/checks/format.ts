@@ -1,4 +1,3 @@
-import type { Check } from '../types'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
@@ -52,6 +51,3 @@ export const formatModule: CheckModule = defineCheckModule(
 		},
 	]
 )
-
-// Export for backward compatibility
-export const formatChecks: Check[] = formatModule.checks

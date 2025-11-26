@@ -1,4 +1,3 @@
-import type { Check } from '../types'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
@@ -102,6 +101,3 @@ export const runtimeModule: CheckModule = defineCheckModule(
 		},
 	]
 )
-
-// Export for backward compatibility
-export const runtimeChecks: Check[] = runtimeModule.checks

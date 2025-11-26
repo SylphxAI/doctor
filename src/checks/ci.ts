@@ -1,4 +1,3 @@
-import type { Check } from '../types'
 import type { CheckModule } from './define'
 import { createFileCheck, defineCheckModule } from './define'
 
@@ -128,6 +127,3 @@ export const ciModule: CheckModule = defineCheckModule(
 		},
 	]
 )
-
-// Export for backward compatibility
-export const ciChecks: Check[] = ciModule.checks

@@ -91,26 +91,6 @@ export {
 	releaseModule,
 }
 
-// Re-export legacy check arrays for backward compatibility
-export { buildChecks } from './build'
-export { ciChecks } from './ci'
-export { cleanupChecks } from './cleanup'
-export { configChecks } from './config'
-export { depsChecks } from './deps'
-export { docsChecks } from './docs'
-export { formatChecks } from './format'
-export { githubChecks } from './github'
-export { hooksChecks } from './hooks'
-export { monorepoChecks } from './monorepo'
-export { packageChecks } from './package'
-export { releaseChecks } from './release'
-export { runtimeChecks } from './runtime'
-export { testChecks } from './test'
-
-// Backward compatibility aliases
-export const fileChecks: Check[] = filesModule.checks
-// Note: fileChecks is different from filesModule.checks name for backward compat
-
 // Re-export define helpers for external use
 export {
 	defineCheck,

@@ -29,3 +29,13 @@ export {
 
 // Exec utilities
 export { exec, type ExecResult } from './exec'
+
+// Format utilities
+export {
+	formatPackageIssues,
+	formatGroupedIssues,
+	formatList,
+	pluralize,
+	formatCount,
+	type PackageIssue,
+} from './format'

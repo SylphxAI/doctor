@@ -1,4 +1,3 @@
-import type { Check } from '../types'
 import type { CheckModule, CheckReturnValue } from './define'
 import { defineCheckModule } from './define'
 
@@ -236,6 +235,3 @@ export const monorepoModule: CheckModule = defineCheckModule(
 		},
 	]
 )
-
-// Export for backward compatibility
-export const monorepoChecks: Check[] = monorepoModule.checks

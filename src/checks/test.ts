@@ -1,20 +1,7 @@
-import type { Check } from '../types'
 import { getAllPackages, isMonorepoRoot } from '../utils/context'
+import { type PackageIssue, formatPackageIssues } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
-
-interface PackageIssue {
-	location: string
-	issue: string
-}
-
-/** Format issues list for display - one package per line */
-function formatIssues(issues: PackageIssue[], maxShow = 5): string {
-	const lines = issues.slice(0, maxShow).map((i) => `${i.location}: ${i.issue}`)
-	const moreCount = issues.length > maxShow ? `(+${issues.length - maxShow} more)` : ''
-	if (moreCount) lines.push(moreCount)
-	return lines.join('\n')
-}
 
 export const testModule: CheckModule = defineCheckModule(
 	{
@@ -55,7 +42,7 @@ export const testModule: CheckModule = defineCheckModule(
 					return {
 						passed: false,
 						message: `${issues.length} package(s) have no tests (${totalTests} tests in others)`,
-						hint: formatIssues(issues),
+						hint: formatPackageIssues(issues),
 					}
 				}
 
@@ -196,7 +183,7 @@ export const testModule: CheckModule = defineCheckModule(
 					return {
 						passed: false,
 						message: `${issues.length} package(s) missing benchmark files`,
-						hint: formatIssues(issues),
+						hint: formatPackageIssues(issues),
 					}
 				}
 
@@ -225,6 +212,3 @@ export const testModule: CheckModule = defineCheckModule(
 		},
 	]
 )
-
-// Export for backward compatibility
-export const testChecks: Check[] = testModule.checks

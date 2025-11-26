@@ -1,4 +1,4 @@
-import type { Check } from '../types'
+import { formatGroupedIssues } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
@@ -259,21 +259,16 @@ export const depsModule: CheckModule = defineCheckModule(
 					byLocation.set(f.location, entry)
 				}
 
-				// Build hint showing which packages have which banned deps - one per line
-				const lines: string[] = []
+				// Build hint showing which packages have which banned deps
+				const groupedIssues: Record<string, string[]> = {}
 				for (const [location, { names }] of byLocation) {
-					lines.push(`${location}: ${names.join(', ')}`)
-				}
-				const maxShow = 5
-				const displayLines = lines.slice(0, maxShow)
-				if (lines.length > maxShow) {
-					displayLines.push(`(+${lines.length - maxShow} more)`)
+					groupedIssues[location] = names
 				}
 
 				return {
 					passed: false,
 					message: `Found ${found.length} banned package(s) in ${byLocation.size} package(s)`,
-					hint: displayLines.join('\n'),
+					hint: formatGroupedIssues(groupedIssues),
 					fix: async () => {
 						const { exec } = await import('../utils/exec')
 						for (const [, { names, path }] of byLocation) {
@@ -285,6 +280,3 @@ export const depsModule: CheckModule = defineCheckModule(
 		},
 	]
 )
-
-// Export for backward compatibility
-export const depsChecks: Check[] = depsModule.checks

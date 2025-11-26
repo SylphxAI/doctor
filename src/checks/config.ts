@@ -1,4 +1,3 @@
-import type { Check } from '../types'
 import type { CheckModule } from './define'
 import { createJsonConfigCheck, defineCheckModule } from './define'
 
@@ -49,6 +48,3 @@ export const configModule: CheckModule = defineCheckModule(
 		// Note: turbo-pipeline check removed - use monorepo/turbo-tasks instead
 	]
 )
-
-// Export for backward compatibility
-export const configChecks: Check[] = configModule.checks

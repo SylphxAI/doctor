@@ -1,4 +1,3 @@
-import type { Check } from '../types'
 import { isCI } from '../utils/env'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
@@ -223,6 +222,3 @@ export const releaseModule: CheckModule = defineCheckModule(
 		},
 	]
 )
-
-// Export for backward compatibility
-export const releaseChecks: Check[] = releaseModule.checks

@@ -1,20 +1,8 @@
-import type { Check, CheckContext, WorkspacePackage } from '../types'
+import type { CheckContext, WorkspacePackage } from '../types'
 import { isMonorepoRoot } from '../utils/context'
+import { type PackageIssue, formatPackageIssues } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
-
-interface PackageIssue {
-	location: string
-	issue: string
-}
-
-/** Format issues list for display - one package per line */
-function formatIssues(issues: PackageIssue[], maxShow = 5): string {
-	const lines = issues.slice(0, maxShow).map((i) => `${i.location}: ${i.issue}`)
-	const moreCount = issues.length > maxShow ? `(+${issues.length - maxShow} more)` : ''
-	if (moreCount) lines.push(moreCount)
-	return lines.join('\n')
-}
 
 /** Get public packages only (non-private) */
 function getPublicPackages(ctx: CheckContext): WorkspacePackage[] {
@@ -111,7 +99,7 @@ export const packageModule: CheckModule = defineCheckModule(
 					return {
 						passed: false,
 						message: `${issues.length} package(s) missing keywords`,
-						hint: formatIssues(issues),
+						hint: formatPackageIssues(issues),
 					}
 				}
 
@@ -162,7 +150,7 @@ export const packageModule: CheckModule = defineCheckModule(
 					return {
 						passed: false,
 						message: `${issues.length} package(s) missing "type": "module"`,
-						hint: formatIssues(issues),
+						hint: formatPackageIssues(issues),
 						fix: async () => {
 							for (const pkg of allPackages) {
 								if (pkg.packageJson.type !== 'module') {
@@ -230,7 +218,7 @@ export const packageModule: CheckModule = defineCheckModule(
 					return {
 						passed: false,
 						message: `${issues.length} package(s) missing exports`,
-						hint: formatIssues(issues),
+						hint: formatPackageIssues(issues),
 					}
 				}
 
@@ -541,7 +529,7 @@ export const packageModule: CheckModule = defineCheckModule(
 					return {
 						passed: false,
 						message: `${issues.length} package(s) with invalid test:coverage script`,
-						hint: formatIssues(issues),
+						hint: formatPackageIssues(issues),
 						fix: async () => {
 							for (const pkg of packagesToFix) {
 								const pkgPath = join(pkg.path, 'package.json')
@@ -587,6 +575,3 @@ export const packageModule: CheckModule = defineCheckModule(
 		},
 	]
 )
-
-// Export for backward compatibility
-export const packageChecks: Check[] = packageModule.checks

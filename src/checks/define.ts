@@ -1,4 +1,5 @@
 import type { Check, CheckContext, CheckResult, Severity } from '../types'
+import type { PackageIssue } from '../utils/format'
 
 /**
  * Check module definition
@@ -284,6 +285,125 @@ export function createCommandCheck(
 					message: `${command} not found or failed`,
 					hint,
 				}
+			}
+		},
+	}
+}
+
+/**
+ * Monorepo-aware check helper
+ * Automatically checks all packages when in monorepo root
+ */
+export interface MonorepoCheckOptions<T> {
+	name: string
+	description: string
+	fixable?: boolean
+	/** Check a single package, return issue or null if passed */
+	checkPackage: (
+		pkg: import('../types').WorkspacePackage,
+		ctx: CheckContext
+	) => Promise<T | null> | T | null
+	/** Format the issue for display */
+	formatIssue: (issue: T, pkg: import('../types').WorkspacePackage) => string
+	/** Optional: filter which packages to check (default: all) */
+	filterPackages?: (
+		packages: import('../types').WorkspacePackage[],
+		ctx: CheckContext
+	) => import('../types').WorkspacePackage[]
+	/** Optional: fix function for a single package */
+	fixPackage?: (
+		pkg: import('../types').WorkspacePackage,
+		issue: T,
+		ctx: CheckContext
+	) => Promise<void>
+	/** Success message when all packages pass */
+	successMessage?: (count: number) => string
+	/** Failure message */
+	failureMessage?: (issueCount: number, totalCount: number) => string
+}
+
+export function createMonorepoCheck<T>(
+	options: MonorepoCheckOptions<T>
+): Omit<DefineCheckOptions, 'category'> {
+	const {
+		name,
+		description,
+		fixable = false,
+		checkPackage,
+		formatIssue,
+		filterPackages,
+		fixPackage,
+		successMessage = (count) => `All ${count} package(s) passed`,
+		failureMessage = (issues, total) => `${issues}/${total} package(s) have issues`,
+	} = options
+
+	return {
+		name,
+		description,
+		fixable: fixable && !!fixPackage,
+		async check(ctx) {
+			const { getAllPackages, isMonorepoRoot } = await import('../utils/context')
+			const { formatPackageIssues } = await import('../utils/format')
+
+			// Get packages to check
+			const allPackages = isMonorepoRoot(ctx) ? getAllPackages(ctx) : []
+
+			// For single package, just check root
+			if (allPackages.length === 0 && ctx.packageJson) {
+				const rootPkg: import('../types').WorkspacePackage = {
+					name: ctx.packageJson.name ?? 'root',
+					path: ctx.cwd,
+					relativePath: 'root',
+					packageJson: ctx.packageJson,
+				}
+				const issue = await checkPackage(rootPkg, ctx)
+				if (!issue) {
+					return { passed: true, message: 'Check passed' }
+				}
+				return {
+					passed: false,
+					message: formatIssue(issue, rootPkg),
+					fix: fixPackage ? async () => fixPackage(rootPkg, issue, ctx) : undefined,
+				}
+			}
+
+			// Filter packages if needed
+			const packages = filterPackages ? filterPackages(allPackages, ctx) : allPackages
+
+			if (packages.length === 0) {
+				return { passed: true, message: 'No packages to check', skipped: true }
+			}
+
+			// Check all packages
+			const issues: Array<{ pkg: import('../types').WorkspacePackage; issue: T }> = []
+			for (const pkg of packages) {
+				const issue = await checkPackage(pkg, ctx)
+				if (issue) {
+					issues.push({ pkg, issue })
+				}
+			}
+
+			if (issues.length === 0) {
+				return { passed: true, message: successMessage(packages.length) }
+			}
+
+			// Format issues
+			const packageIssues: PackageIssue[] = issues.map(({ pkg, issue }) => ({
+				location: pkg.relativePath,
+				issue: formatIssue(issue, pkg),
+			}))
+
+			return {
+				passed: false,
+				message: failureMessage(issues.length, packages.length),
+				hint: formatPackageIssues(packageIssues),
+				fix: fixPackage
+					? async () => {
+							for (const { pkg, issue } of issues) {
+								await fixPackage(pkg, issue, ctx)
+							}
+						}
+					: undefined,
 			}
 		},
 	}
