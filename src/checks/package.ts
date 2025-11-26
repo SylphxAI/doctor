@@ -320,8 +320,10 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { readPackageJson } = await import('../utils/fs')
 
 				const script = ctx.packageJson?.scripts?.build
-				// Monorepo root: always use turbo (company standard)
-				// Packages: bunup, tsc, bun build
+				// Monorepo root: use turbo for orchestration + caching
+				// - Build is slow, caching provides real benefit
+				// - Each package has its own build config
+				// Packages: bunup (or tsc, bun build)
 				const isRoot = isMonorepoRoot(ctx)
 				const defaultScript = isRoot ? 'turbo build' : 'bunup'
 
@@ -364,8 +366,11 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { readPackageJson } = await import('../utils/fs')
 
 				const script = ctx.packageJson?.scripts?.test
-				// Monorepo root: always use turbo (company standard)
-				// Packages: bun test
+				// Monorepo root: MUST use turbo (not just for caching)
+				// - Each package needs its own tsconfig context (e.g., JSX settings)
+				// - `bun test` from root ignores per-package tsconfig
+				// - `turbo test` runs `bun test` in each package directory
+				// Packages: bun test directly
 				const isRoot = isMonorepoRoot(ctx)
 				const defaultScript = isRoot ? 'turbo test' : 'bun test'
 
