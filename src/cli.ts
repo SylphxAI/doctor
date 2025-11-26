@@ -89,11 +89,15 @@ const initCommand = defineCommand({
 	async run({ args }) {
 		const cwd = process.cwd()
 		const preset = args.preset as PresetName
+		const { existsSync, writeFileSync, readFileSync } = await import('node:fs')
+		const { join } = await import('node:path')
 
 		consola.start('Initializing sylphx-doctor...')
 
 		// Create config file
-		const configContent = `import { defineConfig } from 'sylphx-doctor'
+		const configPath = join(cwd, 'sylphx-doctor.config.ts')
+		if (!existsSync(configPath)) {
+			const configContent = `import { defineConfig } from 'sylphx-doctor'
 
 export default defineConfig({
   preset: '${preset}',
@@ -109,11 +113,53 @@ export default defineConfig({
   // },
 })
 `
-		const { writeFileSync } = await import('node:fs')
-		const { join } = await import('node:path')
+			writeFileSync(configPath, configContent, 'utf-8')
+			consola.success('Created sylphx-doctor.config.ts')
+		} else {
+			consola.info('sylphx-doctor.config.ts already exists')
+		}
 
-		writeFileSync(join(cwd, 'sylphx-doctor.config.ts'), configContent, 'utf-8')
-		consola.success('Created sylphx-doctor.config.ts')
+		// Setup lefthook for pre-commit
+		const lefthookPath = join(cwd, 'lefthook.yml')
+		const lefthookContent = `pre-commit:
+  parallel: true
+  commands:
+    doctor:
+      run: bunx sylphx-doctor check --pre-commit
+    lint:
+      glob: "*.{ts,tsx,js,jsx}"
+      run: bun run lint
+    format:
+      glob: "*.{ts,tsx,js,jsx}"
+      run: bun run format
+`
+		if (!existsSync(lefthookPath)) {
+			writeFileSync(lefthookPath, lefthookContent, 'utf-8')
+			consola.success('Created lefthook.yml with sylphx-doctor pre-commit hook')
+		} else {
+			// Check if sylphx-doctor is already in lefthook
+			const existing = readFileSync(lefthookPath, 'utf-8')
+			if (!existing.includes('sylphx-doctor')) {
+				consola.warn('lefthook.yml exists but does not include sylphx-doctor')
+				consola.info('Add this to your lefthook.yml pre-commit commands:')
+				console.log(
+					pc.dim(`    doctor:
+      run: bunx sylphx-doctor check --pre-commit`)
+				)
+			} else {
+				consola.info('lefthook.yml already configured with sylphx-doctor')
+			}
+		}
+
+		// Check if lefthook is installed
+		const pkgPath = join(cwd, 'package.json')
+		if (existsSync(pkgPath)) {
+			const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
+			const hasLefthook = pkg.devDependencies?.lefthook || pkg.dependencies?.lefthook
+			if (!hasLefthook) {
+				consola.info(`Install lefthook: ${pc.cyan('bun add -D lefthook')}`)
+			}
+		}
 
 		// Run fix if requested
 		if (args.fix) {
