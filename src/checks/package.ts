@@ -150,158 +150,264 @@ export const packageModule: CheckModule = defineCheckModule(
 
 		{
 			name: 'pkg/scripts-lint',
-			description: 'Check if "lint" script exists',
+			description: 'Check if "lint" script uses biome or turbo',
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
 				const { writeFileSync } = await import('node:fs')
 				const { readPackageJson } = await import('../utils/fs')
 
-				const hasScript = ctx.packageJson?.scripts?.lint
+				const script = ctx.packageJson?.scripts?.lint
+				// For monorepo root: turbo lint is valid
+				// For packages: biome check is expected
+				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
+				const validLint = isMonorepoRoot
+					? script?.includes('turbo') || script?.includes('biome')
+					: script?.includes('biome')
+
+				if (!script) {
+					const defaultScript = isMonorepoRoot ? 'turbo lint' : 'biome check .'
+					return {
+						passed: false,
+						message: 'Missing "lint" script in package.json',
+						hint: `Add "lint": "${defaultScript}" to package.json scripts`,
+						fix: async () => {
+							const pkgPath = join(ctx.cwd, 'package.json')
+							const currentPkg = readPackageJson(ctx.cwd) ?? {}
+							currentPkg.scripts = currentPkg.scripts ?? {}
+							currentPkg.scripts.lint = defaultScript
+							writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+						},
+					}
+				}
+
 				return {
-					passed: !!hasScript,
-					message: hasScript ? 'Has "lint" script' : 'Missing "lint" script in package.json',
-					hint: hasScript ? undefined : 'Add to package.json scripts: "lint": "biome check ."',
-					fix: async () => {
-						const pkgPath = join(ctx.cwd, 'package.json')
-						const currentPkg = readPackageJson(ctx.cwd) ?? {}
-						currentPkg.scripts = currentPkg.scripts ?? {}
-						currentPkg.scripts.lint = 'biome check .'
-						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
-					},
+					passed: validLint,
+					message: validLint
+						? `lint script: "${script}"`
+						: `lint script uses "${script}" (expected biome${isMonorepoRoot ? ' or turbo' : ''})`,
+					hint: validLint
+						? undefined
+						: isMonorepoRoot
+							? 'Use "turbo lint" or "biome check ."'
+							: 'Use "biome check ."',
 				}
 			},
 		},
 
 		{
 			name: 'pkg/scripts-format',
-			description: 'Check if "format" script exists',
+			description: 'Check if "format" script uses biome',
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
 				const { writeFileSync } = await import('node:fs')
 				const { readPackageJson } = await import('../utils/fs')
 
-				const hasScript = ctx.packageJson?.scripts?.format
+				const script = ctx.packageJson?.scripts?.format
+				const usesBiome = script?.includes('biome')
+
+				if (!script) {
+					return {
+						passed: false,
+						message: 'Missing "format" script in package.json',
+						hint: 'Add "format": "biome format --write ." to package.json scripts',
+						fix: async () => {
+							const pkgPath = join(ctx.cwd, 'package.json')
+							const currentPkg = readPackageJson(ctx.cwd) ?? {}
+							currentPkg.scripts = currentPkg.scripts ?? {}
+							currentPkg.scripts.format = 'biome format --write .'
+							writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+						},
+					}
+				}
+
 				return {
-					passed: !!hasScript,
-					message: hasScript ? 'Has "format" script' : 'Missing "format" script in package.json',
-					hint: hasScript
-						? undefined
-						: 'Add to package.json scripts: "format": "biome format --write ."',
-					fix: async () => {
-						const pkgPath = join(ctx.cwd, 'package.json')
-						const currentPkg = readPackageJson(ctx.cwd) ?? {}
-						currentPkg.scripts = currentPkg.scripts ?? {}
-						currentPkg.scripts.format = 'biome format --write .'
-						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
-					},
+					passed: usesBiome,
+					message: usesBiome
+						? `format script: "${script}"`
+						: `format script uses "${script}" (expected biome)`,
+					hint: usesBiome ? undefined : 'Use "biome format --write ."',
 				}
 			},
 		},
 
 		{
 			name: 'pkg/scripts-build',
-			description: 'Check if "build" script exists',
+			description: 'Check if "build" script uses bunup or turbo',
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
 				const { writeFileSync } = await import('node:fs')
 				const { readPackageJson } = await import('../utils/fs')
 
-				const hasScript = ctx.packageJson?.scripts?.build
+				const script = ctx.packageJson?.scripts?.build
+				// For monorepo root: turbo build is valid
+				// For packages: bunup, tsc, etc.
+				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
+				const validBuild = isMonorepoRoot
+					? script?.includes('turbo') || script?.includes('bunup')
+					: script?.includes('bunup') || script?.includes('tsc') || script?.includes('bun build')
+
+				if (!script) {
+					const defaultScript = isMonorepoRoot ? 'turbo build' : 'bunup'
+					return {
+						passed: false,
+						message: 'Missing "build" script in package.json',
+						hint: `Add "build": "${defaultScript}" to package.json scripts`,
+						fix: async () => {
+							const pkgPath = join(ctx.cwd, 'package.json')
+							const currentPkg = readPackageJson(ctx.cwd) ?? {}
+							currentPkg.scripts = currentPkg.scripts ?? {}
+							currentPkg.scripts.build = defaultScript
+							writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+						},
+					}
+				}
+
 				return {
-					passed: !!hasScript,
-					message: hasScript ? 'Has "build" script' : 'Missing "build" script in package.json',
-					hint: hasScript ? undefined : 'Add to package.json scripts: "build": "bunup"',
-					fix: async () => {
-						const pkgPath = join(ctx.cwd, 'package.json')
-						const currentPkg = readPackageJson(ctx.cwd) ?? {}
-						currentPkg.scripts = currentPkg.scripts ?? {}
-						currentPkg.scripts.build = 'bunup'
-						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
-					},
+					passed: validBuild,
+					message: validBuild ? `build script: "${script}"` : `build script uses "${script}"`,
+					hint: validBuild
+						? undefined
+						: isMonorepoRoot
+							? 'Use "turbo build" or "bunup"'
+							: 'Use "bunup" or "bun build"',
 				}
 			},
 		},
 
 		{
 			name: 'pkg/scripts-test',
-			description: 'Check if "test" script exists',
+			description: 'Check if "test" script uses bun test or turbo',
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
 				const { writeFileSync } = await import('node:fs')
 				const { readPackageJson } = await import('../utils/fs')
 
-				const hasScript = ctx.packageJson?.scripts?.test
+				const script = ctx.packageJson?.scripts?.test
+				// For monorepo root: turbo test is valid
+				// For packages: bun test is expected
+				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
+				const validTest = isMonorepoRoot
+					? script?.includes('turbo') || script?.startsWith('bun test')
+					: script?.startsWith('bun test')
+
+				if (!script) {
+					const defaultScript = isMonorepoRoot ? 'turbo test' : 'bun test'
+					return {
+						passed: false,
+						message: 'Missing "test" script in package.json',
+						hint: `Add "test": "${defaultScript}" to package.json scripts`,
+						fix: async () => {
+							const pkgPath = join(ctx.cwd, 'package.json')
+							const currentPkg = readPackageJson(ctx.cwd) ?? {}
+							currentPkg.scripts = currentPkg.scripts ?? {}
+							currentPkg.scripts.test = defaultScript
+							writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+						},
+					}
+				}
+
 				return {
-					passed: !!hasScript,
-					message: hasScript ? 'Has "test" script' : 'Missing "test" script in package.json',
-					// Use "bun run test" instead of "bun test" so per-package bunfig.toml configs are respected
-					hint: hasScript ? undefined : 'Add to package.json scripts: "test": "bun run test"',
-					fix: async () => {
-						const pkgPath = join(ctx.cwd, 'package.json')
-						const currentPkg = readPackageJson(ctx.cwd) ?? {}
-						currentPkg.scripts = currentPkg.scripts ?? {}
-						currentPkg.scripts.test = 'bun run test'
-						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
-					},
+					passed: validTest,
+					message: validTest
+						? `test script: "${script}"`
+						: `test script uses "${script}" (expected bun test${isMonorepoRoot ? ' or turbo' : ''})`,
+					hint: validTest
+						? undefined
+						: isMonorepoRoot
+							? 'Use "turbo test" or "bun test"'
+							: 'Use "bun test"',
 				}
 			},
 		},
 
 		{
 			name: 'pkg/scripts-bench',
-			description: 'Check if "bench" script exists',
+			description: 'Check if "bench" script uses bun bench',
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
 				const { writeFileSync } = await import('node:fs')
 				const { readPackageJson } = await import('../utils/fs')
 
-				const hasScript = ctx.packageJson?.scripts?.bench
+				const script = ctx.packageJson?.scripts?.bench
+				const usesBunBench = script?.startsWith('bun bench')
+
+				if (!script) {
+					return {
+						passed: false,
+						message: 'Missing "bench" script in package.json',
+						hint: 'Add "bench": "bun bench" to package.json scripts',
+						fix: async () => {
+							const pkgPath = join(ctx.cwd, 'package.json')
+							const currentPkg = readPackageJson(ctx.cwd) ?? {}
+							currentPkg.scripts = currentPkg.scripts ?? {}
+							currentPkg.scripts.bench = 'bun bench'
+							writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+						},
+					}
+				}
+
 				return {
-					passed: !!hasScript,
-					message: hasScript ? 'Has "bench" script' : 'Missing "bench" script in package.json',
-					hint: hasScript ? undefined : 'Add to package.json scripts: "bench": "bun bench"',
-					fix: async () => {
-						const pkgPath = join(ctx.cwd, 'package.json')
-						const currentPkg = readPackageJson(ctx.cwd) ?? {}
-						currentPkg.scripts = currentPkg.scripts ?? {}
-						currentPkg.scripts.bench = 'bun bench'
-						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
-					},
+					passed: usesBunBench,
+					message: usesBunBench
+						? `bench script: "${script}"`
+						: `bench script uses "${script}" (expected "bun bench")`,
+					hint: usesBunBench ? undefined : 'Use "bun bench"',
 				}
 			},
 		},
 
 		{
 			name: 'pkg/scripts-coverage',
-			description: 'Check if "test:coverage" script exists',
+			description: 'Check if "test:coverage" script uses bun test --coverage',
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
 				const { writeFileSync } = await import('node:fs')
 				const { readPackageJson } = await import('../utils/fs')
 
-				const hasScript = ctx.packageJson?.scripts?.['test:coverage']
+				const script = ctx.packageJson?.scripts?.['test:coverage']
+				// Must use "bun test --coverage" directly, NOT "bun run test --coverage"
+				const usesBunTestCoverage = script?.includes('bun test') && script?.includes('--coverage')
+
+				// For monorepo root, test:coverage is less common (turbo doesn't aggregate coverage well)
+				// Skip this check for monorepo root
+				const isMonorepoRoot = ctx.isMonorepo && ctx.workspacePackages.length > 0
+				if (isMonorepoRoot) {
+					return {
+						passed: true,
+						message: 'Skipped for monorepo root (coverage is per-package)',
+						skipped: true,
+					}
+				}
+
+				if (!script) {
+					return {
+						passed: false,
+						message: 'Missing "test:coverage" script in package.json',
+						hint: 'Add "test:coverage": "bun test --coverage" to package.json scripts',
+						fix: async () => {
+							const pkgPath = join(ctx.cwd, 'package.json')
+							const currentPkg = readPackageJson(ctx.cwd) ?? {}
+							currentPkg.scripts = currentPkg.scripts ?? {}
+							currentPkg.scripts['test:coverage'] = 'bun test --coverage'
+							writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+						},
+					}
+				}
+
 				return {
-					passed: !!hasScript,
-					message: hasScript
-						? 'Has "test:coverage" script'
-						: 'Missing "test:coverage" script in package.json',
-					// Use "bun run test" instead of "bun test" so per-package bunfig.toml configs are respected
-					hint: hasScript
+					passed: usesBunTestCoverage,
+					message: usesBunTestCoverage
+						? `test:coverage script: "${script}"`
+						: `test:coverage script uses "${script}" (expected "bun test --coverage")`,
+					hint: usesBunTestCoverage
 						? undefined
-						: 'Add to package.json scripts: "test:coverage": "bun run test --coverage"',
-					fix: async () => {
-						const pkgPath = join(ctx.cwd, 'package.json')
-						const currentPkg = readPackageJson(ctx.cwd) ?? {}
-						currentPkg.scripts = currentPkg.scripts ?? {}
-						currentPkg.scripts['test:coverage'] = 'bun run test --coverage'
-						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
-					},
+						: 'Use "bun test --coverage" (not "bun run test --coverage")',
 				}
 			},
 		},
