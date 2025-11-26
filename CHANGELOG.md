@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.9.0 (2025-11-26)
+
+### ✨ Features
+
+- **reporter:** show version number in report header ([ad9d8d7](https://github.com/SylphxAI/doctor/commit/ad9d8d78472817e9fa9c028b3ccd4a8c92b0c5ba))
+
 ## 1.8.0 (2025-11-26)
 
 ### ✨ Features
