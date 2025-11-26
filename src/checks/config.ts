@@ -94,9 +94,21 @@ export const tsconfigExtendsCheck: Check = {
 export const turboPipelineCheck: Check = {
 	name: 'config/turbo-pipeline',
 	category: 'config',
-	description: 'Check if turbo.json has standard pipeline',
+	description: 'Check if turbo.json has standard pipeline (monorepo only)',
 	fixable: true,
 	async run(ctx: CheckContext): Promise<CheckResult> {
+		// Skip for single-package repos
+		if (!ctx.isMonorepo) {
+			return {
+				name: 'config/turbo-pipeline',
+				category: 'config',
+				passed: true,
+				message: 'Not a monorepo, turbo pipeline not required',
+				severity: ctx.severity,
+				fixable: false,
+			}
+		}
+
 		const configPath = join(ctx.cwd, 'turbo.json')
 
 		if (!fileExists(configPath)) {

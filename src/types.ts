@@ -17,6 +17,8 @@ export interface CheckContext {
 	packageJson: PackageJson | null
 	severity: Severity
 	options?: Record<string, unknown>
+	/** Whether the project is a monorepo (has workspaces or packages/) */
+	isMonorepo: boolean
 }
 
 export interface Check {

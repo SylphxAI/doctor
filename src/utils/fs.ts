@@ -59,3 +59,40 @@ export async function directoryExists(path: string): Promise<boolean> {
 		return false
 	}
 }
+
+/**
+ * Detect if project is a monorepo
+ * Checks for:
+ * 1. workspaces field in package.json
+ * 2. packages/, apps/, libs/, services/, tools/ directories with package.json
+ */
+export async function isMonorepo(cwd: string): Promise<boolean> {
+	// Check for workspaces in package.json
+	const pkg = readPackageJson(cwd)
+	if (pkg?.workspaces && Array.isArray(pkg.workspaces) && pkg.workspaces.length > 0) {
+		return true
+	}
+
+	// Check for common monorepo directories
+	const commonDirs = ['packages', 'apps', 'libs', 'services', 'tools']
+	for (const dir of commonDirs) {
+		const dirPath = join(cwd, dir)
+		if (await directoryExists(dirPath)) {
+			// Check if any subdirectory has a package.json
+			try {
+				const entries = await readdir(dirPath, { withFileTypes: true })
+				for (const entry of entries) {
+					if (entry.isDirectory() && !entry.name.startsWith('.')) {
+						if (fileExists(join(dirPath, entry.name, 'package.json'))) {
+							return true
+						}
+					}
+				}
+			} catch {
+				// Continue checking other directories
+			}
+		}
+	}
+
+	return false
+}

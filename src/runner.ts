@@ -2,7 +2,7 @@ import { allChecks } from './checks'
 import { loadConfig } from './config'
 import { getSeverity } from './presets'
 import type { CheckContext, CheckReport, CheckResult, DoctorConfig, PresetName } from './types'
-import { readPackageJson } from './utils/fs'
+import { isMonorepo, readPackageJson } from './utils/fs'
 
 export interface RunOptions {
 	cwd: string
@@ -21,6 +21,9 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 
 	// Load package.json
 	const packageJson = readPackageJson(cwd)
+
+	// Detect if monorepo
+	const monorepo = await isMonorepo(cwd)
 
 	const results: CheckResult[] = []
 	let passed = 0
@@ -47,6 +50,7 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 			packageJson,
 			severity,
 			options: config.options?.[check.name],
+			isMonorepo: monorepo,
 		}
 
 		// Run the check

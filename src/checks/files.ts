@@ -108,9 +108,21 @@ export const biomeConfigCheck: Check = createFileCheck(
 export const turboConfigCheck: Check = {
 	name: 'files/turbo-config',
 	category: 'files',
-	description: 'Check if turbo.json exists',
+	description: 'Check if turbo.json exists (monorepo only)',
 	fixable: true,
 	async run(ctx: CheckContext): Promise<CheckResult> {
+		// Skip for single-package repos
+		if (!ctx.isMonorepo) {
+			return {
+				name: 'files/turbo-config',
+				category: 'files',
+				passed: true,
+				message: 'Not a monorepo, turbo.json not required',
+				severity: ctx.severity,
+				fixable: false,
+			}
+		}
+
 		const filePath = join(ctx.cwd, 'turbo.json')
 		const exists = fileExists(filePath)
 
@@ -118,7 +130,7 @@ export const turboConfigCheck: Check = {
 			name: 'files/turbo-config',
 			category: 'files',
 			passed: exists,
-			message: exists ? 'turbo.json exists' : 'Missing turbo.json',
+			message: exists ? 'turbo.json exists' : 'Missing turbo.json (monorepo)',
 			severity: ctx.severity,
 			fixable: true,
 			fix: async () => {
