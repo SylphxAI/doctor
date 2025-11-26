@@ -91,10 +91,13 @@ const initCommand = defineCommand({
 		const preset = args.preset as PresetName
 		const { existsSync, writeFileSync, readFileSync } = await import('node:fs')
 		const { join } = await import('node:path')
+		const { execSync } = await import('node:child_process')
 
+		console.log()
 		consola.start('Initializing sylphx-doctor...')
+		console.log()
 
-		// Create config file
+		// 1. Create config file
 		const configPath = join(cwd, 'sylphx-doctor.config.ts')
 		if (!existsSync(configPath)) {
 			const configContent = `import { defineConfig } from 'sylphx-doctor'
@@ -119,51 +122,96 @@ export default defineConfig({
 			consola.info('sylphx-doctor.config.ts already exists')
 		}
 
-		// Setup lefthook for pre-commit
+		// 2. Create lefthook.yml (only doctor check - it handles lint/format internally)
 		const lefthookPath = join(cwd, 'lefthook.yml')
 		const lefthookContent = `pre-commit:
-  parallel: true
   commands:
     doctor:
-      run: bunx sylphx-doctor check --pre-commit
-    lint:
-      glob: "*.{ts,tsx,js,jsx}"
-      run: bun run lint
-    format:
-      glob: "*.{ts,tsx,js,jsx}"
-      run: bun run format
+      run: bun run doctor:check
 `
 		if (!existsSync(lefthookPath)) {
 			writeFileSync(lefthookPath, lefthookContent, 'utf-8')
-			consola.success('Created lefthook.yml with sylphx-doctor pre-commit hook')
+			consola.success('Created lefthook.yml')
 		} else {
-			// Check if sylphx-doctor is already in lefthook
 			const existing = readFileSync(lefthookPath, 'utf-8')
-			if (!existing.includes('sylphx-doctor')) {
-				consola.warn('lefthook.yml exists but does not include sylphx-doctor')
-				consola.info('Add this to your lefthook.yml pre-commit commands:')
+			if (!existing.includes('doctor')) {
+				// Append doctor command to existing lefthook
+				consola.warn('lefthook.yml exists, please add doctor command manually:')
 				console.log(
 					pc.dim(`    doctor:
-      run: bunx sylphx-doctor check --pre-commit`)
+      run: bun run doctor:check`)
 				)
 			} else {
-				consola.info('lefthook.yml already configured with sylphx-doctor')
+				consola.info('lefthook.yml already configured')
 			}
 		}
 
-		// Check if lefthook is installed
+		// 3. Update package.json with scripts
 		const pkgPath = join(cwd, 'package.json')
 		if (existsSync(pkgPath)) {
 			const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
-			const hasLefthook = pkg.devDependencies?.lefthook || pkg.dependencies?.lefthook
-			if (!hasLefthook) {
-				consola.info(`Install lefthook: ${pc.cyan('bun add -D lefthook')}`)
+			let modified = false
+
+			// Add doctor scripts
+			pkg.scripts = pkg.scripts || {}
+			if (!pkg.scripts.doctor) {
+				pkg.scripts.doctor = 'sylphx-doctor check'
+				modified = true
+			}
+			if (!pkg.scripts['doctor:check']) {
+				pkg.scripts['doctor:check'] = 'sylphx-doctor check --pre-commit'
+				modified = true
+			}
+			if (!pkg.scripts['doctor:fix']) {
+				pkg.scripts['doctor:fix'] = 'sylphx-doctor check --fix'
+				modified = true
+			}
+
+			if (modified) {
+				writeFileSync(pkgPath, `${JSON.stringify(pkg, null, '\t')}\n`, 'utf-8')
+				consola.success('Added doctor scripts to package.json')
+			} else {
+				consola.info('Doctor scripts already in package.json')
 			}
 		}
 
-		// Run fix if requested
+		// 4. Install dependencies
+		consola.start('Installing dependencies...')
+		try {
+			execSync('bun add -D sylphx-doctor lefthook', {
+				cwd,
+				stdio: 'pipe',
+			})
+			consola.success('Installed sylphx-doctor and lefthook')
+		} catch {
+			consola.warn('Failed to install dependencies, run manually:')
+			console.log(pc.dim('  bun add -D sylphx-doctor lefthook'))
+		}
+
+		// 5. Setup git hooks (if .git exists)
+		const gitDir = join(cwd, '.git')
+		if (existsSync(gitDir)) {
+			try {
+				execSync('bunx lefthook install', {
+					cwd,
+					stdio: 'pipe',
+				})
+				consola.success('Git hooks installed')
+			} catch {
+				consola.warn('Failed to install git hooks, run manually:')
+				console.log(pc.dim('  bunx lefthook install'))
+			}
+		} else {
+			consola.info('No .git directory, skipping git hooks setup')
+			consola.info('After git init, run: bunx lefthook install')
+		}
+
+		console.log()
+
+		// 6. Run fix if requested
 		if (args.fix) {
-			consola.start('Running fix...')
+			consola.start('Running doctor fix...')
+			console.log()
 
 			const report = await runChecks({
 				cwd,
@@ -173,8 +221,16 @@ export default defineConfig({
 
 			console.log(formatReport(report, preset))
 		} else {
-			consola.info(`Run ${pc.cyan('bunx sylphx-doctor check')} to check your project`)
-			consola.info(`Run ${pc.cyan('bunx sylphx-doctor check --fix')} to auto-fix issues`)
+			consola.box({
+				title: 'Setup Complete!',
+				message: `Preset: ${pc.cyan(preset)}
+
+Commands:
+  ${pc.cyan('bun run doctor')}      Check project
+  ${pc.cyan('bun run doctor:fix')}  Auto-fix issues
+
+Pre-commit hook will run automatically on each commit.`,
+			})
 		}
 	},
 })
