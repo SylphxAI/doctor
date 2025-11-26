@@ -1,5 +1,20 @@
 # sylphx-doctor
 
+## 1.2.0 (2025-11-26)
+
+### ✨ Features
+
+- require shared reusable workflow for releases ([7c942b0](https://github.com/SylphxAI/doctor/commit/7c942b04024603402324d444abd6dcdb3a6de10d))
+
+### ♻️ Refactoring
+
+- **checks:** migrate all check modules to modular architecture ([b2b0a68](https://github.com/SylphxAI/doctor/commit/b2b0a68fc06461e0edd816cc1712f1e126498063))
+- **checks:** add modular check architecture ([e942eb8](https://github.com/SylphxAI/doctor/commit/e942eb8aabfcb45f5384a89022670be311287354))
+
+### 🔧 Chores
+
+- trigger release workflow ([a0a6504](https://github.com/SylphxAI/doctor/commit/a0a6504b33fb73cc9d1a5219eadb1c98f24ef357))
+
 ## 1.1.0 (2025-11-26)
 
 ### ✨ Features
