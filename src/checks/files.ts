@@ -85,6 +85,7 @@ coverage/
 			fixable: false,
 			hint: 'CHANGELOG.md will be created automatically when you make your first release',
 			missingMessage: 'Missing CHANGELOG.md (auto-generated on release)',
+			severity: 'info',
 		}),
 
 		createFileCheck({

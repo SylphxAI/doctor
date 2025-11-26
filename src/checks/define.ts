@@ -111,6 +111,8 @@ export interface FileCheckOptions {
 	existsMessage?: string
 	/** Custom message when file missing */
 	missingMessage?: string
+	/** Severity when check fails (default: uses ctx.severity) */
+	severity?: Severity
 }
 
 export function createFileCheck(options: FileCheckOptions): Omit<DefineCheckOptions, 'category'> {
@@ -123,6 +125,7 @@ export function createFileCheck(options: FileCheckOptions): Omit<DefineCheckOpti
 		condition,
 		existsMessage,
 		missingMessage,
+		severity,
 	} = options
 
 	return {
@@ -157,6 +160,7 @@ export function createFileCheck(options: FileCheckOptions): Omit<DefineCheckOpti
 				passed: false,
 				message: missingMessage ?? `Missing ${fileName}`,
 				hint: hint ?? (fixable ? `Run with --fix to create ${fileName}` : `Create ${fileName} manually`),
+				severity,
 				fix: fixable && content
 					? async () => {
 							const { writeFileSync } = await import('node:fs')
