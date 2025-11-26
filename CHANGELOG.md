@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.7.1 (2025-11-26)
+
+### 🐛 Bug Fixes
+
+- **cli:** pre-push mode only shows hint, no checks ([f965d6e](https://github.com/SylphxAI/doctor/commit/f965d6e3400ae3dca416c61b1a7459240ee8dcf0))
+
 ## 1.7.0 (2025-11-26)
 
 ### ✨ Features
