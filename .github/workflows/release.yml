@@ -20,6 +20,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install
+
       - uses: SylphxAI/bump@v0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
