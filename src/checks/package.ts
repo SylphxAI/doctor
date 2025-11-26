@@ -418,11 +418,13 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { readPackageJson } = await import('../utils/fs')
 
 				const script = ctx.packageJson?.scripts?.typecheck
-				// Always use tsc directly (even in monorepo root)
-				// - tsc has built-in incremental caching (--incremental)
-				// - turbo caching adds no benefit on top of tsc's cache
-				// - Only tsc can do real type checking (no alternatives exist)
-				const defaultScript = 'tsc --noEmit'
+				// Monorepo root: MUST use turbo (same reason as test)
+				// - Each package has its own tsconfig
+				// - `tsc --noEmit` from root only checks root scope
+				// - `turbo typecheck` runs tsc in each package directory
+				// Packages: tsc --noEmit directly
+				const isRoot = isMonorepoRoot(ctx)
+				const defaultScript = isRoot ? 'turbo typecheck' : 'tsc --noEmit'
 
 				if (!script) {
 					return {
@@ -439,14 +441,14 @@ export const packageModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				const usesTsc = script.includes('tsc')
+				const validTypecheck = isRoot ? script.includes('turbo') : script.includes('tsc')
 
 				return {
-					passed: usesTsc,
-					message: usesTsc
+					passed: validTypecheck,
+					message: validTypecheck
 						? `typecheck script: "${script}"`
-						: `typecheck script should use tsc (found "${script}")`,
-					hint: usesTsc ? undefined : `Use "${defaultScript}"`,
+						: `typecheck script uses "${script}" (expected "${defaultScript}")`,
+					hint: validTypecheck ? undefined : `Use "${defaultScript}"`,
 				}
 			},
 		},
