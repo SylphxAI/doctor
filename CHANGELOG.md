@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.14.3 (2025-11-26)
+
+### 🐛 Bug Fixes
+
+- **reporter:** handle multi-line hints in Quick Actions section ([8893a30](https://github.com/SylphxAI/doctor/commit/8893a30727fd9081dd5b2c8718e527eaf5365cc8))
+
 ## 1.14.2 (2025-11-26)
 
 ### 🐛 Bug Fixes
