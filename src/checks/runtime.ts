@@ -76,6 +76,28 @@ export const runtimeModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'runtime/no-pnpm-lock',
+			description: 'Check that pnpm-lock.yaml does not exist',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { unlinkSync } = await import('node:fs')
+				const { fileExists } = await import('../utils/fs')
+
+				const lockPath = join(ctx.cwd, 'pnpm-lock.yaml')
+				const exists = fileExists(lockPath)
+
+				return {
+					passed: !exists,
+					message: exists ? 'Found pnpm-lock.yaml - should use Bun instead' : 'No pnpm-lock.yaml (good)',
+					fix: async () => {
+						unlinkSync(lockPath)
+					},
+				}
+			},
+		},
 	]
 )
 
