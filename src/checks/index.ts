@@ -2,6 +2,7 @@ import type { Check } from '../types'
 import { buildChecks } from './build'
 import { ciChecks } from './ci'
 import { configChecks } from './config'
+import { depsChecks } from './deps'
 import { docsChecks } from './docs'
 import { fileChecks } from './files'
 import { formatChecks } from './format'
@@ -16,6 +17,7 @@ export const allChecks: Check[] = [
 	...fileChecks,
 	...configChecks,
 	...packageChecks,
+	...depsChecks,
 	...testChecks,
 	...formatChecks,
 	...buildChecks,
@@ -39,6 +41,7 @@ export {
 	buildChecks,
 	ciChecks,
 	configChecks,
+	depsChecks,
 	docsChecks,
 	fileChecks,
 	formatChecks,

@@ -29,6 +29,10 @@ const initPreset: PresetConfig = {
 	'pkg/scripts-coverage': 'off',
 	'pkg/exports': 'off',
 
+	// Dependencies
+	'deps/outdated': 'off',
+	'deps/security': 'off',
+
 	// Testing
 	'test/has-tests': 'off',
 	'test/passes': 'off',
@@ -105,6 +109,10 @@ const devPreset: PresetConfig = {
 	'pkg/scripts-coverage': 'off',
 	'pkg/exports': 'warn',
 
+	// Dependencies
+	'deps/outdated': 'warn',
+	'deps/security': 'warn',
+
 	// Testing
 	'test/has-tests': 'warn',
 	'test/passes': 'error',
@@ -180,6 +188,10 @@ const stablePreset: PresetConfig = {
 	'pkg/scripts-bench': 'warn',
 	'pkg/scripts-coverage': 'error',
 	'pkg/exports': 'error',
+
+	// Dependencies
+	'deps/outdated': 'error',
+	'deps/security': 'error',
 
 	// Testing
 	'test/has-tests': 'error',

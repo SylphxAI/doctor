@@ -47,6 +47,7 @@ export function formatReport(report: CheckReport, preset: PresetName): string {
 		files: '📁 Files',
 		config: '⚙️  Config',
 		pkg: '📦 Package.json',
+		deps: '📦 Dependencies',
 		test: '🧪 Testing',
 		format: '🎨 Formatting',
 		build: '🔨 Build',
