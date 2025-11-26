@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.2.1 (2025-11-26)
+
+### 🐛 Bug Fixes
+
+- **checks:** make CHANGELOG.md check info severity instead of warning ([25cfdf7](https://github.com/SylphxAI/doctor/commit/25cfdf7e23f7bd7ff36416457cd0fc19a66a4b9b))
+
 ## 1.2.0 (2025-11-26)
 
 ### ✨ Features
