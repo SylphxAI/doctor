@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.13.1 (2025-11-26)
+
+### 🐛 Bug Fixes
+
+- **release:** add build-command to include dist/ in package ([742c447](https://github.com/SylphxAI/doctor/commit/742c447e734f76bb87c6838aaecd4619dd88063e))
+
 ## 1.13.0 (2025-11-26)
 
 ### ✨ Features
