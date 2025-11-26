@@ -181,6 +181,8 @@ export const depsModule: CheckModule = defineCheckModule(
 			description: 'Check for packages that should not be installed',
 			fixable: true,
 			async check(ctx) {
+				const { getAllPackages } = await import('../utils/context')
+
 				// Banned packages with their alternatives
 				const bannedPackages: Record<string, string> = {
 					// Linting/Formatting - use biome
@@ -225,50 +227,36 @@ export const depsModule: CheckModule = defineCheckModule(
 					pnpm: 'bun (remove pnpm)',
 				}
 
-				// Helper to check a package.json for banned deps
-				const checkPackageJson = (
-					pkg: Record<string, unknown> | null,
-					location: string
-				): { name: string; alternative: string; location: string }[] => {
-					if (!pkg) return []
+				const allPackages = getAllPackages(ctx)
+				const found: { name: string; alternative: string; location: string; path: string }[] = []
+
+				// Check all packages (root + workspaces)
+				for (const pkg of allPackages) {
 					const allDeps = {
-						...(pkg.dependencies as Record<string, string> | undefined),
-						...(pkg.devDependencies as Record<string, string> | undefined),
+						...pkg.packageJson.dependencies,
+						...pkg.packageJson.devDependencies,
 					}
-					const found: { name: string; alternative: string; location: string }[] = []
 					for (const [banned, alternative] of Object.entries(bannedPackages)) {
 						if (banned in allDeps) {
-							found.push({ name: banned, alternative, location })
+							found.push({ name: banned, alternative, location: pkg.relativePath, path: pkg.path })
 						}
 					}
-					return found
-				}
-
-				// Check root package.json
-				const found = checkPackageJson(ctx.packageJson as Record<string, unknown>, 'root')
-
-				// Check all workspace packages
-				for (const pkg of ctx.workspacePackages) {
-					found.push(
-						...checkPackageJson(pkg.packageJson as Record<string, unknown>, pkg.relativePath)
-					)
 				}
 
 				if (found.length === 0) {
-					const pkgCount = ctx.workspacePackages.length
-					const message = pkgCount > 0 ? `No banned packages (checked ${pkgCount + 1} packages)` : 'No banned packages found'
-					return {
-						passed: true,
-						message,
-					}
+					const message =
+						allPackages.length > 1
+							? `No banned packages (checked ${allPackages.length} packages)`
+							: 'No banned packages found'
+					return { passed: true, message }
 				}
 
-				// Group by location for better hint
-				const byLocation = new Map<string, { name: string; alternative: string }[]>()
+				// Group by location for fix
+				const byPath = new Map<string, string[]>()
 				for (const f of found) {
-					const list = byLocation.get(f.location) ?? []
-					list.push({ name: f.name, alternative: f.alternative })
-					byLocation.set(f.location, list)
+					const list = byPath.get(f.path) ?? []
+					list.push(f.name)
+					byPath.set(f.path, list)
 				}
 
 				const hint = found
@@ -276,7 +264,7 @@ export const depsModule: CheckModule = defineCheckModule(
 					.map((p) => `${p.name} → ${p.alternative}`)
 					.join(', ')
 				const moreCount = found.length > 3 ? ` (+${found.length - 3} more)` : ''
-				const locationCount = byLocation.size > 1 ? ` in ${byLocation.size} packages` : ''
+				const locationCount = byPath.size > 1 ? ` in ${byPath.size} packages` : ''
 
 				return {
 					passed: false,
@@ -284,11 +272,8 @@ export const depsModule: CheckModule = defineCheckModule(
 					hint: `Replace: ${hint}${moreCount}`,
 					fix: async () => {
 						const { exec } = await import('../utils/exec')
-						// Remove from each location
-						for (const [location, pkgs] of byLocation) {
-							const cwd = location === 'root' ? ctx.cwd : `${ctx.cwd}/${location}`
-							const toRemove = pkgs.map((p) => p.name)
-							await exec('bun', ['remove', ...toRemove], cwd)
+						for (const [path, pkgs] of byPath) {
+							await exec('bun', ['remove', ...pkgs], path)
 						}
 					},
 				}
