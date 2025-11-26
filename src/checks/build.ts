@@ -14,7 +14,7 @@ export const buildModule: CheckModule = defineCheckModule(
 			description: 'Check if build.config.ts exists when using bunup',
 			fixable: true,
 			async check(ctx) {
-				const { join } = await import('node:path')
+				const { join, dirname } = await import('node:path')
 				const { writeFileSync } = await import('node:fs')
 				const { fileExists } = await import('../utils/fs')
 
@@ -29,12 +29,42 @@ export const buildModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				const configPath = join(ctx.cwd, 'build.config.ts')
-				const exists = fileExists(configPath)
+				const localConfig = join(ctx.cwd, 'build.config.ts')
+				const localConfigJs = join(ctx.cwd, 'build.config.js')
+				const bunupConfig = join(ctx.cwd, 'bunup.config.ts')
+				const bunupConfigJs = join(ctx.cwd, 'bunup.config.js')
+
+				// Check local config (build.config.ts or bunup.config.ts)
+				const hasLocalConfig =
+					fileExists(localConfig) ||
+					fileExists(localConfigJs) ||
+					fileExists(bunupConfig) ||
+					fileExists(bunupConfigJs)
+
+				if (hasLocalConfig) {
+					return {
+						passed: true,
+						message: 'bunup config exists',
+					}
+				}
+
+				// If in workspace, check root for config (workspace mode)
+				if (ctx.workspaceRoot && ctx.workspaceRoot !== ctx.cwd) {
+					const rootConfig = join(ctx.workspaceRoot, 'bunup.config.ts')
+					const rootConfigJs = join(ctx.workspaceRoot, 'bunup.config.js')
+					const rootBuildConfig = join(ctx.workspaceRoot, 'build.config.ts')
+
+					if (fileExists(rootConfig) || fileExists(rootConfigJs) || fileExists(rootBuildConfig)) {
+						return {
+							passed: true,
+							message: 'Using workspace root bunup config',
+						}
+					}
+				}
 
 				return {
-					passed: exists,
-					message: exists ? 'build.config.ts exists' : 'Missing build.config.ts for bunup',
+					passed: false,
+					message: 'Missing bunup config (build.config.ts or bunup.config.ts)',
 					fix: async () => {
 						const defaultConfig = `import { defineConfig } from 'bunup'
 
@@ -45,7 +75,7 @@ export default defineConfig({
   clean: true,
 })
 `
-						writeFileSync(configPath, defaultConfig, 'utf-8')
+						writeFileSync(bunupConfig, defaultConfig, 'utf-8')
 					},
 				}
 			},

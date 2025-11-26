@@ -203,3 +203,30 @@ export async function isMonorepo(cwd: string): Promise<boolean> {
 
 	return false
 }
+
+/**
+ * Find the workspace root by traversing up the directory tree
+ * Returns the root directory if found, or undefined if not in a workspace
+ */
+export function findWorkspaceRoot(cwd: string): string | undefined {
+	const { dirname, parse } = require('node:path') as typeof import('node:path')
+
+	let current = cwd
+	const root = parse(cwd).root
+
+	while (current !== root) {
+		const pkg = readPackageJson(current)
+
+		// Found workspace root if has workspaces field
+		if (pkg?.workspaces && Array.isArray(pkg.workspaces) && pkg.workspaces.length > 0) {
+			return current
+		}
+
+		// Move up one directory
+		const parent = dirname(current)
+		if (parent === current) break
+		current = parent
+	}
+
+	return undefined
+}

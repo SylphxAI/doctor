@@ -92,7 +92,6 @@ coverage/
 			name: 'files/progress',
 			fileName: 'progress.md',
 			fixable: true,
-			severity: 'info',
 			hint: 'Track project progress and status',
 			fixContent: `# Progress
 

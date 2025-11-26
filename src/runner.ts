@@ -11,6 +11,7 @@ import type {
 } from './types'
 import {
 	discoverWorkspacePackages,
+	findWorkspaceRoot,
 	getWorkspacePatterns,
 	isMonorepo,
 	readPackageJson,
@@ -38,6 +39,7 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 	const monorepo = await isMonorepo(cwd)
 	const workspacePackages = monorepo ? discoverWorkspacePackages(cwd) : []
 	const workspacePatterns = monorepo ? getWorkspacePatterns(cwd) : []
+	const workspaceRoot = findWorkspaceRoot(cwd)
 
 	// Filter checks based on severity
 	const checksToRun: { check: Check; ctx: CheckContext }[] = []
@@ -59,6 +61,7 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 			isMonorepo: monorepo,
 			workspacePackages,
 			workspacePatterns,
+			workspaceRoot,
 		}
 
 		checksToRun.push({ check, ctx })

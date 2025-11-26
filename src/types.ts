@@ -39,6 +39,8 @@ export interface CheckContext {
 	workspacePackages: WorkspacePackage[]
 	/** Workspace patterns from package.json (e.g., ["packages/*"]) */
 	workspacePatterns: string[]
+	/** Root directory of the workspace (if running from within a workspace package) */
+	workspaceRoot?: string
 }
 
 export interface Check {
