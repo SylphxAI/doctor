@@ -181,15 +181,6 @@ export const depsModule: CheckModule = defineCheckModule(
 			description: 'Check for packages that should not be installed',
 			fixable: true,
 			async check(ctx) {
-				const pkg = ctx.packageJson
-				if (!pkg) {
-					return {
-						passed: true,
-						message: 'No package.json found',
-						skipped: true,
-					}
-				}
-
 				// Banned packages with their alternatives
 				const bannedPackages: Record<string, string> = {
 					// Linting/Formatting - use biome
@@ -234,24 +225,50 @@ export const depsModule: CheckModule = defineCheckModule(
 					pnpm: 'bun (remove pnpm)',
 				}
 
-				const allDeps = {
-					...pkg.dependencies,
-					...pkg.devDependencies,
+				// Helper to check a package.json for banned deps
+				const checkPackageJson = (
+					pkg: Record<string, unknown> | null,
+					location: string
+				): { name: string; alternative: string; location: string }[] => {
+					if (!pkg) return []
+					const allDeps = {
+						...(pkg.dependencies as Record<string, string> | undefined),
+						...(pkg.devDependencies as Record<string, string> | undefined),
+					}
+					const found: { name: string; alternative: string; location: string }[] = []
+					for (const [banned, alternative] of Object.entries(bannedPackages)) {
+						if (banned in allDeps) {
+							found.push({ name: banned, alternative, location })
+						}
+					}
+					return found
 				}
 
-				const found: { name: string; alternative: string }[] = []
+				// Check root package.json
+				const found = checkPackageJson(ctx.packageJson as Record<string, unknown>, 'root')
 
-				for (const [banned, alternative] of Object.entries(bannedPackages)) {
-					if (banned in allDeps) {
-						found.push({ name: banned, alternative })
-					}
+				// Check all workspace packages
+				for (const pkg of ctx.workspacePackages) {
+					found.push(
+						...checkPackageJson(pkg.packageJson as Record<string, unknown>, pkg.relativePath)
+					)
 				}
 
 				if (found.length === 0) {
+					const pkgCount = ctx.workspacePackages.length
+					const message = pkgCount > 0 ? `No banned packages (checked ${pkgCount + 1} packages)` : 'No banned packages found'
 					return {
 						passed: true,
-						message: 'No banned packages found',
+						message,
 					}
+				}
+
+				// Group by location for better hint
+				const byLocation = new Map<string, { name: string; alternative: string }[]>()
+				for (const f of found) {
+					const list = byLocation.get(f.location) ?? []
+					list.push({ name: f.name, alternative: f.alternative })
+					byLocation.set(f.location, list)
 				}
 
 				const hint = found
@@ -259,15 +276,20 @@ export const depsModule: CheckModule = defineCheckModule(
 					.map((p) => `${p.name} → ${p.alternative}`)
 					.join(', ')
 				const moreCount = found.length > 3 ? ` (+${found.length - 3} more)` : ''
+				const locationCount = byLocation.size > 1 ? ` in ${byLocation.size} packages` : ''
 
 				return {
 					passed: false,
-					message: `Found ${found.length} banned package(s)`,
+					message: `Found ${found.length} banned package(s)${locationCount}`,
 					hint: `Replace: ${hint}${moreCount}`,
 					fix: async () => {
 						const { exec } = await import('../utils/exec')
-						const toRemove = found.map((p) => p.name)
-						await exec('bun', ['remove', ...toRemove], ctx.cwd)
+						// Remove from each location
+						for (const [location, pkgs] of byLocation) {
+							const cwd = location === 'root' ? ctx.cwd : `${ctx.cwd}/${location}`
+							const toRemove = pkgs.map((p) => p.name)
+							await exec('bun', ['remove', ...toRemove], cwd)
+						}
 					},
 				}
 			},
