@@ -51,7 +51,7 @@ export function getPackageNames(ctx: CheckContext): Set<string> {
 
 /**
  * Get all packages including root (for checks that need to scan everything)
- * Root is represented with relativePath = 'root'
+ * Root is represented with relativePath = '.'
  */
 export function getAllPackages(ctx: CheckContext): WorkspacePackage[] {
 	const packages: WorkspacePackage[] = []
@@ -61,7 +61,7 @@ export function getAllPackages(ctx: CheckContext): WorkspacePackage[] {
 		packages.push({
 			name: ctx.packageJson.name ?? 'root',
 			path: ctx.cwd,
-			relativePath: 'root',
+			relativePath: '.',
 			packageJson: ctx.packageJson,
 		})
 	}

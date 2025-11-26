@@ -353,7 +353,7 @@ export function createMonorepoCheck<T>(
 				const rootPkg: import('../types').WorkspacePackage = {
 					name: ctx.packageJson.name ?? 'root',
 					path: ctx.cwd,
-					relativePath: 'root',
+					relativePath: '.',
 					packageJson: ctx.packageJson,
 				}
 				const issue = await checkPackage(rootPkg, ctx)
