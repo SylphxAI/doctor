@@ -12,7 +12,7 @@ export const formatModule: CheckModule = defineCheckModule(
 			name: 'format/biome-check',
 			description: 'Run biome check',
 			fixable: true,
-			// Not in commit stage - lefthook runs biome directly for staging
+			hooks: ['precommit'],
 			async check(ctx) {
 				const { exec } = await import('../utils/exec')
 
@@ -34,7 +34,7 @@ export const formatModule: CheckModule = defineCheckModule(
 			name: 'format/biome-format',
 			description: 'Run biome format',
 			fixable: true,
-			// Not in commit stage - lefthook runs biome directly for staging
+			hooks: ['precommit'],
 			async check(ctx) {
 				const { exec } = await import('../utils/exec')
 

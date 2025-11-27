@@ -84,7 +84,7 @@ const checkCommand = defineCommand({
 const precommitCommand = defineCommand({
 	meta: {
 		name: 'precommit',
-		description: 'Pre-commit hook: format + typecheck',
+		description: 'Pre-commit hook: biome check/format + typecheck',
 	},
 	args: {
 		fix: {
@@ -118,7 +118,7 @@ const precommitCommand = defineCommand({
 const prepushCommand = defineCommand({
 	meta: {
 		name: 'prepush',
-		description: 'Pre-push hook: test + info',
+		description: 'Pre-push hook: test',
 	},
 	async run() {
 		const cwd = process.cwd()
@@ -199,12 +199,12 @@ export default defineConfig({
 		const lefthookContent = `pre-commit:
   commands:
     doctor:
-      run: doctor precommit --fix
+      run: bunx @sylphx/doctor precommit --fix
 
 pre-push:
   commands:
     doctor:
-      run: doctor prepush
+      run: bunx @sylphx/doctor prepush
 `
 		if (!existsSync(lefthookPath)) {
 			writeFileSync(lefthookPath, lefthookContent, 'utf-8')
@@ -296,8 +296,8 @@ pre-push:
 
 Commands:
   ${pc.cyan('doctor')}             Full project audit
-  ${pc.cyan('doctor precommit')}   Pre-commit (format + typecheck)
-  ${pc.cyan('doctor prepush')}     Pre-push (test + info)
+  ${pc.cyan('doctor precommit')}   Pre-commit (biome + typecheck)
+  ${pc.cyan('doctor prepush')}     Pre-push (test)
   ${pc.cyan('doctor --fix')}       Auto-fix issues
 
 Git hooks will run automatically on commit/push.`,
