@@ -1,5 +1,23 @@
 # sylphx-doctor
 
+## 1.21.0 (2025-11-27)
+
+### ✨ Features
+
+- add workflow_dispatch trigger for release ([0094752](https://github.com/SylphxAI/doctor/commit/0094752a98b3880dd443ea5161c2101116b2a1a4))
+- add --stage flag to filter checks by hook (commit/push) ([b7c39f5](https://github.com/SylphxAI/doctor/commit/b7c39f5fbb6dd4a3a1bccfed7d7c2f7ad0c008c6))
+- **release:** make prepublishOnly chainable with && ([67cce85](https://github.com/SylphxAI/doctor/commit/67cce85bb92fa782951489fc86cb297008e0c6e9))
+
+### 🐛 Bug Fixes
+
+- use bump action directly instead of reusable workflow ([1382d80](https://github.com/SylphxAI/doctor/commit/1382d801c7b45e6612c681607e7c31901a02caba))
+- add permissions for release workflow ([1d50f0c](https://github.com/SylphxAI/doctor/commit/1d50f0cc774f740f4cf5e0f477ab104ebc05b62d))
+- remove deprecated build-command input ([40407c3](https://github.com/SylphxAI/doctor/commit/40407c33714da5b0374ebdeb6ef00688ac663dee))
+
+### ♻️ Refactoring
+
+- modular hooks with commit/push/prepublish commands ([9a64451](https://github.com/SylphxAI/doctor/commit/9a64451d10ded816894a4320b54208585fb88f6f))
+
 ## 1.20.0 (2025-11-27)
 
 ### ✨ Features
