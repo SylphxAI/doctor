@@ -1,5 +1,15 @@
 # sylphx-doctor
 
+## 1.18.0 (2025-11-27)
+
+### ✨ Features
+
+- **credits:** add credits check and CLI footer for @sylphx packages ([0ffdf8e](https://github.com/SylphxAI/doctor/commit/0ffdf8e971a37d018666173225dc9e2d4127dcc7))
+
+### ♻️ Refactoring
+
+- **credits:** split into has-section and mentions-packages checks ([ab4743a](https://github.com/SylphxAI/doctor/commit/ab4743ae2350c4f0cfb815e8aa838a66ac75909c))
+
 ## 1.17.0 (2025-11-27)
 
 ### ✨ Features
