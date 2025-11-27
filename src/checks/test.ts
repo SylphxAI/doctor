@@ -241,5 +241,41 @@ export const testModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'test/no-jest-config',
+			description: 'Check that Jest config does not exist (use bun test)',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { unlinkSync } = await import('node:fs')
+				const { fileExists } = await import('../utils/fs')
+
+				const jestFiles = ['jest.config.js', 'jest.config.ts', 'jest.config.mjs', 'jest.config.cjs']
+				const found = jestFiles.filter((f) => fileExists(join(ctx.cwd, f)))
+
+				// Also check package.json for jest config
+				const pkg = ctx.packageJson as Record<string, unknown> | null
+				const hasJestInPkg = pkg && 'jest' in pkg
+
+				if (found.length === 0 && !hasJestInPkg) {
+					return { passed: true, message: 'No Jest config (good)' }
+				}
+
+				const issues = [...found]
+				if (hasJestInPkg) issues.push('package.json#jest')
+
+				return {
+					passed: false,
+					message: `Found Jest config: ${issues.join(', ')}`,
+					hint: 'Remove Jest config and use bun test',
+					fix: async () => {
+						for (const f of found) {
+							unlinkSync(join(ctx.cwd, f))
+						}
+					},
+				}
+			},
+		},
 	]
 )

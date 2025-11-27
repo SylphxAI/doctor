@@ -4,7 +4,6 @@ import type { CheckModule } from './define'
 // Import all check modules (new modular format)
 import { buildModule } from './build'
 import { ciModule } from './ci'
-import { cleanupModule } from './cleanup'
 import { configModule } from './config'
 import { creditsModule } from './credits'
 import { depsModule } from './deps'
@@ -32,7 +31,6 @@ export const checkModules: CheckModule[] = [
 	formatModule,
 	buildModule,
 	runtimeModule,
-	cleanupModule,
 	docsModule,
 	hooksModule,
 	githubModule,
@@ -85,7 +83,6 @@ export {
 	formatModule,
 	buildModule,
 	runtimeModule,
-	cleanupModule,
 	docsModule,
 	hooksModule,
 	githubModule,

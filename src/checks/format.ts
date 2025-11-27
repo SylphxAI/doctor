@@ -120,5 +120,85 @@ export const formatModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'format/no-eslint-config',
+			description: 'Check that ESLint config does not exist (use biome)',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { unlinkSync } = await import('node:fs')
+				const { fileExists } = await import('../utils/fs')
+
+				const eslintFiles = [
+					'.eslintrc',
+					'.eslintrc.js',
+					'.eslintrc.cjs',
+					'.eslintrc.json',
+					'.eslintrc.yml',
+					'.eslintrc.yaml',
+					'eslint.config.js',
+					'eslint.config.mjs',
+					'.eslintignore',
+				]
+
+				const found = eslintFiles.filter((f) => fileExists(join(ctx.cwd, f)))
+
+				if (found.length === 0) {
+					return { passed: true, message: 'No ESLint config files (good)' }
+				}
+
+				return {
+					passed: false,
+					message: `Found ESLint config: ${found.join(', ')}`,
+					hint: 'Remove ESLint config and use biome',
+					fix: async () => {
+						for (const f of found) {
+							unlinkSync(join(ctx.cwd, f))
+						}
+					},
+				}
+			},
+		},
+
+		{
+			name: 'format/no-prettier-config',
+			description: 'Check that Prettier config does not exist (use biome)',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { unlinkSync } = await import('node:fs')
+				const { fileExists } = await import('../utils/fs')
+
+				const prettierFiles = [
+					'.prettierrc',
+					'.prettierrc.js',
+					'.prettierrc.cjs',
+					'.prettierrc.json',
+					'.prettierrc.yml',
+					'.prettierrc.yaml',
+					'prettier.config.js',
+					'prettier.config.mjs',
+					'.prettierignore',
+				]
+
+				const found = prettierFiles.filter((f) => fileExists(join(ctx.cwd, f)))
+
+				if (found.length === 0) {
+					return { passed: true, message: 'No Prettier config files (good)' }
+				}
+
+				return {
+					passed: false,
+					message: `Found Prettier config: ${found.join(', ')}`,
+					hint: 'Remove Prettier config and use biome',
+					fix: async () => {
+						for (const f of found) {
+							unlinkSync(join(ctx.cwd, f))
+						}
+					},
+				}
+			},
+		},
 	]
 )

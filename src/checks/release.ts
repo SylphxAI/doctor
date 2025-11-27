@@ -271,5 +271,67 @@ export const releaseModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'release/no-changesets',
+			description: 'Check that .changeset folder does not exist (use @sylphx/bump)',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { rmSync } = await import('node:fs')
+				const { directoryExists } = await import('../utils/fs')
+
+				const changesetPath = join(ctx.cwd, '.changeset')
+				const exists = await directoryExists(changesetPath)
+
+				return {
+					passed: !exists,
+					message: exists
+						? 'Found .changeset folder - use @sylphx/bump instead'
+						: 'No .changeset folder (good)',
+					hint: exists ? 'Remove: rm -rf .changeset' : undefined,
+					fix: async () => {
+						rmSync(changesetPath, { recursive: true, force: true })
+					},
+				}
+			},
+		},
+
+		{
+			name: 'release/no-changesets-dep',
+			description: 'Check that @changesets packages are not installed (use @sylphx/bump)',
+			fixable: true,
+			async check(ctx) {
+				const { exec } = await import('../utils/exec')
+				const pkg = ctx.packageJson
+				if (!pkg) {
+					return { passed: true, message: 'No package.json', skipped: true }
+				}
+
+				const allDeps = {
+					...((pkg.dependencies as Record<string, string>) ?? {}),
+					...((pkg.devDependencies as Record<string, string>) ?? {}),
+				}
+
+				const changesetsDeps = ['@changesets/cli', '@changesets/changelog-github']
+				const found = changesetsDeps.filter((dep) => dep in allDeps)
+
+				if (found.length === 0) {
+					return {
+						passed: true,
+						message: 'No @changesets packages (good)',
+					}
+				}
+
+				return {
+					passed: false,
+					message: `Found @changesets packages: ${found.join(', ')}`,
+					hint: `Remove: bun remove ${found.join(' ')}`,
+					fix: async () => {
+						await exec('bun', ['remove', ...found], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )

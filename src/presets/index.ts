@@ -19,6 +19,7 @@ const basePreset: PresetConfig = {
 	'config/tsconfig-extends': 'warn',
 	'config/biome-config-dep': 'error',
 	'config/tsconfig-dep': 'error',
+	'config/no-tsconfig-build': 'warn',
 
 	// Package.json - metadata and scripts
 	'pkg/name': 'error',
@@ -44,6 +45,7 @@ const basePreset: PresetConfig = {
 	'test/passes': 'off',
 	'test/coverage-threshold': 'off',
 	'test/no-legacy-frameworks': 'error',
+	'test/no-jest-config': 'error',
 	'bench/has-files': 'off',
 
 	// Formatting
@@ -51,6 +53,8 @@ const basePreset: PresetConfig = {
 	'format/biome-format': 'error',
 	'format/biome-dep': 'error',
 	'format/no-eslint': 'error',
+	'format/no-eslint-config': 'error',
+	'format/no-prettier-config': 'error',
 
 	// Build
 	'build/exports-valid': 'off',
@@ -102,6 +106,8 @@ const basePreset: PresetConfig = {
 	'release/no-release-commit': 'error',
 	'release/no-direct-publish': 'error',
 	'release/bump-dep': 'warn',
+	'release/no-changesets': 'error',
+	'release/no-changesets-dep': 'error',
 
 	// Credits
 	'credits/has-section': 'warn',

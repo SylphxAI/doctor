@@ -122,5 +122,32 @@ export const configModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'config/no-tsconfig-build',
+			description: 'Check for unnecessary tsconfig.build.json (bunup handles this)',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { unlinkSync } = await import('node:fs')
+				const { fileExists } = await import('../utils/fs')
+
+				const buildConfig = join(ctx.cwd, 'tsconfig.build.json')
+				const exists = fileExists(buildConfig)
+
+				return {
+					passed: !exists,
+					message: exists
+						? 'Found tsconfig.build.json - bunup handles build config'
+						: 'No tsconfig.build.json (good)',
+					hint: exists
+						? 'Remove tsconfig.build.json - bunup handles TypeScript compilation'
+						: undefined,
+					fix: async () => {
+						unlinkSync(buildConfig)
+					},
+				}
+			},
+		},
 	]
 )
