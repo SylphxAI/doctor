@@ -1,6 +1,6 @@
 import { allChecks } from './checks'
 import { loadConfig } from './config'
-import { getSeverity } from './presets'
+import { getNextPreset, getSeverity } from './presets'
 import type {
 	Check,
 	CheckContext,
@@ -153,15 +153,8 @@ export function getExitCode(report: CheckReport, preCommit: boolean): number {
 	return report.failed > 0 ? 1 : 0
 }
 
-/**
- * Get the next preset level
- */
-export function getNextPreset(current: PresetName): PresetName | null {
-	const levels: PresetName[] = ['init', 'dev', 'stable']
-	const index = levels.indexOf(current)
-	if (index >= levels.length - 1) return null
-	return levels[index + 1] as PresetName
-}
+// Re-export from presets for backwards compatibility
+export { getNextPreset } from './presets'
 
 /**
  * Check if user is ready to upgrade to next preset

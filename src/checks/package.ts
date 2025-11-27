@@ -52,8 +52,7 @@ export const packageModule: CheckModule = defineCheckModule(
 			description: 'Check if package.json has repository field',
 			fixable: false,
 			async check(ctx) {
-				const pkg = ctx.packageJson as Record<string, unknown> | null
-				const hasRepo = !!(pkg?.repository || pkg?.repository)
+				const hasRepo = !!ctx.packageJson?.repository
 				return {
 					passed: hasRepo,
 					message: hasRepo ? 'package.json has "repository"' : 'package.json missing "repository"',

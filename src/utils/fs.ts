@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { readdir, stat } from 'node:fs/promises'
-import { join, relative } from 'node:path'
+import { dirname, join, parse, relative } from 'node:path'
 import type { PackageJson, WorkspacePackage } from '../types'
 
 export function fileExists(path: string): boolean {
@@ -209,8 +209,6 @@ export async function isMonorepo(cwd: string): Promise<boolean> {
  * Returns the root directory if found, or undefined if not in a workspace
  */
 export function findWorkspaceRoot(cwd: string): string | undefined {
-	const { dirname, parse } = require('node:path') as typeof import('node:path')
-
 	let current = cwd
 	const root = parse(cwd).root
 

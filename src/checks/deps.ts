@@ -132,17 +132,58 @@ export const depsModule: CheckModule = defineCheckModule(
 			async check(ctx) {
 				const { exec } = await import('../utils/exec')
 
-				// bun doesn't have audit yet, use npm audit
-				const result = await exec('npm', ['audit', '--json'], ctx.cwd)
+				// Use bun audit (available since bun 1.2+)
+				const result = await exec('bun', ['audit', '--json'], ctx.cwd)
 
 				try {
-					const audit = JSON.parse(result.stdout)
-					const vulnerabilities = audit.metadata?.vulnerabilities ?? {}
-					const total =
-						(vulnerabilities.critical ?? 0) +
-						(vulnerabilities.high ?? 0) +
-						(vulnerabilities.moderate ?? 0) +
-						(vulnerabilities.low ?? 0)
+					// bun audit --json returns {} when no vulnerabilities
+					const output = result.stdout.trim()
+					// Skip the header line if present (bun audit v1.x.x)
+					const jsonLine = output.split('\n').find((line) => line.startsWith('{'))
+					if (!jsonLine) {
+						return {
+							passed: true,
+							message: 'No known vulnerabilities',
+						}
+					}
+
+					const audit = JSON.parse(jsonLine) as Record<string, unknown>
+
+					// Empty object means no vulnerabilities
+					if (Object.keys(audit).length === 0) {
+						return {
+							passed: true,
+							message: 'No known vulnerabilities',
+						}
+					}
+
+					// Count vulnerabilities by severity
+					let critical = 0
+					let high = 0
+					let moderate = 0
+					let low = 0
+
+					for (const [, vulns] of Object.entries(audit)) {
+						const vulnList = vulns as Array<{ severity?: string }>
+						for (const vuln of vulnList) {
+							switch (vuln.severity) {
+								case 'critical':
+									critical++
+									break
+								case 'high':
+									high++
+									break
+								case 'moderate':
+									moderate++
+									break
+								case 'low':
+									low++
+									break
+							}
+						}
+					}
+
+					const total = critical + high + moderate + low
 
 					if (total === 0) {
 						return {
@@ -150,9 +191,6 @@ export const depsModule: CheckModule = defineCheckModule(
 							message: 'No known vulnerabilities',
 						}
 					}
-
-					const critical = vulnerabilities.critical ?? 0
-					const high = vulnerabilities.high ?? 0
 
 					let message = `${total} vulnerabilities found`
 					if (critical > 0) message += ` (${critical} critical)`
@@ -162,13 +200,13 @@ export const depsModule: CheckModule = defineCheckModule(
 						passed: false,
 						message,
 						severity: critical > 0 || high > 0 ? 'error' : 'warn',
-						hint: 'Run: npm audit fix (or npm audit for details)',
+						hint: 'Run: bun audit (for details)',
 					}
 				} catch {
-					// npm audit failed or not available
+					// bun audit failed or not available
 					return {
 						passed: true,
-						message: 'Security audit skipped (npm audit unavailable)',
+						message: 'Security audit skipped (bun audit unavailable)',
 						skipped: true,
 					}
 				}
