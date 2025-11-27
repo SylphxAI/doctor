@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.21.1 (2025-11-27)
+
+### 🐛 Bug Fixes
+
+- restore reusable workflow ([034327f](https://github.com/SylphxAI/doctor/commit/034327ffe7410e2dbecfadc90f5b00eeac5e09f3))
+
 ## 1.21.0 (2025-11-27)
 
 ### ✨ Features
