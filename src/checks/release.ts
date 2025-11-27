@@ -176,7 +176,7 @@ export const releaseModule: CheckModule = defineCheckModule(
 					return {
 						passed: false,
 						message: 'Missing prepublishOnly script to block direct npm publish',
-						hint: 'Add prepublishOnly script that checks for CI environment',
+						hint: 'Add: "prepublishOnly": "bunx @sylphx/doctor prepublish [&& ...]"',
 						fix: async () => {
 							const { join } = await import('node:path')
 							const { readJson } = await import('../utils/fs')
@@ -211,7 +211,21 @@ export const releaseModule: CheckModule = defineCheckModule(
 					return {
 						passed: false,
 						message: 'prepublishOnly script does not block direct publish',
-						hint: 'Use: "prepublishOnly": "bunx @sylphx/doctor prepublish"',
+						hint: 'Prepend: "bunx @sylphx/doctor prepublish && " to your existing script',
+						fix: async () => {
+							const { join } = await import('node:path')
+							const { readJson } = await import('../utils/fs')
+							const { writeFile } = await import('node:fs/promises')
+
+							const pkgPath = join(ctx.cwd, 'package.json')
+							const pkgJson = readJson(pkgPath) as Record<string, unknown>
+							const scripts = pkgJson.scripts as Record<string, string>
+
+							// Prepend doctor to existing script
+							scripts.prepublishOnly = `bunx @sylphx/doctor prepublish && ${prepublishOnly}`
+
+							await writeFile(pkgPath, JSON.stringify(pkgJson, null, 2), 'utf-8')
+						},
 					}
 				}
 
