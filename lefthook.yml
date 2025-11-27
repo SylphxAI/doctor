@@ -1,4 +1,4 @@
-# Managed by sylphx-doctor
+# Managed by @sylphx/doctor
 # https://github.com/evilmartians/lefthook
 
 pre-commit:
@@ -15,3 +15,8 @@ pre-commit:
 
     doctor:
       run: bunx @sylphx/doctor check --pre-commit
+
+pre-push:
+  commands:
+    doctor:
+      run: bunx @sylphx/doctor check --pre-push
