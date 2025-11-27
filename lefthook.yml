@@ -2,21 +2,9 @@
 # https://github.com/evilmartians/lefthook
 
 pre-commit:
-  parallel: true
   commands:
-    format:
-      glob: "*.{js,ts,jsx,tsx,json,md}"
-      run: bunx biome format --write --no-errors-on-unmatched {staged_files}
-      stage_fixed: true
-      skip_empty: true
-
-    lint:
-      glob: "*.{js,ts,jsx,tsx}"
-      run: bunx biome check --no-errors-on-unmatched {staged_files}
-      skip_empty: true
-
     doctor:
-      run: bun src/cli.ts precommit
+      run: bun src/cli.ts precommit --fix
 
 pre-push:
   commands:
