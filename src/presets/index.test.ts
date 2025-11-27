@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { allChecks } from '../checks'
 import { getPreset, getSeverity, presets } from './index'
 
 describe('presets', () => {
@@ -69,5 +70,35 @@ describe('getSeverity', () => {
 	test('override takes precedence', () => {
 		expect(getSeverity('files/readme', 'init', { 'files/readme': 'off' })).toBe('off')
 		expect(getSeverity('test/has-tests', 'init', { 'test/has-tests': 'error' })).toBe('error')
+	})
+})
+
+describe('preset completeness', () => {
+	test('all checks have preset entry', () => {
+		const basePreset = getPreset('init')
+		const presetKeys = Object.keys(basePreset)
+
+		const missingChecks = allChecks
+			.map((check) => check.name)
+			.filter((name) => !presetKeys.includes(name))
+
+		if (missingChecks.length > 0) {
+			throw new Error(`Missing preset entries for: ${missingChecks.join(', ')}`)
+		}
+
+		expect(missingChecks).toEqual([])
+	})
+
+	test('no orphan preset entries', () => {
+		const basePreset = getPreset('init')
+		const checkNames = allChecks.map((check) => check.name)
+
+		const orphanEntries = Object.keys(basePreset).filter((name) => !checkNames.includes(name))
+
+		if (orphanEntries.length > 0) {
+			throw new Error(`Orphan preset entries (no matching check): ${orphanEntries.join(', ')}`)
+		}
+
+		expect(orphanEntries).toEqual([])
 	})
 })
