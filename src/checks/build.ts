@@ -101,6 +101,7 @@ export const buildModule: CheckModule = defineCheckModule(
 			description: 'Check if bunup is in devDependencies when build uses it',
 			fixable: true,
 			async check(ctx) {
+				const { readPackageJson } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')
 
 				const buildScript = ctx.packageJson?.scripts?.build ?? ''
@@ -111,7 +112,9 @@ export const buildModule: CheckModule = defineCheckModule(
 					return { passed: true, message: 'Build does not use bunup (skipped)', skipped: true }
 				}
 
-				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				// Read fresh from disk to handle post-fix verification
+				const packageJson = readPackageJson(ctx.cwd)
+				const devDeps = packageJson?.devDependencies ?? {}
 				const hasBunup = 'bunup' in devDeps
 
 				return {

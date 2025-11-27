@@ -237,7 +237,7 @@ export const hooksModule: CheckModule = defineCheckModule(
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
-				const { fileExists } = await import('../utils/fs')
+				const { fileExists, readPackageJson } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')
 
 				const lefthookPath = join(ctx.cwd, 'lefthook.yml')
@@ -249,7 +249,9 @@ export const hooksModule: CheckModule = defineCheckModule(
 					return { passed: true, message: 'No lefthook config (skipped)', skipped: true }
 				}
 
-				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				// Read fresh from disk to handle post-fix verification
+				const packageJson = readPackageJson(ctx.cwd)
+				const devDeps = packageJson?.devDependencies ?? {}
 				const hasLefthook = 'lefthook' in devDeps
 
 				return {
@@ -302,7 +304,7 @@ export const hooksModule: CheckModule = defineCheckModule(
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
-				const { fileExists, readFile } = await import('../utils/fs')
+				const { fileExists, readFile, readPackageJson } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')
 
 				const lefthookPath = join(ctx.cwd, 'lefthook.yml')
@@ -326,7 +328,9 @@ export const hooksModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				// Read fresh from disk to handle post-fix verification
+				const packageJson = readPackageJson(ctx.cwd)
+				const devDeps = packageJson?.devDependencies ?? {}
 				const hasDoctor = '@sylphx/doctor' in devDeps
 
 				return {

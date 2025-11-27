@@ -58,7 +58,7 @@ export const formatModule: CheckModule = defineCheckModule(
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
-				const { fileExists } = await import('../utils/fs')
+				const { fileExists, readPackageJson } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')
 
 				const hasBiomeConfig = fileExists(join(ctx.cwd, 'biome.json'))
@@ -68,7 +68,9 @@ export const formatModule: CheckModule = defineCheckModule(
 					return { passed: true, message: 'No biome.json (skipped)', skipped: true }
 				}
 
-				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				// Read fresh from disk to handle post-fix verification
+				const packageJson = readPackageJson(ctx.cwd)
+				const devDeps = packageJson?.devDependencies ?? {}
 				const hasBiome = '@biomejs/biome' in devDeps
 
 				return {

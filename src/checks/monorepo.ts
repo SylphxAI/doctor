@@ -279,11 +279,14 @@ export const monorepoModule: CheckModule = defineCheckModule(
 			description: 'Check if turbo is in devDependencies',
 			fixable: true,
 			async check(ctx) {
+				const { readPackageJson } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')
 
 				if (!ctx.isMonorepo) return skipResult()
 
-				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				// Read fresh from disk to handle post-fix verification
+				const packageJson = readPackageJson(ctx.cwd)
+				const devDeps = packageJson?.devDependencies ?? {}
 				const hasTurbo = 'turbo' in devDeps
 
 				return {

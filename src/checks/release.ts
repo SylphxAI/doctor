@@ -242,7 +242,7 @@ export const releaseModule: CheckModule = defineCheckModule(
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
-				const { fileExists, readFile } = await import('../utils/fs')
+				const { fileExists, readFile, readPackageJson } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')
 
 				// Check if using shared release workflow
@@ -268,7 +268,9 @@ export const releaseModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				// Read fresh from disk to handle post-fix verification
+				const packageJson = readPackageJson(ctx.cwd)
+				const devDeps = packageJson?.devDependencies ?? {}
 				const hasBump = '@sylphx/bump' in devDeps
 
 				return {
