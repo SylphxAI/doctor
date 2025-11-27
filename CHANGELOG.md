@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.14.8 (2025-11-27)
+
+### ♻️ Refactoring
+
+- **hooks:** split lefthook check into granular checks ([5e4386b](https://github.com/SylphxAI/doctor/commit/5e4386baa6b51ff32674df5fb04e415cb5ec942c))
+
 ## 1.14.7 (2025-11-27)
 
 ### 🐛 Bug Fixes
