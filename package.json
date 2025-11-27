@@ -1,65 +1,65 @@
 {
-	"name": "@sylphx/doctor",
-	"version": "1.23.3",
-	"description": "CLI tool to check and enforce project standards across SylphxAI repositories",
-	"type": "module",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		}
-	},
-	"bin": {
-		"doctor": "./dist/cli.js"
-	},
-	"files": [
-		"dist"
-	],
-	"scripts": {
-		"build": "bunup && bun build src/cli.ts --outfile dist/cli.js --target node",
-		"dev": "bunup --watch",
-		"lint": "biome check .",
-		"format": "biome format --write .",
-		"test": "bun test",
-		"test:coverage": "bun test --coverage",
-		"typecheck": "tsc --noEmit",
-		"prepack": "bun run build",
-		"prepublishOnly": "bun src/cli.ts prepublish"
-	},
-	"dependencies": {
-		"citty": "^0.1.6",
-		"consola": "^3.4.2",
-		"defu": "^6.1.4",
-		"jiti": "^2.4.2",
-		"picocolors": "^1.1.1"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "^2.3.8",
-		"@sylphx/biome-config": "^0.4.0",
-		"@sylphx/bump": "^0.6.1",
-		"@sylphx/doctor": "^1.16.1",
-		"@sylphx/tsconfig": "^0.1.0",
-		"@types/bun": "^1.2.10",
-		"bunup": "^0.9.2",
-		"lefthook": "^2.0.4",
-		"typescript": "^5.8.3"
-	},
-	"keywords": [
-		"cli",
-		"doctor",
-		"lint",
-		"standards",
-		"monorepo",
-		"typescript"
-	],
-	"author": "SylphxAI",
-	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/SylphxAI/doctor.git"
-	},
-	"bugs": {
-		"url": "https://github.com/SylphxAI/doctor/issues"
-	},
-	"homepage": "https://github.com/SylphxAI/doctor#readme"
+  "name": "@sylphx/doctor",
+  "version": "1.24.0",
+  "description": "CLI tool to check and enforce project standards across SylphxAI repositories",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "doctor": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bunup && bun build src/cli.ts --outfile dist/cli.js --target node",
+    "dev": "bunup --watch",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage",
+    "typecheck": "tsc --noEmit",
+    "prepack": "bun run build",
+    "prepublishOnly": "bun src/cli.ts prepublish"
+  },
+  "dependencies": {
+    "citty": "^0.1.6",
+    "consola": "^3.4.2",
+    "defu": "^6.1.4",
+    "jiti": "^2.4.2",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.8",
+    "@sylphx/biome-config": "^0.4.0",
+    "@sylphx/bump": "^0.6.1",
+    "@sylphx/doctor": "^1.16.1",
+    "@sylphx/tsconfig": "^0.1.0",
+    "@types/bun": "^1.2.10",
+    "bunup": "^0.9.2",
+    "lefthook": "^2.0.4",
+    "typescript": "^5.8.3"
+  },
+  "keywords": [
+    "cli",
+    "doctor",
+    "lint",
+    "standards",
+    "monorepo",
+    "typescript"
+  ],
+  "author": "SylphxAI",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SylphxAI/doctor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SylphxAI/doctor/issues"
+  },
+  "homepage": "https://github.com/SylphxAI/doctor#readme"
 }
