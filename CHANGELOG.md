@@ -1,5 +1,15 @@
 # sylphx-doctor
 
+## 1.20.0 (2025-11-27)
+
+### ✨ Features
+
+- **monorepo:** split workspace protocol checks ([4cf76c5](https://github.com/SylphxAI/doctor/commit/4cf76c5db41f2cd3324a397e1e556ab1d48947f2))
+
+### 🐛 Bug Fixes
+
+- **monorepo:** clarify workspace protocol check description ([3fc5ef2](https://github.com/SylphxAI/doctor/commit/3fc5ef2b743651a593da2a20fdc752e0f7039c8c))
+
 ## 1.19.2 (2025-11-27)
 
 ### ♻️ Refactoring
