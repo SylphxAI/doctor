@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { readdir, stat } from 'node:fs/promises'
 import { dirname, join, parse, relative } from 'node:path'
 import type { PackageJson, WorkspacePackage } from '../types'
@@ -18,6 +18,10 @@ export function readJson<T>(path: string): T | null {
 
 export function readPackageJson(cwd: string): PackageJson | null {
 	return readJson<PackageJson>(join(cwd, 'package.json'))
+}
+
+export function writePackageJson(cwd: string, pkg: PackageJson): void {
+	writeFileSync(join(cwd, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`, 'utf-8')
 }
 
 export function readFile(path: string): string | null {

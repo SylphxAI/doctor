@@ -302,6 +302,58 @@ export const hooksModule: CheckModule = defineCheckModule(
 		},
 
 		{
+			name: 'hooks/lefthook-prepare',
+			description: 'Check if prepare script is CI-safe for lefthook',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { fileExists, readPackageJson, writePackageJson } = await import('../utils/fs')
+
+				const lefthookPath = join(ctx.cwd, 'lefthook.yml')
+				const lefthookYamlPath = join(ctx.cwd, 'lefthook.yaml')
+				const hasConfig = fileExists(lefthookPath) || fileExists(lefthookYamlPath)
+
+				// Skip if no lefthook config
+				if (!hasConfig) {
+					return { passed: true, message: 'No lefthook config (skipped)', skipped: true }
+				}
+
+				const pkg = readPackageJson(ctx.cwd)
+				const prepare = pkg?.scripts?.prepare
+
+				// No prepare script is fine
+				if (!prepare) {
+					return { passed: true, message: 'No prepare script (ok)' }
+				}
+
+				// Check if prepare uses bare "lefthook" command (will fail in CI)
+				// Good: "node_modules/.bin/lefthook install || true"
+				// Bad: "lefthook install"
+				const isBare = /^lefthook\s/.test(prepare) || /\s&&\s*lefthook\s/.test(prepare)
+
+				if (isBare) {
+					return {
+						passed: false,
+						message: 'prepare script uses bare "lefthook" (fails in CI)',
+						hint: 'Change to: "node_modules/.bin/lefthook install || true"',
+						fix: async () => {
+							const updated = prepare.replace(
+								/\blefthook\s+install\b/g,
+								'node_modules/.bin/lefthook install || true'
+							)
+							if (pkg?.scripts) {
+								pkg.scripts.prepare = updated
+								writePackageJson(ctx.cwd, pkg)
+							}
+						},
+					}
+				}
+
+				return { passed: true, message: 'prepare script is CI-safe' }
+			},
+		},
+
+		{
 			name: 'hooks/doctor-dep',
 			description: 'Check if @sylphx/doctor is in devDependencies when lefthook uses it',
 			fixable: true,

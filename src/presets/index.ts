@@ -86,6 +86,7 @@ const basePreset: PresetConfig = {
 	'hooks/lefthook-installed': 'error',
 	'hooks/lefthook-dep': 'error',
 	'hooks/no-husky': 'error',
+	'hooks/lefthook-prepare': 'error',
 	'hooks/doctor-dep': 'error',
 
 	// GitHub
