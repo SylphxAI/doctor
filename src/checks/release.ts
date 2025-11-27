@@ -3,19 +3,11 @@ import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
 /**
- * Check if commit message matches release patterns
+ * Check if commit message matches release pattern
+ * Aligned with @sylphx/bump action detection
  */
 function isReleaseCommit(msg: string): boolean {
-	const releasePatterns = [
-		/^chore\(release\)/i,
-		/^chore:\s*release/i,
-		/^release:/i,
-		/^release\(/i,
-		/bump.*version/i,
-		/^v?\d+\.\d+\.\d+$/,
-	]
-
-	return releasePatterns.some((pattern) => pattern.test(msg))
+	return msg.includes('chore(release):')
 }
 
 export const releaseModule: CheckModule = defineCheckModule(
