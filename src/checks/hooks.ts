@@ -264,5 +264,36 @@ export const hooksModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'hooks/no-husky',
+			description: 'Check for legacy git hook tools (use lefthook instead)',
+			fixable: true,
+			async check(ctx) {
+				const { exec } = await import('../utils/exec')
+
+				const banned = ['husky', 'simple-git-hooks', 'lint-staged']
+
+				const allDeps = {
+					...ctx.packageJson?.dependencies,
+					...ctx.packageJson?.devDependencies,
+				}
+
+				const found = banned.filter((pkg) => pkg in allDeps)
+
+				if (found.length === 0) {
+					return { passed: true, message: 'No legacy git hook tools' }
+				}
+
+				return {
+					passed: false,
+					message: `Found legacy git hook tools: ${found.join(', ')}`,
+					hint: `Use lefthook instead. Run: bun remove ${found.join(' ')}`,
+					fix: async () => {
+						await exec('bun', ['remove', ...found], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )

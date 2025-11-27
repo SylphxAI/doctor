@@ -99,5 +99,36 @@ export const runtimeModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'runtime/no-ts-node',
+			description: 'Check for legacy TS execution tools (use bun instead)',
+			fixable: true,
+			async check(ctx) {
+				const { exec } = await import('../utils/exec')
+
+				const banned = ['ts-node', 'tsx', 'ts-node-dev']
+
+				const allDeps = {
+					...ctx.packageJson?.dependencies,
+					...ctx.packageJson?.devDependencies,
+				}
+
+				const found = banned.filter((pkg) => pkg in allDeps)
+
+				if (found.length === 0) {
+					return { passed: true, message: 'No legacy TS execution tools' }
+				}
+
+				return {
+					passed: false,
+					message: `Found legacy TS tools: ${found.join(', ')}`,
+					hint: `Use bun instead (bun runs TS natively). Run: bun remove ${found.join(' ')}`,
+					fix: async () => {
+						await exec('bun', ['remove', ...found], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )

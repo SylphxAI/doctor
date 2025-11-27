@@ -178,53 +178,23 @@ export const depsModule: CheckModule = defineCheckModule(
 
 		{
 			name: 'deps/banned',
-			description: 'Check for packages that should not be installed',
+			description: 'Check for banned packages (uncategorized)',
 			fixable: true,
 			async check(ctx) {
 				const { getAllPackages } = await import('../utils/context')
 
-				// Banned packages with their alternatives
+				// Only keep uncategorized banned packages here
+				// Categorized bans are now in their respective modules:
+				// - format/no-eslint (eslint, prettier, etc.)
+				// - build/no-legacy-bundlers (webpack, rollup, etc.)
+				// - test/no-legacy-frameworks (jest, vitest, etc.)
+				// - hooks/no-husky (husky, simple-git-hooks, etc.)
+				// - runtime/no-ts-node (ts-node, tsx, etc.)
 				const bannedPackages: Record<string, string> = {
-					// Linting/Formatting - use biome
-					eslint: 'biome',
-					prettier: 'biome',
-					'@typescript-eslint/parser': 'biome',
-					'@typescript-eslint/eslint-plugin': 'biome',
-					'eslint-config-prettier': 'biome',
-					'eslint-plugin-prettier': 'biome',
-
-					// Build tools - use bunup
-					esbuild: 'bunup',
-					tsup: 'bunup',
-					rollup: 'bunup',
-					webpack: 'bunup',
-					parcel: 'bunup',
-					'@rollup/plugin-node-resolve': 'bunup',
-					'@rollup/plugin-commonjs': 'bunup',
-					'rollup-plugin-dts': 'bunup',
-
-					// Testing - use bun test
-					jest: 'bun test',
-					vitest: 'bun test',
-					mocha: 'bun test',
-					chai: 'bun test',
-					'ts-jest': 'bun test',
-					'@types/jest': 'bun test',
-
-					// Git hooks - use lefthook
-					husky: 'lefthook',
-					'simple-git-hooks': 'lefthook',
-					'lint-staged': 'lefthook',
-
-					// TypeScript execution - use bun
-					'ts-node': 'bun',
-					tsx: 'bun',
-					'ts-node-dev': 'bun --watch',
-
-					// Package managers - use bun
-					npm: 'bun (remove npm)',
-					yarn: 'bun (remove yarn)',
-					pnpm: 'bun (remove pnpm)',
+					// Package managers as deps (should never be in deps)
+					npm: 'remove from dependencies',
+					yarn: 'remove from dependencies',
+					pnpm: 'remove from dependencies',
 				}
 
 				const allPackages = getAllPackages(ctx)

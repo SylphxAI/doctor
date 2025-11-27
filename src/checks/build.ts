@@ -124,5 +124,45 @@ export const buildModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'build/no-legacy-bundlers',
+			description: 'Check for legacy bundlers (use bunup instead)',
+			fixable: true,
+			async check(ctx) {
+				const { exec } = await import('../utils/exec')
+
+				const banned = [
+					'esbuild',
+					'tsup',
+					'rollup',
+					'webpack',
+					'parcel',
+					'@rollup/plugin-node-resolve',
+					'@rollup/plugin-commonjs',
+					'rollup-plugin-dts',
+				]
+
+				const allDeps = {
+					...ctx.packageJson?.dependencies,
+					...ctx.packageJson?.devDependencies,
+				}
+
+				const found = banned.filter((pkg) => pkg in allDeps)
+
+				if (found.length === 0) {
+					return { passed: true, message: 'No legacy bundlers' }
+				}
+
+				return {
+					passed: false,
+					message: `Found legacy bundlers: ${found.join(', ')}`,
+					hint: `Use bunup instead. Run: bun remove ${found.join(' ')}`,
+					fix: async () => {
+						await exec('bun', ['remove', ...found], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )

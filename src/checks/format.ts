@@ -81,5 +81,44 @@ export const formatModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'format/no-eslint',
+			description: 'Check for legacy linting tools (use biome instead)',
+			fixable: true,
+			async check(ctx) {
+				const { exec } = await import('../utils/exec')
+
+				// Banned linting/formatting packages
+				const banned = [
+					'eslint',
+					'prettier',
+					'@typescript-eslint/parser',
+					'@typescript-eslint/eslint-plugin',
+					'eslint-config-prettier',
+					'eslint-plugin-prettier',
+				]
+
+				const allDeps = {
+					...ctx.packageJson?.dependencies,
+					...ctx.packageJson?.devDependencies,
+				}
+
+				const found = banned.filter((pkg) => pkg in allDeps)
+
+				if (found.length === 0) {
+					return { passed: true, message: 'No legacy linting tools' }
+				}
+
+				return {
+					passed: false,
+					message: `Found legacy linting tools: ${found.join(', ')}`,
+					hint: `Use biome instead. Run: bun remove ${found.join(' ')}`,
+					fix: async () => {
+						await exec('bun', ['remove', ...found], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )

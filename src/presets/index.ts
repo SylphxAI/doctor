@@ -43,21 +43,26 @@ const basePreset: PresetConfig = {
 	'test/has-tests': 'off',
 	'test/passes': 'off',
 	'test/coverage-threshold': 'off',
+	'test/no-legacy-frameworks': 'error',
 	'bench/has-files': 'off',
 
 	// Formatting
 	'format/biome-check': 'error',
 	'format/biome-format': 'error',
 	'format/biome-dep': 'error',
+	'format/no-eslint': 'error',
 
 	// Build
 	'build/exports-valid': 'off',
 	'build/bunup-dep': 'error',
+	'build/no-legacy-bundlers': 'error',
 
 	// Runtime
 	'runtime/bun-lock': 'error',
 	'runtime/no-npm-lock': 'error',
 	'runtime/no-yarn-lock': 'error',
+	'runtime/no-pnpm-lock': 'error',
+	'runtime/no-ts-node': 'error',
 
 	// Docs
 	'docs/vitepress': 'off',
@@ -74,6 +79,7 @@ const basePreset: PresetConfig = {
 	'hooks/lefthook-doctor': 'error',
 	'hooks/lefthook-installed': 'error',
 	'hooks/lefthook-dep': 'error',
+	'hooks/no-husky': 'error',
 
 	// GitHub
 	'github/description': 'warn',

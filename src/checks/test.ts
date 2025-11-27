@@ -210,5 +210,36 @@ export const testModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'test/no-legacy-frameworks',
+			description: 'Check for legacy test frameworks (use bun test instead)',
+			fixable: true,
+			async check(ctx) {
+				const { exec } = await import('../utils/exec')
+
+				const banned = ['jest', 'vitest', 'mocha', 'chai', 'ts-jest', '@types/jest']
+
+				const allDeps = {
+					...ctx.packageJson?.dependencies,
+					...ctx.packageJson?.devDependencies,
+				}
+
+				const found = banned.filter((pkg) => pkg in allDeps)
+
+				if (found.length === 0) {
+					return { passed: true, message: 'No legacy test frameworks' }
+				}
+
+				return {
+					passed: false,
+					message: `Found legacy test frameworks: ${found.join(', ')}`,
+					hint: `Use bun test instead. Run: bun remove ${found.join(' ')}`,
+					fix: async () => {
+						await exec('bun', ['remove', ...found], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )
