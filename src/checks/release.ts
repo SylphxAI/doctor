@@ -10,6 +10,15 @@ function isReleaseCommit(msg: string): boolean {
 	return msg.includes('chore(release):')
 }
 
+/**
+ * Check if on bump/release branch (used by @sylphx/bump pr command)
+ */
+async function isReleaseBranch(cwd: string): Promise<boolean> {
+	const { exec } = await import('../utils/exec')
+	const result = await exec('git', ['branch', '--show-current'], cwd)
+	return result.stdout.trim() === 'bump/release'
+}
+
 export const releaseModule: CheckModule = defineCheckModule(
 	{
 		category: 'release',
@@ -24,10 +33,10 @@ export const releaseModule: CheckModule = defineCheckModule(
 			async check(ctx) {
 				const { exec } = await import('../utils/exec')
 
-				if (isCI()) {
+				if (isCI() || (await isReleaseBranch(ctx.cwd))) {
 					return {
 						passed: true,
-						message: 'Version change allowed (CI environment)',
+						message: 'Version change allowed (CI or bump/release branch)',
 					}
 				}
 
@@ -103,10 +112,10 @@ export const releaseModule: CheckModule = defineCheckModule(
 
 					// Check if last commit is a release commit (for pre-push)
 					if (isReleaseCommit(lastCommitMsg)) {
-						if (isCI()) {
+						if (isCI() || (await isReleaseBranch(ctx.cwd))) {
 							return {
 								passed: true,
-								message: 'Release commit allowed (CI environment)',
+								message: 'Release commit allowed (CI or bump/release branch)',
 							}
 						}
 
@@ -134,17 +143,17 @@ export const releaseModule: CheckModule = defineCheckModule(
 
 				// Check for release commit patterns
 				if (isReleaseCommit(commitMsg)) {
-					if (isCI()) {
+					if (isCI() || (await isReleaseBranch(ctx.cwd))) {
 						return {
 							passed: true,
-							message: 'Release commit allowed (CI environment)',
+							message: 'Release commit allowed (CI or bump/release branch)',
 						}
 					}
 
 					return {
 						passed: false,
 						message: `Manual release commit blocked: "${commitMsg}"`,
-						hint: 'Release commits (chore(release), chore: release, etc.) are reserved for automated workflow',
+						hint: 'Release commits (chore(release):) are reserved for automated workflow',
 					}
 				}
 
