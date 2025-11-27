@@ -97,22 +97,18 @@ export const ciModule: CheckModule = defineCheckModule(
 				const usesSharedWorkflow = content.includes(SHARED_WORKFLOW)
 				const usesSecretsInherit = content.includes('secrets: inherit')
 
-				if (!usesSharedWorkflow) {
-					return {
-						passed: false,
-						message: 'Release workflow not using shared reusable workflow',
-						hint: `Use: uses: ${SHARED_WORKFLOW}@main`,
-						fix: async () => {
-							writeFileSync(releasePath, defaultReleaseWorkflow, 'utf-8')
-						},
-					}
-				}
+				// Collect ALL issues (not just the first one)
+				const missing: string[] = []
+				if (!usesSharedWorkflow) missing.push('shared workflow')
+				if (!usesSecretsInherit) missing.push('secrets: inherit')
 
-				if (!usesSecretsInherit) {
+				if (missing.length > 0) {
 					return {
 						passed: false,
-						message: 'Release workflow missing secrets: inherit',
-						hint: 'Add: secrets: inherit',
+						message: `Release workflow missing: ${missing.join(', ')}`,
+						hint: !usesSharedWorkflow
+							? `Use: uses: ${SHARED_WORKFLOW}@main`
+							: 'Add: secrets: inherit',
 						fix: async () => {
 							writeFileSync(releasePath, defaultReleaseWorkflow, 'utf-8')
 						},

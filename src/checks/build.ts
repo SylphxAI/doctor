@@ -18,15 +18,14 @@ function checkExports(pkg: PackageJson, location: string): PackageIssue | null {
 		return { location, issue: 'exports missing "." entry' }
 	}
 
+	// Collect ALL missing fields (not just the first one)
 	const exportObj = mainExport as Record<string, unknown>
-	const hasTypes = 'types' in exportObj
-	const hasImport = 'import' in exportObj
+	const missing: string[] = []
+	if (!('types' in exportObj)) missing.push('types')
+	if (!('import' in exportObj)) missing.push('import')
 
-	if (!hasTypes) {
-		return { location, issue: 'exports["."] missing types' }
-	}
-	if (!hasImport) {
-		return { location, issue: 'exports["."] missing import' }
+	if (missing.length > 0) {
+		return { location, issue: `exports["."] missing: ${missing.join(', ')}` }
 	}
 
 	return null
