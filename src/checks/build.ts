@@ -5,9 +5,9 @@ import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
 /**
- * Legacy bundlers that bunup can replace
+ * Legacy bundler dependencies that bunup can replace
  */
-const LEGACY_BUNDLERS = [
+const LEGACY_BUNDLER_DEPS = [
 	'esbuild',
 	'tsup',
 	'rollup',
@@ -21,14 +21,20 @@ const LEGACY_BUNDLERS = [
 ]
 
 /**
- * Check if project uses any legacy bundlers
+ * Check if project uses any legacy bundlers (deps or build script)
  */
-function usesLegacyBundlers(ctx: CheckContext): string[] {
-	const deps = {
+function usesLegacyBundlers(ctx: CheckContext): { deps: string[]; usesBunBuild: boolean } {
+	const allDeps = {
 		...ctx.packageJson?.dependencies,
 		...ctx.packageJson?.devDependencies,
 	}
-	return LEGACY_BUNDLERS.filter((pkg) => pkg in deps)
+	const deps = LEGACY_BUNDLER_DEPS.filter((pkg) => pkg in allDeps)
+
+	// Check if build script uses "bun build" (not bunup)
+	const buildScript = ctx.packageJson?.scripts?.build ?? ''
+	const usesBunBuild = buildScript.includes('bun build') && !buildScript.includes('bunup')
+
+	return { deps, usesBunBuild }
 }
 
 function checkExports(pkg: PackageJson, location: string): PackageIssue | null {
@@ -157,28 +163,43 @@ export const buildModule: CheckModule = defineCheckModule(
 
 		{
 			name: 'build/suggest-bunup',
-			description: 'Suggest bunup for projects using legacy bundlers',
+			description: 'Check for legacy bundlers (use bunup instead)',
 			fixable: true,
 			async check(ctx) {
 				const { exec } = await import('../utils/exec')
 
-				// Only check if project uses legacy bundlers
-				const legacyBundlers = usesLegacyBundlers(ctx)
+				// Check for legacy bundlers (deps and build script)
+				const { deps, usesBunBuild } = usesLegacyBundlers(ctx)
 
-				// No legacy bundlers = nothing to suggest, skip silently
-				if (legacyBundlers.length === 0) {
+				// No legacy bundlers = nothing to check, skip silently
+				if (deps.length === 0 && !usesBunBuild) {
 					return { passed: true, message: 'No legacy bundlers', skipped: true }
 				}
 
-				// Found legacy bundlers - suggest migration to bunup
+				// Build error message
+				const issues: string[] = []
+				if (deps.length > 0) {
+					issues.push(`legacy deps: ${deps.join(', ')}`)
+				}
+				if (usesBunBuild) {
+					issues.push('"bun build" in build script')
+				}
+
+				// Found legacy bundlers - must migrate to bunup
 				return {
 					passed: false,
-					message: `Using legacy bundlers: ${legacyBundlers.join(', ')}`,
-					hint: `Use bunup instead. Run: bun remove ${legacyBundlers.join(' ')} && bun add -D bunup`,
-					fix: async () => {
-						await exec('bun', ['remove', ...legacyBundlers], ctx.cwd)
-						await exec('bun', ['add', '-D', 'bunup'], ctx.cwd)
-					},
+					message: `Using legacy bundlers: ${issues.join('; ')}`,
+					hint:
+						deps.length > 0
+							? `Use bunup instead. Run: bun remove ${deps.join(' ')} && bun add -D bunup`
+							: 'Use bunup instead. Replace "bun build" with "bunup" in build script',
+					fix:
+						deps.length > 0
+							? async () => {
+									await exec('bun', ['remove', ...deps], ctx.cwd)
+									await exec('bun', ['add', '-D', 'bunup'], ctx.cwd)
+								}
+							: undefined, // Can't auto-fix build script change
 				}
 			},
 		},
