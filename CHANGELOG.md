@@ -1,5 +1,13 @@
 # sylphx-doctor
 
+## 1.19.1 (2025-11-27)
+
+### 🐛 Bug Fixes
+
+- **hooks:** add --no-errors-on-unmatched to biome commands ([81cc419](https://github.com/SylphxAI/doctor/commit/81cc419d85c5dfd594ab685df4322fd5c209cb77))
+- **release:** allow release commits on bump/release branch ([f6e397e](https://github.com/SylphxAI/doctor/commit/f6e397ef6bf73308bf068e020af14c473e3fce2f))
+- **release:** align release commit detection with @sylphx/bump ([9b7f45e](https://github.com/SylphxAI/doctor/commit/9b7f45e0a5870d33c8d1d9f442c067ce32c66b74))
+
 ## 1.19.0 (2025-11-27)
 
 ### ✨ Features
