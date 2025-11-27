@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.17.0 (2025-11-27)
+
+### ✨ Features
+
+- **checks:** add hooks/doctor-dep and release/bump-dep checks ([8efb30d](https://github.com/SylphxAI/doctor/commit/8efb30da33f7e17b65e266585c2afc2704ff0a39))
+
 ## 1.16.1 (2025-11-27)
 
 ### ♻️ Refactoring
