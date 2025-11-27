@@ -51,6 +51,7 @@ const basePreset: PresetConfig = {
 	// Formatting
 	'format/biome-check': 'error',
 	'format/biome-format': 'error',
+	'format/typecheck': 'error',
 	'format/biome-dep': 'error',
 	'format/no-eslint': 'error',
 	'format/no-eslint-config': 'error',

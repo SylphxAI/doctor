@@ -12,7 +12,7 @@ export const formatModule: CheckModule = defineCheckModule(
 			name: 'format/biome-check',
 			description: 'Run biome check',
 			fixable: true,
-			stages: ['commit'],
+			// Not in commit stage - lefthook runs biome directly for staging
 			async check(ctx) {
 				const { exec } = await import('../utils/exec')
 
@@ -34,7 +34,7 @@ export const formatModule: CheckModule = defineCheckModule(
 			name: 'format/biome-format',
 			description: 'Run biome format',
 			fixable: true,
-			stages: ['commit'],
+			// Not in commit stage - lefthook runs biome directly for staging
 			async check(ctx) {
 				const { exec } = await import('../utils/exec')
 
@@ -199,6 +199,33 @@ export const formatModule: CheckModule = defineCheckModule(
 							unlinkSync(join(ctx.cwd, f))
 						}
 					},
+				}
+			},
+		},
+
+		{
+			name: 'format/typecheck',
+			description: 'Run TypeScript type checking',
+			fixable: false,
+			stages: ['commit'],
+			// TODO: unsure if commit or push stage is best for typecheck
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { fileExists } = await import('../utils/fs')
+				const { exec } = await import('../utils/exec')
+
+				// Skip if no tsconfig
+				if (!fileExists(join(ctx.cwd, 'tsconfig.json'))) {
+					return { passed: true, message: 'No tsconfig.json (skipped)', skipped: true }
+				}
+
+				const result = await exec('bun', ['--bun', 'tsc', '--noEmit'], ctx.cwd)
+				const passed = result.exitCode === 0
+
+				return {
+					passed,
+					message: passed ? 'Type check passed' : 'Type errors found',
+					hint: passed ? undefined : 'Run: bun --bun tsc --noEmit',
 				}
 			},
 		},

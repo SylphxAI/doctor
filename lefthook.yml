@@ -16,9 +16,9 @@ pre-commit:
       skip_empty: true
 
     doctor:
-      run: bunx @sylphx/doctor check --pre-commit
+      run: bun src/cli.ts commit
 
 pre-push:
   commands:
     doctor:
-      run: bunx @sylphx/doctor check --pre-push
+      run: bun src/cli.ts push

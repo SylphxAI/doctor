@@ -2,6 +2,26 @@ export type Severity = 'error' | 'warn' | 'info' | 'off'
 
 export type CheckStage = 'commit' | 'push'
 
+export type HookName = 'commit' | 'push' | 'prepublish'
+
+export interface Guard {
+	name: string
+	/** Which hook this guard runs on */
+	hook: HookName
+	/** Description */
+	description: string
+	/** Run the guard, return { passed, message } */
+	run: () => Promise<{ passed: boolean; message: string }>
+}
+
+export interface InfoMessage {
+	name: string
+	/** Which hook this info shows on */
+	hook: HookName
+	/** Get the message to display */
+	message: () => string
+}
+
 export type PresetName = 'init' | 'dev' | 'stable'
 
 export interface CheckResult {

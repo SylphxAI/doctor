@@ -5,14 +5,16 @@ import consola from 'consola'
 import pc from 'picocolors'
 import { version } from '../package.json'
 import { loadConfig } from './config'
+import { getGuardsForHook } from './guards'
+import { getInfoForHook } from './info'
 import { formatPreCommitReport, formatReport } from './reporter'
-import { checkUpgradeReadiness, getExitCode, runChecks } from './runner'
-import type { CheckStage, PresetName } from './types'
+import { checkUpgradeReadiness, runChecks } from './runner'
+import type { PresetName } from './types'
 
 const checkCommand = defineCommand({
 	meta: {
 		name: 'check',
-		description: 'Check project against standards',
+		description: 'Full project audit (all checks)',
 	},
 	args: {
 		fix: {
@@ -24,43 +26,14 @@ const checkCommand = defineCommand({
 			type: 'string',
 			description: 'Preset to use (init, dev, stable)',
 		},
-		'pre-commit': {
-			type: 'boolean',
-			description: 'Run in pre-commit mode (only errors, no warnings)',
-			default: false,
-		},
-		'pre-push': {
-			type: 'boolean',
-			description: 'Run in pre-push mode (with release hint)',
-			default: false,
-		},
 		'dry-run': {
 			type: 'boolean',
 			description: 'Preview what would be fixed without making changes',
 			default: false,
 		},
-		stage: {
-			type: 'string',
-			description: 'Filter checks by stage (commit, push)',
-		},
 	},
 	async run({ args }) {
 		const cwd = process.cwd()
-		const preCommit = args['pre-commit']
-		const prePush = args['pre-push']
-
-		// Determine stage (--stage flag or legacy --pre-commit/--pre-push)
-		let stage: CheckStage | undefined = args.stage as CheckStage | undefined
-		if (!stage && preCommit) stage = 'commit'
-		if (!stage && prePush) stage = 'push'
-
-		// Validate stage
-		if (stage && !['commit', 'push'].includes(stage)) {
-			consola.error(`Invalid stage: ${stage}. Use: commit or push`)
-			process.exit(1)
-		}
-
-		// Load config to get preset
 		const config = await loadConfig(cwd)
 		const preset = (args.preset as PresetName) ?? config.preset ?? 'dev'
 
@@ -72,57 +45,98 @@ const checkCommand = defineCommand({
 		const report = await runChecks({
 			cwd,
 			fix: args.fix && !args['dry-run'],
-			preCommit,
 			preset,
 			config,
-			stage,
 		})
 
-		// Output report
-		if (preCommit) {
-			console.log(formatPreCommitReport(report))
-		} else {
-			console.log(formatReport(report, preset))
+		console.log(formatReport(report, preset))
 
-			// Check upgrade readiness when all checks pass
-			if (report.failed === 0 && report.warnings === 0) {
-				const upgrade = await checkUpgradeReadiness({
-					cwd,
-					preset,
-					config,
-				})
+		// Check upgrade readiness when all checks pass
+		if (report.failed === 0 && report.warnings === 0) {
+			const upgrade = await checkUpgradeReadiness({ cwd, preset, config })
 
-				if (upgrade.nextPreset) {
-					if (upgrade.ready) {
-						// Ready to upgrade!
-						console.log(
-							pc.bold(pc.green(`🎉 Ready to upgrade to ${pc.cyan(upgrade.nextPreset)} preset!`))
+			if (upgrade.nextPreset) {
+				if (upgrade.ready) {
+					console.log(
+						pc.bold(pc.green(`🎉 Ready to upgrade to ${pc.cyan(upgrade.nextPreset)} preset!`))
+					)
+					console.log(pc.dim(`   Run: ${pc.cyan('doctor upgrade')} or update your config manually`))
+					console.log()
+				} else if (upgrade.nextScore >= 80) {
+					console.log(
+						pc.yellow(
+							`💡 ${upgrade.blockers} issue(s) away from ${pc.cyan(upgrade.nextPreset)} preset (${upgrade.nextScore}% ready)`
 						)
-						console.log(
-							pc.dim(`   Run: ${pc.cyan('doctor upgrade')} or update your config manually`)
-						)
-						console.log()
-					} else if (upgrade.nextScore >= 80) {
-						// Close to ready
-						console.log(
-							pc.yellow(
-								`💡 ${upgrade.blockers} issue(s) away from ${pc.cyan(upgrade.nextPreset)} preset (${upgrade.nextScore}% ready)`
-							)
-						)
-						console.log(
-							pc.dim(
-								`   Run: ${pc.cyan(`doctor upgrade --target ${upgrade.nextPreset}`)} to preview`
-							)
-						)
-						console.log()
-					}
+					)
+					console.log(
+						pc.dim(`   Run: ${pc.cyan(`doctor upgrade --target ${upgrade.nextPreset}`)} to preview`)
+					)
+					console.log()
 				}
 			}
 		}
 
-		// Exit with appropriate code
-		const exitCode = getExitCode(report, preCommit)
-		process.exit(exitCode)
+		process.exit(report.failed > 0 ? 1 : 0)
+	},
+})
+
+const commitCommand = defineCommand({
+	meta: {
+		name: 'commit',
+		description: 'Pre-commit hook: format + typecheck',
+	},
+	args: {
+		fix: {
+			type: 'boolean',
+			description: 'Automatically fix fixable issues',
+			default: false,
+		},
+	},
+	async run({ args }) {
+		const cwd = process.cwd()
+		const config = await loadConfig(cwd)
+		const preset = config.preset ?? 'dev'
+
+		const report = await runChecks({
+			cwd,
+			fix: args.fix,
+			preset,
+			config,
+			stage: 'commit',
+			preCommit: true,
+		})
+
+		console.log(formatPreCommitReport(report))
+		process.exit(report.failed > 0 ? 1 : 0)
+	},
+})
+
+const pushCommand = defineCommand({
+	meta: {
+		name: 'push',
+		description: 'Pre-push hook: test + info',
+	},
+	async run() {
+		const cwd = process.cwd()
+		const config = await loadConfig(cwd)
+		const preset = config.preset ?? 'dev'
+
+		const report = await runChecks({
+			cwd,
+			preset,
+			config,
+			stage: 'push',
+		})
+
+		console.log(formatPreCommitReport(report))
+
+		// Show info messages
+		const infoMessages = getInfoForHook('push')
+		for (const info of infoMessages) {
+			console.log(pc.dim(info.message()))
+		}
+
+		process.exit(report.failed > 0 ? 1 : 0)
 	},
 })
 
@@ -179,12 +193,17 @@ export default defineConfig({
 			consola.info('sylphx-doctor.config.ts already exists')
 		}
 
-		// 2. Create lefthook.yml (only doctor check - it handles lint/format internally)
+		// 2. Create lefthook.yml
 		const lefthookPath = join(cwd, 'lefthook.yml')
 		const lefthookContent = `pre-commit:
   commands:
     doctor:
-      run: bun run doctor:check
+      run: doctor commit --fix
+
+pre-push:
+  commands:
+    doctor:
+      run: doctor push
 `
 		if (!existsSync(lefthookPath)) {
 			writeFileSync(lefthookPath, lefthookContent, 'utf-8')
@@ -192,12 +211,8 @@ export default defineConfig({
 		} else {
 			const existing = readFileSync(lefthookPath, 'utf-8')
 			if (!existing.includes('doctor')) {
-				// Append doctor command to existing lefthook
-				consola.warn('lefthook.yml exists, please add doctor command manually:')
-				console.log(
-					pc.dim(`    doctor:
-      run: bun run doctor:check`)
-				)
+				consola.warn('lefthook.yml exists, please add doctor commands manually:')
+				console.log(pc.dim(lefthookContent))
 			} else {
 				consola.info('lefthook.yml already configured')
 			}
@@ -212,15 +227,11 @@ export default defineConfig({
 			// Add doctor scripts
 			pkg.scripts = pkg.scripts || {}
 			if (!pkg.scripts.doctor) {
-				pkg.scripts.doctor = 'doctor check'
-				modified = true
-			}
-			if (!pkg.scripts['doctor:check']) {
-				pkg.scripts['doctor:check'] = 'doctor check --pre-commit'
+				pkg.scripts.doctor = 'doctor'
 				modified = true
 			}
 			if (!pkg.scripts['doctor:fix']) {
-				pkg.scripts['doctor:fix'] = 'doctor check --fix'
+				pkg.scripts['doctor:fix'] = 'doctor --fix'
 				modified = true
 			}
 
@@ -283,10 +294,12 @@ export default defineConfig({
 				message: `Preset: ${pc.cyan(preset)}
 
 Commands:
-  ${pc.cyan('bun run doctor')}      Check project
-  ${pc.cyan('bun run doctor:fix')}  Auto-fix issues
+  ${pc.cyan('doctor')}          Full project audit
+  ${pc.cyan('doctor commit')}   Pre-commit (format + typecheck)
+  ${pc.cyan('doctor push')}     Pre-push (test + info)
+  ${pc.cyan('doctor --fix')}    Auto-fix issues
 
-Pre-commit hook will run automatically on each commit.`,
+Git hooks will run automatically on commit/push.`,
 			})
 		}
 	},
@@ -349,27 +362,22 @@ const prepublishCommand = defineCommand({
 		description: 'Guard against direct npm publish (use in prepublishOnly script)',
 	},
 	async run() {
-		const { isCI } = await import('./utils/env')
+		const guards = getGuardsForHook('prepublish')
 
-		if (isCI()) {
-			// In CI, allow publish
-			process.exit(0)
+		for (const guard of guards) {
+			const result = await guard.run()
+			if (!result.passed) {
+				console.log()
+				console.log(pc.red(`❌ ${guard.description}`))
+				console.log()
+				console.log(result.message)
+				console.log()
+				process.exit(1)
+			}
 		}
 
-		// Not in CI, block and show instructions
-		console.log()
-		console.log(pc.red('❌ Direct npm publish is blocked.'))
-		console.log()
-		console.log(pc.bold('To release a new version:'))
-		console.log(pc.dim('  1. Push your changes to main branch'))
-		console.log(pc.dim('  2. CI will automatically create a release PR'))
-		console.log(pc.dim('  3. Merge the release PR to publish'))
-		console.log()
-		console.log(pc.bold('Check for existing release PR:'))
-		console.log(pc.cyan('  gh pr list'))
-		console.log()
-
-		process.exit(1)
+		// All guards passed
+		process.exit(0)
 	},
 })
 
@@ -381,6 +389,8 @@ const main = defineCommand({
 	},
 	subCommands: {
 		check: checkCommand,
+		commit: commitCommand,
+		push: pushCommand,
 		init: initCommand,
 		upgrade: upgradeCommand,
 		prepublish: prepublishCommand,
