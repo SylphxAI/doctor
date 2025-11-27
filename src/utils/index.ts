@@ -2,40 +2,36 @@
  * Utility exports
  */
 
-// Environment utilities
-export { isCI, isGitHubActions } from './env'
-
 // Context utilities
 export {
-	isMonorepoRoot,
-	forEachPackage,
 	checkAllPackages,
+	forEachPackage,
 	getPackageNames,
+	isMonorepoRoot,
 } from './context'
-
-// Filesystem utilities
-export {
-	fileExists,
-	readJson,
-	readPackageJson,
-	readFile,
-	findFiles,
-	directoryExists,
-	getWorkspacePatterns,
-	discoverWorkspacePackages,
-	isMonorepo,
-	findWorkspaceRoot,
-} from './fs'
-
+// Environment utilities
+export { isCI, isGitHubActions } from './env'
 // Exec utilities
-export { exec, type ExecResult } from './exec'
-
+export { type ExecResult, exec } from './exec'
 // Format utilities
 export {
-	formatPackageIssues,
+	formatCount,
 	formatGroupedIssues,
 	formatList,
-	pluralize,
-	formatCount,
+	formatPackageIssues,
 	type PackageIssue,
+	pluralize,
 } from './format'
+// Filesystem utilities
+export {
+	directoryExists,
+	discoverWorkspacePackages,
+	fileExists,
+	findFiles,
+	findWorkspaceRoot,
+	getWorkspacePatterns,
+	isMonorepo,
+	readFile,
+	readJson,
+	readPackageJson,
+} from './fs'

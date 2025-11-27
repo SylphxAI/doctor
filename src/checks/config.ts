@@ -19,7 +19,7 @@ export const configModule: CheckModule = defineCheckModule(
 				return null
 			},
 			fix: (config) => ({
-				$schema: 'https://biomejs.dev/schemas/1.9.4/schema.json',
+				$schema: 'https://biomejs.dev/schemas/2.3.8/schema.json',
 				extends: ['@sylphx/biome-config'],
 				...(config as object),
 			}),

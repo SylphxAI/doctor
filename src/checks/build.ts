@@ -1,6 +1,6 @@
 import type { PackageJson } from '../types'
 import { isMonorepoRoot } from '../utils/context'
-import { type PackageIssue, formatPackageIssues } from '../utils/format'
+import { formatPackageIssues, type PackageIssue } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 

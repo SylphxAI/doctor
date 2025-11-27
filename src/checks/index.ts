@@ -1,11 +1,10 @@
 import type { Check } from '../types'
-import type { CheckModule } from './define'
-
 // Import all check modules (new modular format)
 import { buildModule } from './build'
 import { ciModule } from './ci'
 import { configModule } from './config'
 import { creditsModule } from './credits'
+import type { CheckModule } from './define'
 import { depsModule } from './deps'
 import { docsModule } from './docs'
 import { filesModule } from './files'
@@ -91,19 +90,19 @@ export {
 	creditsModule,
 }
 
-// Re-export define helpers for external use
-export {
-	defineCheck,
-	defineCheckModule,
-	createFileCheck,
-	createJsonConfigCheck,
-	createCommandCheck,
-} from './define'
 export type {
 	CheckModule,
+	CheckResultData,
+	CheckReturnValue,
 	DefineCheckOptions,
 	FileCheckOptions,
 	JsonConfigCheckOptions,
-	CheckResultData,
-	CheckReturnValue,
+} from './define'
+// Re-export define helpers for external use
+export {
+	createCommandCheck,
+	createFileCheck,
+	createJsonConfigCheck,
+	defineCheck,
+	defineCheckModule,
 } from './define'

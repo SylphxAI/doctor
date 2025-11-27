@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { readdir, stat } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 import type { PackageJson, WorkspacePackage } from '../types'

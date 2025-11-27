@@ -1,12 +1,13 @@
 // Main exports for programmatic usage
-export { defineConfig, loadConfig } from './config'
-export { runChecks } from './runner'
-export { formatReport, formatPreCommitReport } from './reporter'
-export { getPreset, getSeverity, presets } from './presets'
+
 export { allChecks, checksByName, getCheck } from './checks'
-export { runHook, getGuardsForHook, getInfoForHook } from './hooks'
+export { defineConfig, loadConfig } from './config'
 export { guards } from './guards'
+export { getGuardsForHook, getInfoForHook, runHook } from './hooks'
 export { infoMessages } from './info'
+export { getPreset, getSeverity, presets } from './presets'
+export { formatPreCommitReport, formatReport } from './reporter'
+export { runChecks } from './runner'
 
 // Types
 export type {

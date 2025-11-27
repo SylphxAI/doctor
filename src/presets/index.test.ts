@@ -28,8 +28,7 @@ describe('presets', () => {
 		const dev = getPreset('dev')
 		const stable = getPreset('stable')
 
-		const countErrors = (p: Record<string, string>) =>
-			Object.values(p).filter((v) => v === 'error').length
+		const countErrors = (p: Record<string, string>) => Object.values(p).filter((v) => v === 'error').length
 
 		expect(countErrors(dev)).toBeGreaterThan(countErrors(init))
 		expect(countErrors(stable)).toBeGreaterThan(countErrors(dev))
@@ -78,9 +77,7 @@ describe('preset completeness', () => {
 		const basePreset = getPreset('init')
 		const presetKeys = Object.keys(basePreset)
 
-		const missingChecks = allChecks
-			.map((check) => check.name)
-			.filter((name) => !presetKeys.includes(name))
+		const missingChecks = allChecks.map((check) => check.name).filter((name) => !presetKeys.includes(name))
 
 		if (missingChecks.length > 0) {
 			throw new Error(`Missing preset entries for: ${missingChecks.join(', ')}`)
