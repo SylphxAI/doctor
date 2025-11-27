@@ -23,7 +23,7 @@
     "test": "bun test",
     "test:coverage": "bun test --coverage",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bun src/cli.ts prepublish"
+    "prepublishOnly": "bun src/cli.ts prepublish && bun run build"
   },
   "dependencies": {
     "citty": "^0.1.6",
