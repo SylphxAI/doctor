@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.21.3 (2025-11-27)
+
+### ♻️ Refactoring
+
+- separate prepack (build) and prepublishOnly (guard) ([2371bed](https://github.com/SylphxAI/doctor/commit/2371bed6feca3267606ffc49f1e2732c51a3f65a))
+
 ## 1.21.2 (2025-11-27)
 
 ### 🐛 Bug Fixes
