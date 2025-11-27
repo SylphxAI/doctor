@@ -81,6 +81,7 @@ const basePreset: PresetConfig = {
 	'hooks/lefthook-installed': 'error',
 	'hooks/lefthook-dep': 'error',
 	'hooks/no-husky': 'error',
+	'hooks/doctor-dep': 'error',
 
 	// GitHub
 	'github/description': 'warn',
@@ -100,6 +101,7 @@ const basePreset: PresetConfig = {
 	'release/no-manual-version': 'error',
 	'release/no-release-commit': 'error',
 	'release/no-direct-publish': 'error',
+	'release/bump-dep': 'warn',
 }
 
 /**

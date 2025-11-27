@@ -220,5 +220,55 @@ export const releaseModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'release/bump-dep',
+			description: 'Check if @sylphx/bump is in devDependencies when using release workflow',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { fileExists, readFile } = await import('../utils/fs')
+				const { exec } = await import('../utils/exec')
+
+				// Check if using shared release workflow
+				const releaseWorkflowPath = join(ctx.cwd, '.github', 'workflows', 'release.yml')
+				const releaseWorkflowYamlPath = join(ctx.cwd, '.github', 'workflows', 'release.yaml')
+				const exists = fileExists(releaseWorkflowPath) || fileExists(releaseWorkflowYamlPath)
+
+				if (!exists) {
+					return { passed: true, message: 'No release workflow (skipped)', skipped: true }
+				}
+
+				const content = readFile(releaseWorkflowPath) || readFile(releaseWorkflowYamlPath) || ''
+				const usesSharedWorkflow =
+					content.includes('SylphxAI/.github') ||
+					content.includes('@sylphx/bump') ||
+					content.includes('sylphx/bump')
+
+				if (!usesSharedWorkflow) {
+					return {
+						passed: true,
+						message: 'Not using @sylphx/bump workflow (skipped)',
+						skipped: true,
+					}
+				}
+
+				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				const hasBump = '@sylphx/bump' in devDeps
+
+				return {
+					passed: hasBump,
+					message: hasBump
+						? '@sylphx/bump in devDependencies'
+						: '@sylphx/bump missing from devDependencies',
+					hint: hasBump
+						? undefined
+						: 'Recommended for local version preview. Run: bun add -D @sylphx/bump',
+					fix: async () => {
+						await exec('bun', ['add', '-D', '@sylphx/bump'], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )

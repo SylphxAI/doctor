@@ -295,5 +295,51 @@ export const hooksModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'hooks/doctor-dep',
+			description: 'Check if @sylphx/doctor is in devDependencies when lefthook uses it',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { fileExists, readFile } = await import('../utils/fs')
+				const { exec } = await import('../utils/exec')
+
+				const lefthookPath = join(ctx.cwd, 'lefthook.yml')
+				const lefthookYamlPath = join(ctx.cwd, 'lefthook.yaml')
+				const exists = fileExists(lefthookPath) || fileExists(lefthookYamlPath)
+
+				// Skip if no lefthook config
+				if (!exists) {
+					return { passed: true, message: 'No lefthook config (skipped)', skipped: true }
+				}
+
+				const content = readFile(lefthookPath) || readFile(lefthookYamlPath) || ''
+				const usesDoctor = content.includes('@sylphx/doctor') || content.includes('sylphx-doctor')
+
+				// Skip if lefthook doesn't use doctor
+				if (!usesDoctor) {
+					return {
+						passed: true,
+						message: 'lefthook does not use @sylphx/doctor (skipped)',
+						skipped: true,
+					}
+				}
+
+				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				const hasDoctor = '@sylphx/doctor' in devDeps
+
+				return {
+					passed: hasDoctor,
+					message: hasDoctor
+						? '@sylphx/doctor in devDependencies'
+						: '@sylphx/doctor missing from devDependencies',
+					hint: hasDoctor ? undefined : 'Run: bun add -D @sylphx/doctor',
+					fix: async () => {
+						await exec('bun', ['add', '-D', '@sylphx/doctor'], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )
