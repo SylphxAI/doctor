@@ -62,7 +62,7 @@ export const testModule: CheckModule = defineCheckModule(
 			name: 'test/passes',
 			description: 'Check if tests pass',
 			fixable: false,
-			stages: ['push'],
+			hooks: ['prepush'],
 			async check(ctx) {
 				const { findFiles } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')

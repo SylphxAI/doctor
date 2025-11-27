@@ -5,9 +5,10 @@ import consola from 'consola'
 import pc from 'picocolors'
 import { version } from '../package.json'
 import { loadConfig } from './config'
-import { getGuardsForHook } from './guards'
-import { getInfoForHook } from './info'
-import { formatPreCommitReport, formatReport } from './reporter'
+import { guards } from './guards'
+import { getGuardsForHook, printGuardFailure, runHook } from './hooks'
+import { infoMessages } from './info'
+import { formatReport } from './reporter'
 import { checkUpgradeReadiness, runChecks } from './runner'
 import type { PresetName } from './types'
 
@@ -80,9 +81,9 @@ const checkCommand = defineCommand({
 	},
 })
 
-const commitCommand = defineCommand({
+const precommitCommand = defineCommand({
 	meta: {
-		name: 'commit',
+		name: 'precommit',
 		description: 'Pre-commit hook: format + typecheck',
 	},
 	args: {
@@ -97,23 +98,26 @@ const commitCommand = defineCommand({
 		const config = await loadConfig(cwd)
 		const preset = config.preset ?? 'dev'
 
-		const report = await runChecks({
+		const result = await runHook('precommit', {
 			cwd,
 			fix: args.fix,
 			preset,
 			config,
-			stage: 'commit',
-			preCommit: true,
+			guards,
+			info: infoMessages,
 		})
 
-		console.log(formatPreCommitReport(report))
-		process.exit(report.failed > 0 ? 1 : 0)
+		if (result.failedGuard && result.guardMessage) {
+			printGuardFailure(result.failedGuard, result.guardMessage)
+		}
+
+		process.exit(result.success ? 0 : 1)
 	},
 })
 
-const pushCommand = defineCommand({
+const prepushCommand = defineCommand({
 	meta: {
-		name: 'push',
+		name: 'prepush',
 		description: 'Pre-push hook: test + info',
 	},
 	async run() {
@@ -121,22 +125,19 @@ const pushCommand = defineCommand({
 		const config = await loadConfig(cwd)
 		const preset = config.preset ?? 'dev'
 
-		const report = await runChecks({
+		const result = await runHook('prepush', {
 			cwd,
 			preset,
 			config,
-			stage: 'push',
+			guards,
+			info: infoMessages,
 		})
 
-		console.log(formatPreCommitReport(report))
-
-		// Show info messages
-		const infoMessages = getInfoForHook('push')
-		for (const info of infoMessages) {
-			console.log(pc.dim(info.message()))
+		if (result.failedGuard && result.guardMessage) {
+			printGuardFailure(result.failedGuard, result.guardMessage)
 		}
 
-		process.exit(report.failed > 0 ? 1 : 0)
+		process.exit(result.success ? 0 : 1)
 	},
 })
 
@@ -198,12 +199,12 @@ export default defineConfig({
 		const lefthookContent = `pre-commit:
   commands:
     doctor:
-      run: doctor commit --fix
+      run: doctor precommit --fix
 
 pre-push:
   commands:
     doctor:
-      run: doctor push
+      run: doctor prepush
 `
 		if (!existsSync(lefthookPath)) {
 			writeFileSync(lefthookPath, lefthookContent, 'utf-8')
@@ -294,10 +295,10 @@ pre-push:
 				message: `Preset: ${pc.cyan(preset)}
 
 Commands:
-  ${pc.cyan('doctor')}          Full project audit
-  ${pc.cyan('doctor commit')}   Pre-commit (format + typecheck)
-  ${pc.cyan('doctor push')}     Pre-push (test + info)
-  ${pc.cyan('doctor --fix')}    Auto-fix issues
+  ${pc.cyan('doctor')}             Full project audit
+  ${pc.cyan('doctor precommit')}   Pre-commit (format + typecheck)
+  ${pc.cyan('doctor prepush')}     Pre-push (test + info)
+  ${pc.cyan('doctor --fix')}       Auto-fix issues
 
 Git hooks will run automatically on commit/push.`,
 			})
@@ -362,16 +363,12 @@ const prepublishCommand = defineCommand({
 		description: 'Guard against direct npm publish (use in prepublishOnly script)',
 	},
 	async run() {
-		const guards = getGuardsForHook('prepublish')
+		const prepublishGuards = getGuardsForHook(guards, 'prepublish')
 
-		for (const guard of guards) {
+		for (const guard of prepublishGuards) {
 			const result = await guard.run()
 			if (!result.passed) {
-				console.log()
-				console.log(pc.red(`❌ ${guard.description}`))
-				console.log()
-				console.log(result.message)
-				console.log()
+				printGuardFailure(guard, result.message)
 				process.exit(1)
 			}
 		}
@@ -387,10 +384,12 @@ const main = defineCommand({
 		version,
 		description: 'CLI tool to check and enforce project standards',
 	},
+	args: checkCommand.args,
+	run: checkCommand.run,
 	subCommands: {
 		check: checkCommand,
-		commit: commitCommand,
-		push: pushCommand,
+		precommit: precommitCommand,
+		prepush: prepushCommand,
 		init: initCommand,
 		upgrade: upgradeCommand,
 		prepublish: prepublishCommand,

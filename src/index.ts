@@ -4,6 +4,9 @@ export { runChecks } from './runner'
 export { formatReport, formatPreCommitReport } from './reporter'
 export { getPreset, getSeverity, presets } from './presets'
 export { allChecks, checksByName, getCheck } from './checks'
+export { runHook, getGuardsForHook, getInfoForHook } from './hooks'
+export { guards } from './guards'
+export { infoMessages } from './info'
 
 // Types
 export type {
@@ -11,8 +14,10 @@ export type {
 	CheckContext,
 	CheckReport,
 	CheckResult,
-	CheckStage,
 	DoctorConfig,
+	Guard,
+	HookName,
+	InfoMessage,
 	PackageJson,
 	PresetConfig,
 	PresetName,

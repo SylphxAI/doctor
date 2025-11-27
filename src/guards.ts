@@ -3,7 +3,7 @@ import type { Guard } from './types'
 export const guards: Guard[] = [
 	{
 		name: 'guard/ci-env',
-		hook: 'prepublish',
+		hooks: ['prepublish'],
 		description: 'Block direct npm publish outside CI',
 		async run() {
 			const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
@@ -30,6 +30,4 @@ Or set CI=true to bypass (not recommended)`,
 	},
 ]
 
-export function getGuardsForHook(hook: Guard['hook']): Guard[] {
-	return guards.filter((g) => g.hook === hook)
-}
+// Note: getGuardsForHook moved to src/hooks.ts

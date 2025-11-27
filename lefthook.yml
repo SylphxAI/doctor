@@ -16,9 +16,9 @@ pre-commit:
       skip_empty: true
 
     doctor:
-      run: bun src/cli.ts commit
+      run: bun src/cli.ts precommit
 
 pre-push:
   commands:
     doctor:
-      run: bun src/cli.ts push
+      run: bun src/cli.ts prepush

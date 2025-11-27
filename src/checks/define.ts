@@ -1,4 +1,4 @@
-import type { Check, CheckContext, CheckResult, CheckStage, Severity } from '../types'
+import type { Check, CheckContext, CheckResult, HookName, Severity } from '../types'
 import type { PackageIssue } from '../utils/format'
 
 /**
@@ -29,8 +29,8 @@ export interface DefineCheckOptions {
 	description: string
 	/** Is this check fixable? */
 	fixable?: boolean
-	/** Which stages this check runs on (default: ['check']) */
-	stages?: CheckStage[]
+	/** Which hooks this check runs on. Empty = runs on all hooks. */
+	hooks?: HookName[]
 	/** The check function */
 	check: (ctx: CheckContext) => Promise<CheckResultData> | CheckResultData
 }
@@ -56,14 +56,14 @@ export type CheckReturnValue = CheckResultData
  * Define a single check with less boilerplate
  */
 export function defineCheck(options: DefineCheckOptions): Check {
-	const { name, category, description, fixable = false, stages = [], check } = options
+	const { name, category, description, fixable = false, hooks, check } = options
 
 	return {
 		name,
 		category: category ?? name.split('/')[0] ?? 'unknown',
 		description,
 		fixable,
-		stages,
+		hooks,
 		async run(ctx: CheckContext): Promise<CheckResult> {
 			const result = await check(ctx)
 
@@ -117,8 +117,8 @@ export interface FileCheckOptions {
 	missingMessage?: string
 	/** Severity when check fails (default: uses ctx.severity) */
 	severity?: Severity
-	/** Which stages this check runs on (default: ['check']) */
-	stages?: CheckStage[]
+	/** Which hooks this check runs on. Empty = runs on all hooks. */
+	hooks?: HookName[]
 }
 
 export function createFileCheck(options: FileCheckOptions): Omit<DefineCheckOptions, 'category'> {
@@ -132,14 +132,14 @@ export function createFileCheck(options: FileCheckOptions): Omit<DefineCheckOpti
 		existsMessage,
 		missingMessage,
 		severity,
-		stages,
+		hooks,
 	} = options
 
 	return {
 		name,
 		description: `Check if ${fileName} exists`,
 		fixable,
-		stages,
+		hooks,
 		async check(ctx) {
 			// Skip if condition not met
 			if (condition && !condition(ctx)) {
@@ -196,20 +196,20 @@ export interface JsonConfigCheckOptions {
 	hint?: string
 	/** Skip if file doesn't exist */
 	skipIfMissing?: boolean
-	/** Which stages this check runs on (default: ['check']) */
-	stages?: CheckStage[]
+	/** Which hooks this check runs on. Empty = runs on all hooks. */
+	hooks?: HookName[]
 }
 
 export function createJsonConfigCheck(
 	options: JsonConfigCheckOptions
 ): Omit<DefineCheckOptions, 'category'> {
-	const { name, fileName, validate, fix, hint, skipIfMissing = false, stages } = options
+	const { name, fileName, validate, fix, hint, skipIfMissing = false, hooks } = options
 
 	return {
 		name,
 		description: `Check ${fileName} configuration`,
 		fixable: !!fix,
-		stages,
+		hooks,
 		async check(ctx) {
 			const { join } = await import('node:path')
 			const { fileExists, readJson } = await import('../utils/fs')
@@ -308,8 +308,8 @@ export interface MonorepoCheckOptions<T> {
 	name: string
 	description: string
 	fixable?: boolean
-	/** Which stages this check runs on (default: ['check']) */
-	stages?: CheckStage[]
+	/** Which hooks this check runs on. Empty = runs on all hooks. */
+	hooks?: HookName[]
 	/** Check a single package, return issue or null if passed */
 	checkPackage: (
 		pkg: import('../types').WorkspacePackage,
@@ -341,7 +341,7 @@ export function createMonorepoCheck<T>(
 		name,
 		description,
 		fixable = false,
-		stages,
+		hooks,
 		checkPackage,
 		formatIssue,
 		filterPackages,
@@ -354,7 +354,7 @@ export function createMonorepoCheck<T>(
 		name,
 		description,
 		fixable: fixable && !!fixPackage,
-		stages,
+		hooks,
 		async check(ctx) {
 			const { getAllPackages, isMonorepoRoot } = await import('../utils/context')
 			const { formatPackageIssues } = await import('../utils/format')

@@ -1,13 +1,17 @@
 export type Severity = 'error' | 'warn' | 'info' | 'off'
 
-export type CheckStage = 'commit' | 'push'
-
-export type HookName = 'commit' | 'push' | 'prepublish'
+/**
+ * All hook stages in the project lifecycle
+ * - 'precommit': Before committing code (format, typecheck, lint)
+ * - 'prepush': Before pushing to remote (test, validation)
+ * - 'prepublish': Before publishing to npm (security guards)
+ */
+export type HookName = 'precommit' | 'prepush' | 'prepublish'
 
 export interface Guard {
 	name: string
-	/** Which hook this guard runs on */
-	hook: HookName
+	/** Which hooks this guard runs on */
+	hooks: HookName[]
 	/** Description */
 	description: string
 	/** Run the guard, return { passed, message } */
@@ -16,8 +20,8 @@ export interface Guard {
 
 export interface InfoMessage {
 	name: string
-	/** Which hook this info shows on */
-	hook: HookName
+	/** Which hooks this info shows on */
+	hooks: HookName[]
 	/** Get the message to display */
 	message: () => string
 }
@@ -70,8 +74,8 @@ export interface Check {
 	category: string
 	description: string
 	fixable: boolean
-	/** Which hooks this check runs on. The 'check' command always runs all checks. */
-	stages: CheckStage[]
+	/** Which hooks this check runs on. Empty = runs on all hooks. */
+	hooks?: HookName[]
 	run: (ctx: CheckContext) => Promise<CheckResult>
 }
 

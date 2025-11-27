@@ -6,8 +6,8 @@ import type {
 	CheckContext,
 	CheckReport,
 	CheckResult,
-	CheckStage,
 	DoctorConfig,
+	HookName,
 	PresetName,
 } from './types'
 import {
@@ -24,12 +24,12 @@ export interface RunOptions {
 	preCommit?: boolean
 	preset?: PresetName
 	config?: DoctorConfig
-	/** Filter checks by stage. If not specified, runs all checks. */
-	stage?: CheckStage
+	/** Filter checks by hook. If not specified, runs all checks. */
+	hook?: HookName
 }
 
 export async function runChecks(options: RunOptions): Promise<CheckReport> {
-	const { cwd, fix = false, preCommit = false, stage } = options
+	const { cwd, fix = false, preCommit = false, hook } = options
 
 	// Load config
 	const config = options.config ?? (await loadConfig(cwd))
@@ -48,8 +48,10 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 	const checksToRun: { check: Check; ctx: CheckContext }[] = []
 
 	for (const check of allChecks) {
-		// Filter by stage if specified (otherwise run all checks)
-		if (stage && !check.stages.includes(stage)) continue
+		// Filter by hook if specified (otherwise run all checks)
+		// If check has hooks defined, it must include the specified hook
+		// If check has no hooks (empty/undefined), it runs on all hooks
+		if (hook && check.hooks && check.hooks.length > 0 && !check.hooks.includes(hook)) continue
 
 		const severity = getSeverity(check.name, preset, config.rules)
 

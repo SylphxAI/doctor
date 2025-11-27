@@ -207,7 +207,7 @@ export const formatModule: CheckModule = defineCheckModule(
 			name: 'format/typecheck',
 			description: 'Run TypeScript type checking',
 			fixable: false,
-			stages: ['commit'],
+			hooks: ['precommit'],
 			// TODO: unsure if commit or push stage is best for typecheck
 			async check(ctx) {
 				const { join } = await import('node:path')
