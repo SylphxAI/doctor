@@ -37,6 +37,7 @@ const basePreset: PresetConfig = {
 	'deps/outdated': 'off',
 	'deps/security': 'off',
 	'deps/banned': 'error',
+	'deps/required': 'error',
 
 	// Testing
 	'test/has-tests': 'off',

@@ -278,5 +278,81 @@ export const depsModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'deps/required',
+			description: 'Check if required devDependencies are installed',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { fileExists, readFile, readJson } = await import('../utils/fs')
+
+				// Required packages based on what's used in the project
+				const missing: { pkg: string; reason: string }[] = []
+				const devDeps = ctx.packageJson?.devDependencies ?? {}
+
+				// Check biome
+				const hasBiomeConfig = fileExists(join(ctx.cwd, 'biome.json'))
+				if (hasBiomeConfig && !('@biomejs/biome' in devDeps)) {
+					missing.push({ pkg: '@biomejs/biome', reason: 'biome.json exists' })
+				}
+
+				// Check @sylphx/biome-config if biome.json extends it
+				if (hasBiomeConfig) {
+					const biomeConfig = readJson<{ extends?: string[] }>(join(ctx.cwd, 'biome.json'))
+					if (biomeConfig?.extends?.includes('@sylphx/biome-config')) {
+						if (!('@sylphx/biome-config' in devDeps)) {
+							missing.push({ pkg: '@sylphx/biome-config', reason: 'biome.json extends it' })
+						}
+					}
+				}
+
+				// Check @sylphx/tsconfig if tsconfig.json extends it
+				const tsconfigPath = join(ctx.cwd, 'tsconfig.json')
+				if (fileExists(tsconfigPath)) {
+					const content = readFile(tsconfigPath) || ''
+					if (content.includes('@sylphx/tsconfig')) {
+						if (!('@sylphx/tsconfig' in devDeps)) {
+							missing.push({ pkg: '@sylphx/tsconfig', reason: 'tsconfig.json extends it' })
+						}
+					}
+				}
+
+				// Check turbo for monorepos
+				if (ctx.isMonorepo && !('turbo' in devDeps)) {
+					missing.push({ pkg: 'turbo', reason: 'monorepo detected' })
+				}
+
+				// Check bunup if build script uses it
+				const buildScript = ctx.packageJson?.scripts?.build ?? ''
+				if (buildScript.includes('bunup') && !('bunup' in devDeps)) {
+					missing.push({ pkg: 'bunup', reason: 'build script uses bunup' })
+				}
+
+				// Check lefthook if lefthook.yml exists
+				const hasLefthook =
+					fileExists(join(ctx.cwd, 'lefthook.yml')) || fileExists(join(ctx.cwd, 'lefthook.yaml'))
+				if (hasLefthook && !('lefthook' in devDeps)) {
+					missing.push({ pkg: 'lefthook', reason: 'lefthook.yml exists' })
+				}
+
+				if (missing.length === 0) {
+					return {
+						passed: true,
+						message: 'All required devDependencies installed',
+					}
+				}
+
+				return {
+					passed: false,
+					message: `Missing ${missing.length} required devDependencies`,
+					hint: missing.map((m) => `${m.pkg} (${m.reason})`).join('\n'),
+					fix: async () => {
+						const { exec } = await import('../utils/exec')
+						await exec('bun', ['add', '-D', ...missing.map((m) => m.pkg)], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )
