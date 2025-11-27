@@ -88,6 +88,13 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 			continue
 		}
 
+		// Info severity doesn't count against score (just informational)
+		if (result.severity === 'info') {
+			passed++
+			finalResults.push(result)
+			continue
+		}
+
 		// Count as warning or error
 		if (result.severity === 'warn') {
 			warnings++
