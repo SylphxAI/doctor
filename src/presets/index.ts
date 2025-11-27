@@ -48,19 +48,19 @@ const basePreset: PresetConfig = {
 	'test/no-jest-config': 'error',
 	'bench/has-files': 'off',
 
-	// Formatting
+	// Formatting (biome is mandatory)
 	'format/biome-check': 'error',
 	'format/biome-format': 'error',
 	'format/typecheck': 'error',
 	'format/biome-dep': 'error',
-	'format/suggest-biome': 'warn', // Suggestion, not error
+	'format/no-eslint': 'error', // biome is mandatory, eslint/prettier must go
 	'format/eslint-config-orphan': 'error',
 	'format/prettier-config-orphan': 'error',
 
 	// Build
 	'build/exports-valid': 'off',
 	'build/bunup-dep': 'error',
-	'build/suggest-bunup': 'warn', // Suggestion, not error
+	'build/suggest-bunup': 'error', // If using legacy bundlers, must switch to bunup
 
 	// Runtime
 	'runtime/bun-lock': 'error',

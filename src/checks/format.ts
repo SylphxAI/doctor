@@ -1,32 +1,5 @@
-import type { CheckContext } from '../types'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
-
-/**
- * Legacy linting/formatting tools that biome can replace
- */
-const LEGACY_LINTING_TOOLS = [
-	'eslint',
-	'prettier',
-	'@typescript-eslint/parser',
-	'@typescript-eslint/eslint-plugin',
-	'eslint-config-prettier',
-	'eslint-plugin-prettier',
-	'eslint-plugin-import',
-	'eslint-plugin-react',
-	'eslint-plugin-react-hooks',
-]
-
-/**
- * Check if project uses any legacy linting tools
- */
-function usesLegacyLintingTools(ctx: CheckContext): string[] {
-	const deps = {
-		...ctx.packageJson?.dependencies,
-		...ctx.packageJson?.devDependencies,
-	}
-	return LEGACY_LINTING_TOOLS.filter((pkg) => pkg in deps)
-}
 
 export const formatModule: CheckModule = defineCheckModule(
 	{
@@ -114,23 +87,46 @@ export const formatModule: CheckModule = defineCheckModule(
 		},
 
 		{
-			name: 'format/suggest-biome',
-			description: 'Suggest biome for projects using eslint/prettier',
-			fixable: false,
+			name: 'format/no-eslint',
+			description: 'Check for legacy linting tools (use biome instead)',
+			fixable: true,
 			async check(ctx) {
-				// Check for legacy linting tools
-				const legacyTools = usesLegacyLintingTools(ctx)
+				const { readPackageJson } = await import('../utils/fs')
+				const { exec } = await import('../utils/exec')
 
-				if (legacyTools.length === 0) {
-					return { passed: true, message: 'No legacy linting tools detected' }
+				// Banned linting/formatting packages - biome is mandatory
+				const banned = [
+					'eslint',
+					'prettier',
+					'@typescript-eslint/parser',
+					'@typescript-eslint/eslint-plugin',
+					'eslint-config-prettier',
+					'eslint-plugin-prettier',
+					'eslint-plugin-import',
+					'eslint-plugin-react',
+					'eslint-plugin-react-hooks',
+				]
+
+				// Read fresh from disk to handle post-fix verification
+				const packageJson = readPackageJson(ctx.cwd)
+				const allDeps = {
+					...packageJson?.dependencies,
+					...packageJson?.devDependencies,
 				}
 
-				// This is a suggestion, not an error - use 'warn' severity
+				const found = banned.filter((pkg) => pkg in allDeps)
+
+				if (found.length === 0) {
+					return { passed: true, message: 'No legacy linting tools' }
+				}
+
 				return {
 					passed: false,
-					message: `Using legacy linting tools: ${legacyTools.join(', ')}`,
-					hint: 'Consider migrating to biome for faster linting and formatting. See: https://biomejs.dev',
-					severity: 'warn',
+					message: `Found legacy linting tools: ${found.join(', ')}`,
+					hint: `Use biome instead. Run: bun remove ${found.join(' ')}`,
+					fix: async () => {
+						await exec('bun', ['remove', ...found], ctx.cwd)
+					},
 				}
 			},
 		},
