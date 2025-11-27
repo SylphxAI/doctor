@@ -6,6 +6,7 @@ import type {
 	CheckContext,
 	CheckReport,
 	CheckResult,
+	CheckStage,
 	DoctorConfig,
 	PresetName,
 } from './types'
@@ -23,10 +24,12 @@ export interface RunOptions {
 	preCommit?: boolean
 	preset?: PresetName
 	config?: DoctorConfig
+	/** Filter checks by stage. If not specified, runs all checks. */
+	stage?: CheckStage
 }
 
 export async function runChecks(options: RunOptions): Promise<CheckReport> {
-	const { cwd, fix = false, preCommit = false } = options
+	const { cwd, fix = false, preCommit = false, stage } = options
 
 	// Load config
 	const config = options.config ?? (await loadConfig(cwd))
@@ -45,6 +48,9 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 	const checksToRun: { check: Check; ctx: CheckContext }[] = []
 
 	for (const check of allChecks) {
+		// Filter by stage if specified (otherwise run all checks)
+		if (stage && !check.stages.includes(stage)) continue
+
 		const severity = getSeverity(check.name, preset, config.rules)
 
 		// Skip if severity is 'off'

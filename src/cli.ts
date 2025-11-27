@@ -7,7 +7,7 @@ import { version } from '../package.json'
 import { loadConfig } from './config'
 import { formatPreCommitReport, formatReport } from './reporter'
 import { checkUpgradeReadiness, getExitCode, runChecks } from './runner'
-import type { PresetName } from './types'
+import type { CheckStage, PresetName } from './types'
 
 const checkCommand = defineCommand({
 	meta: {
@@ -39,16 +39,25 @@ const checkCommand = defineCommand({
 			description: 'Preview what would be fixed without making changes',
 			default: false,
 		},
+		stage: {
+			type: 'string',
+			description: 'Filter checks by stage (commit, push)',
+		},
 	},
 	async run({ args }) {
 		const cwd = process.cwd()
 		const preCommit = args['pre-commit']
 		const prePush = args['pre-push']
 
-		// Pre-push mode: only show hint, no checks (pre-commit already did that)
-		if (prePush) {
-			console.log(pc.dim('💡 Release? Check: gh pr list --head bump/release'))
-			process.exit(0)
+		// Determine stage (--stage flag or legacy --pre-commit/--pre-push)
+		let stage: CheckStage | undefined = args.stage as CheckStage | undefined
+		if (!stage && preCommit) stage = 'commit'
+		if (!stage && prePush) stage = 'push'
+
+		// Validate stage
+		if (stage && !['commit', 'push'].includes(stage)) {
+			consola.error(`Invalid stage: ${stage}. Use: commit or push`)
+			process.exit(1)
 		}
 
 		// Load config to get preset
@@ -66,6 +75,7 @@ const checkCommand = defineCommand({
 			preCommit,
 			preset,
 			config,
+			stage,
 		})
 
 		// Output report

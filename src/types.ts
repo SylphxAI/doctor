@@ -1,5 +1,7 @@
 export type Severity = 'error' | 'warn' | 'info' | 'off'
 
+export type CheckStage = 'commit' | 'push'
+
 export type PresetName = 'init' | 'dev' | 'stable'
 
 export interface CheckResult {
@@ -48,6 +50,8 @@ export interface Check {
 	category: string
 	description: string
 	fixable: boolean
+	/** Which hooks this check runs on. The 'check' command always runs all checks. */
+	stages: CheckStage[]
 	run: (ctx: CheckContext) => Promise<CheckResult>
 }
 

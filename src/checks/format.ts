@@ -12,6 +12,7 @@ export const formatModule: CheckModule = defineCheckModule(
 			name: 'format/biome-check',
 			description: 'Run biome check',
 			fixable: true,
+			stages: ['commit'],
 			async check(ctx) {
 				const { exec } = await import('../utils/exec')
 
@@ -33,6 +34,7 @@ export const formatModule: CheckModule = defineCheckModule(
 			name: 'format/biome-format',
 			description: 'Run biome format',
 			fixable: true,
+			stages: ['commit'],
 			async check(ctx) {
 				const { exec } = await import('../utils/exec')
 

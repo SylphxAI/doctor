@@ -11,6 +11,7 @@ export type {
 	CheckContext,
 	CheckReport,
 	CheckResult,
+	CheckStage,
 	DoctorConfig,
 	PackageJson,
 	PresetConfig,
