@@ -98,7 +98,7 @@ export const monorepoModule: CheckModule = defineCheckModule(
 
 		{
 			name: 'monorepo/workspace-protocol',
-			description: 'Check if internal dependencies use workspace:* protocol',
+			description: 'Check if internal dependencies use workspace: protocol',
 			fixable: false,
 			async check(ctx) {
 				if (!ctx.isMonorepo) return skipResult()
@@ -124,9 +124,9 @@ export const monorepoModule: CheckModule = defineCheckModule(
 					passed: issues.length === 0,
 					message:
 						issues.length === 0
-							? 'All internal dependencies use workspace:* protocol'
-							: `Should use workspace:* for: ${issues.slice(0, 3).join(', ')}${issues.length > 3 ? ` (+${issues.length - 3} more)` : ''}`,
-					hint: 'Use "workspace:*" for internal package dependencies',
+							? 'All internal dependencies use workspace: protocol'
+							: `Should use workspace: for: ${issues.slice(0, 3).join(', ')}${issues.length > 3 ? ` (+${issues.length - 3} more)` : ''}`,
+					hint: 'Use "workspace:*" for internal package dependencies (workspace:^ also accepted)',
 				}
 			},
 		},
