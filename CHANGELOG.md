@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.22.0 (2025-11-27)
+
+### ✨ Features
+
+- **info:** add bump release workflow hints on prepush ([3b90f94](https://github.com/SylphxAI/doctor/commit/3b90f94ae383b0293a4f9a0bc1d31f32c15df209))
+
 ## 1.21.4 (2025-11-27)
 
 ### ♻️ Refactoring
