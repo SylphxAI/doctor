@@ -36,7 +36,6 @@ const basePreset: PresetConfig = {
 	// Dependencies
 	'deps/outdated': 'off',
 	'deps/security': 'off',
-	'deps/banned': 'error',
 	'deps/required': 'error',
 
 	// Testing
@@ -63,6 +62,7 @@ const basePreset: PresetConfig = {
 	'runtime/no-yarn-lock': 'error',
 	'runtime/no-pnpm-lock': 'error',
 	'runtime/no-ts-node': 'error',
+	'runtime/no-other-pkg-managers': 'error',
 
 	// Docs
 	'docs/vitepress': 'off',

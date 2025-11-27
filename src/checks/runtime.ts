@@ -130,5 +130,36 @@ export const runtimeModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'runtime/no-other-pkg-managers',
+			description: 'Check for other package managers in dependencies (use bun instead)',
+			fixable: true,
+			async check(ctx) {
+				const { exec } = await import('../utils/exec')
+
+				const banned = ['npm', 'yarn', 'pnpm']
+
+				const allDeps = {
+					...ctx.packageJson?.dependencies,
+					...ctx.packageJson?.devDependencies,
+				}
+
+				const found = banned.filter((pkg) => pkg in allDeps)
+
+				if (found.length === 0) {
+					return { passed: true, message: 'No other package managers in dependencies' }
+				}
+
+				return {
+					passed: false,
+					message: `Found other package managers: ${found.join(', ')}`,
+					hint: `Use bun instead. Run: bun remove ${found.join(' ')}`,
+					fix: async () => {
+						await exec('bun', ['remove', ...found], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )

@@ -1,4 +1,3 @@
-import { formatGroupedIssues } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
@@ -172,79 +171,6 @@ export const depsModule: CheckModule = defineCheckModule(
 						message: 'Security audit skipped (npm audit unavailable)',
 						skipped: true,
 					}
-				}
-			},
-		},
-
-		{
-			name: 'deps/banned',
-			description: 'Check for banned packages (uncategorized)',
-			fixable: true,
-			async check(ctx) {
-				const { getAllPackages } = await import('../utils/context')
-
-				// Only keep uncategorized banned packages here
-				// Categorized bans are now in their respective modules:
-				// - format/no-eslint (eslint, prettier, etc.)
-				// - build/no-legacy-bundlers (webpack, rollup, etc.)
-				// - test/no-legacy-frameworks (jest, vitest, etc.)
-				// - hooks/no-husky (husky, simple-git-hooks, etc.)
-				// - runtime/no-ts-node (ts-node, tsx, etc.)
-				const bannedPackages: Record<string, string> = {
-					// Package managers as deps (should never be in deps)
-					npm: 'remove from dependencies',
-					yarn: 'remove from dependencies',
-					pnpm: 'remove from dependencies',
-				}
-
-				const allPackages = getAllPackages(ctx)
-				const found: { name: string; alternative: string; location: string; path: string }[] = []
-
-				// Check all packages (root + workspaces)
-				for (const pkg of allPackages) {
-					const allDeps = {
-						...pkg.packageJson.dependencies,
-						...pkg.packageJson.devDependencies,
-					}
-					for (const [banned, alternative] of Object.entries(bannedPackages)) {
-						if (banned in allDeps) {
-							found.push({ name: banned, alternative, location: pkg.relativePath, path: pkg.path })
-						}
-					}
-				}
-
-				if (found.length === 0) {
-					const message =
-						allPackages.length > 1
-							? `No banned packages (checked ${allPackages.length} packages)`
-							: 'No banned packages found'
-					return { passed: true, message }
-				}
-
-				// Group by location for display and fix
-				const byLocation = new Map<string, { names: string[]; path: string }>()
-				for (const f of found) {
-					const entry = byLocation.get(f.location) ?? { names: [], path: f.path }
-					entry.names.push(f.name)
-					byLocation.set(f.location, entry)
-				}
-
-				// Build hint showing which packages have which banned deps
-				const groupedIssues: Record<string, string[]> = {}
-				for (const [location, { names }] of byLocation) {
-					groupedIssues[location] = names
-				}
-
-				return {
-					passed: false,
-					message: `Found ${found.length} banned package(s) in ${byLocation.size} package(s)`,
-					hint: formatGroupedIssues(groupedIssues),
-					fix: async () => {
-						const { exec } = await import('../utils/exec')
-						for (const [, { names, path }] of byLocation) {
-							await exec('bun', ['remove', ...names], path)
-						}
-					},
 				}
 			},
 		},
