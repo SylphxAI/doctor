@@ -17,6 +17,8 @@ const basePreset: PresetConfig = {
 	// Config - configuration validation
 	'config/biome-extends': 'warn',
 	'config/tsconfig-extends': 'warn',
+	'config/biome-config-dep': 'error',
+	'config/tsconfig-dep': 'error',
 
 	// Package.json - metadata and scripts
 	'pkg/name': 'error',
@@ -36,7 +38,6 @@ const basePreset: PresetConfig = {
 	// Dependencies
 	'deps/outdated': 'off',
 	'deps/security': 'off',
-	'deps/required': 'error',
 
 	// Testing
 	'test/has-tests': 'off',

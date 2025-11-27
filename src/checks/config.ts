@@ -45,6 +45,82 @@ export const configModule: CheckModule = defineCheckModule(
 			skipIfMissing: true,
 		}),
 
-		// Note: turbo-pipeline check removed - use monorepo/turbo-tasks instead
+		{
+			name: 'config/biome-config-dep',
+			description: 'Check if @sylphx/biome-config is installed when biome.json extends it',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { fileExists, readJson } = await import('../utils/fs')
+				const { exec } = await import('../utils/exec')
+
+				const biomePath = join(ctx.cwd, 'biome.json')
+				if (!fileExists(biomePath)) {
+					return { passed: true, message: 'No biome.json (skipped)', skipped: true }
+				}
+
+				const biomeConfig = readJson<{ extends?: string[] }>(biomePath)
+				if (!biomeConfig?.extends?.includes('@sylphx/biome-config')) {
+					return {
+						passed: true,
+						message: 'biome.json does not extend @sylphx/biome-config (skipped)',
+						skipped: true,
+					}
+				}
+
+				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				const hasPackage = '@sylphx/biome-config' in devDeps
+
+				return {
+					passed: hasPackage,
+					message: hasPackage
+						? '@sylphx/biome-config in devDependencies'
+						: '@sylphx/biome-config missing from devDependencies',
+					hint: hasPackage ? undefined : 'Run: bun add -D @sylphx/biome-config',
+					fix: async () => {
+						await exec('bun', ['add', '-D', '@sylphx/biome-config'], ctx.cwd)
+					},
+				}
+			},
+		},
+
+		{
+			name: 'config/tsconfig-dep',
+			description: 'Check if @sylphx/tsconfig is installed when tsconfig.json extends it',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { fileExists, readFile } = await import('../utils/fs')
+				const { exec } = await import('../utils/exec')
+
+				const tsconfigPath = join(ctx.cwd, 'tsconfig.json')
+				if (!fileExists(tsconfigPath)) {
+					return { passed: true, message: 'No tsconfig.json (skipped)', skipped: true }
+				}
+
+				const content = readFile(tsconfigPath) || ''
+				if (!content.includes('@sylphx/tsconfig')) {
+					return {
+						passed: true,
+						message: 'tsconfig.json does not extend @sylphx/tsconfig (skipped)',
+						skipped: true,
+					}
+				}
+
+				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				const hasPackage = '@sylphx/tsconfig' in devDeps
+
+				return {
+					passed: hasPackage,
+					message: hasPackage
+						? '@sylphx/tsconfig in devDependencies'
+						: '@sylphx/tsconfig missing from devDependencies',
+					hint: hasPackage ? undefined : 'Run: bun add -D @sylphx/tsconfig',
+					fix: async () => {
+						await exec('bun', ['add', '-D', '@sylphx/tsconfig'], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )
