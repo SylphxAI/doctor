@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.21.4 (2025-11-27)
+
+### ♻️ Refactoring
+
+- modularize hook system with unified HookName type ([355f043](https://github.com/SylphxAI/doctor/commit/355f0433028b40b96cd169baa7adf625f4062de4))
+
 ## 1.21.3 (2025-11-27)
 
 ### ♻️ Refactoring
