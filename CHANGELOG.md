@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.23.3 (2025-11-27)
+
+### ♻️ Refactoring
+
+- code cleanup and add unit tests ([0e496c0](https://github.com/SylphxAI/doctor/commit/0e496c07eb52af9cba7b32928e47080689f02b41))
+
 ## 1.23.2 (2025-11-27)
 
 ### 🐛 Bug Fixes
