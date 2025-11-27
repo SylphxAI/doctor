@@ -1,5 +1,15 @@
 # sylphx-doctor
 
+## 1.15.0 (2025-11-27)
+
+### ✨ Features
+
+- **hooks:** add check for lefthook installation ([3530576](https://github.com/SylphxAI/doctor/commit/35305761e0c6b99bd96007753c47840a87d820ee))
+
+### 🔧 Chores
+
+- **hooks:** add pre-push hook to lefthook.yml ([9d77ba1](https://github.com/SylphxAI/doctor/commit/9d77ba1182c50499e36bc659b1d6f8f6b6c8ad62))
+
 ## 1.14.10 (2025-11-27)
 
 ### 🐛 Bug Fixes
