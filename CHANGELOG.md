@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.14.6 (2025-11-27)
+
+### 🐛 Bug Fixes
+
+- **score:** info severity should not count against score ([9b0d38f](https://github.com/SylphxAI/doctor/commit/9b0d38f38373a07bf9af66440691909236903575))
+
 ## 1.14.5 (2025-11-26)
 
 ### 🐛 Bug Fixes
