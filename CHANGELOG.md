@@ -1,5 +1,20 @@
 # sylphx-doctor
 
+## 1.24.0 (2025-11-27)
+
+### ✨ Features
+
+- **hooks:** add lefthook-prepare check for CI-safe prepare script ([387aeb0](https://github.com/SylphxAI/doctor/commit/387aeb0ce642689f739f98b63fd4b2dde72711f1))
+
+### 🐛 Bug Fixes
+
+- **build:** also detect "bun build" as legacy bundler ([d8e2f73](https://github.com/SylphxAI/doctor/commit/d8e2f73c9c7ace10ac4923e4b75943f9f8ed72f1))
+- **checks:** correct contextual check logic ([d4f02fc](https://github.com/SylphxAI/doctor/commit/d4f02fccf06d040f6377d440bec623f0a9368d56))
+
+### ♻️ Refactoring
+
+- **checks:** make tooling suggestions contextual instead of prescriptive ([6cd6bc3](https://github.com/SylphxAI/doctor/commit/6cd6bc35743b9552cf02685296fd7d18a2249fb5))
+
 ## 1.23.3 (2025-11-27)
 
 ### ♻️ Refactoring
