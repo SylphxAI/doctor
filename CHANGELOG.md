@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.23.2 (2025-11-27)
+
+### 🐛 Bug Fixes
+
+- **checks:** read package.json fresh for bun remove checks ([28a86bd](https://github.com/SylphxAI/doctor/commit/28a86bda5b5749c732a1db380ee4400743148b6a))
+
 ## 1.23.1 (2025-11-27)
 
 ### 🐛 Bug Fixes
