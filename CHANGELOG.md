@@ -1,5 +1,15 @@
 # sylphx-doctor
 
+## 1.16.0 (2025-11-27)
+
+### ✨ Features
+
+- **deps:** add check for required devDependencies ([c60d4db](https://github.com/SylphxAI/doctor/commit/c60d4db7a041a3071adbfb347e80572058a9a6d9))
+
+### ♻️ Refactoring
+
+- **deps:** move tool dep checks to their functional categories ([3b4f0dc](https://github.com/SylphxAI/doctor/commit/3b4f0dcf7bfc2d55e0e6d947e9dd9b0d3ef5329b))
+
 ## 1.15.0 (2025-11-27)
 
 ### ✨ Features
