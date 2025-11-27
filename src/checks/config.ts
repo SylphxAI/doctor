@@ -51,7 +51,7 @@ export const configModule: CheckModule = defineCheckModule(
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
-				const { fileExists, readJson } = await import('../utils/fs')
+				const { fileExists, readJson, readPackageJson } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')
 
 				const biomePath = join(ctx.cwd, 'biome.json')
@@ -68,7 +68,9 @@ export const configModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				// Read fresh from disk to handle post-fix verification
+				const packageJson = readPackageJson(ctx.cwd)
+				const devDeps = packageJson?.devDependencies ?? {}
 				const hasPackage = '@sylphx/biome-config' in devDeps
 
 				return {
@@ -90,7 +92,7 @@ export const configModule: CheckModule = defineCheckModule(
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
-				const { fileExists, readFile } = await import('../utils/fs')
+				const { fileExists, readFile, readPackageJson } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')
 
 				const tsconfigPath = join(ctx.cwd, 'tsconfig.json')
@@ -107,7 +109,9 @@ export const configModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				// Read fresh from disk to handle post-fix verification
+				const packageJson = readPackageJson(ctx.cwd)
+				const devDeps = packageJson?.devDependencies ?? {}
 				const hasPackage = '@sylphx/tsconfig' in devDeps
 
 				return {
