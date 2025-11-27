@@ -63,6 +63,7 @@ const categoryLabels: Record<string, string> = {
 	github: '🐙 GitHub',
 	monorepo: '📦 Monorepo',
 	release: '🚀 Release',
+	credits: '✨ Credits',
 }
 
 interface IssueSummary {
@@ -216,6 +217,11 @@ export function formatReport(report: CheckReport, preset: PresetName): string {
 			}
 		}
 	}
+
+	// Footer
+	lines.push(pc.dim('─'.repeat(50)))
+	lines.push(pc.dim('✨ Powered by @sylphx | https://github.com/SylphxAI'))
+	lines.push('')
 
 	return lines.join('\n')
 }

@@ -102,6 +102,9 @@ const basePreset: PresetConfig = {
 	'release/no-release-commit': 'error',
 	'release/no-direct-publish': 'error',
 	'release/bump-dep': 'warn',
+
+	// Credits
+	'credits/readme-sylphx': 'warn',
 }
 
 /**

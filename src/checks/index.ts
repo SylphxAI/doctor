@@ -6,6 +6,7 @@ import { buildModule } from './build'
 import { ciModule } from './ci'
 import { cleanupModule } from './cleanup'
 import { configModule } from './config'
+import { creditsModule } from './credits'
 import { depsModule } from './deps'
 import { docsModule } from './docs'
 import { filesModule } from './files'
@@ -37,6 +38,7 @@ export const checkModules: CheckModule[] = [
 	githubModule,
 	monorepoModule,
 	releaseModule,
+	creditsModule,
 ]
 
 /**
@@ -89,6 +91,7 @@ export {
 	githubModule,
 	monorepoModule,
 	releaseModule,
+	creditsModule,
 }
 
 // Re-export define helpers for external use
