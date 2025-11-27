@@ -1,5 +1,32 @@
+import type { CheckContext } from '../types'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
+
+/**
+ * Legacy linting/formatting tools that biome can replace
+ */
+const LEGACY_LINTING_TOOLS = [
+	'eslint',
+	'prettier',
+	'@typescript-eslint/parser',
+	'@typescript-eslint/eslint-plugin',
+	'eslint-config-prettier',
+	'eslint-plugin-prettier',
+	'eslint-plugin-import',
+	'eslint-plugin-react',
+	'eslint-plugin-react-hooks',
+]
+
+/**
+ * Check if project uses any legacy linting tools
+ */
+function usesLegacyLintingTools(ctx: CheckContext): string[] {
+	const deps = {
+		...ctx.packageJson?.dependencies,
+		...ctx.packageJson?.devDependencies,
+	}
+	return LEGACY_LINTING_TOOLS.filter((pkg) => pkg in deps)
+}
 
 export const formatModule: CheckModule = defineCheckModule(
 	{
@@ -87,50 +114,30 @@ export const formatModule: CheckModule = defineCheckModule(
 		},
 
 		{
-			name: 'format/no-eslint',
-			description: 'Check for legacy linting tools (use biome instead)',
-			fixable: true,
+			name: 'format/suggest-biome',
+			description: 'Suggest biome for projects using eslint/prettier',
+			fixable: false,
 			async check(ctx) {
-				const { readPackageJson } = await import('../utils/fs')
-				const { exec } = await import('../utils/exec')
+				// Check for legacy linting tools
+				const legacyTools = usesLegacyLintingTools(ctx)
 
-				// Banned linting/formatting packages
-				const banned = [
-					'eslint',
-					'prettier',
-					'@typescript-eslint/parser',
-					'@typescript-eslint/eslint-plugin',
-					'eslint-config-prettier',
-					'eslint-plugin-prettier',
-				]
-
-				// Read fresh from disk to handle post-fix verification
-				const packageJson = readPackageJson(ctx.cwd)
-				const allDeps = {
-					...packageJson?.dependencies,
-					...packageJson?.devDependencies,
+				if (legacyTools.length === 0) {
+					return { passed: true, message: 'No legacy linting tools detected' }
 				}
 
-				const found = banned.filter((pkg) => pkg in allDeps)
-
-				if (found.length === 0) {
-					return { passed: true, message: 'No legacy linting tools' }
-				}
-
+				// This is a suggestion, not an error - use 'warn' severity
 				return {
 					passed: false,
-					message: `Found legacy linting tools: ${found.join(', ')}`,
-					hint: `Use biome instead. Run: bun remove ${found.join(' ')}`,
-					fix: async () => {
-						await exec('bun', ['remove', ...found], ctx.cwd)
-					},
+					message: `Using legacy linting tools: ${legacyTools.join(', ')}`,
+					hint: 'Consider migrating to biome for faster linting and formatting. See: https://biomejs.dev',
+					severity: 'warn',
 				}
 			},
 		},
 
 		{
-			name: 'format/no-eslint-config',
-			description: 'Check that ESLint config does not exist (use biome)',
+			name: 'format/eslint-config-orphan',
+			description: 'Check for orphaned ESLint config (no eslint in deps)',
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
@@ -152,13 +159,30 @@ export const formatModule: CheckModule = defineCheckModule(
 				const found = eslintFiles.filter((f) => fileExists(join(ctx.cwd, f)))
 
 				if (found.length === 0) {
-					return { passed: true, message: 'No ESLint config files (good)' }
+					return { passed: true, message: 'No ESLint config files' }
 				}
 
+				// Check if eslint is actually installed
+				const deps = {
+					...ctx.packageJson?.dependencies,
+					...ctx.packageJson?.devDependencies,
+				}
+				const hasEslint = 'eslint' in deps
+
+				// If eslint is installed, config is expected - skip
+				if (hasEslint) {
+					return {
+						passed: true,
+						message: 'ESLint config exists (eslint installed)',
+						skipped: true,
+					}
+				}
+
+				// Orphaned config - eslint not installed but config exists
 				return {
 					passed: false,
-					message: `Found ESLint config: ${found.join(', ')}`,
-					hint: 'Remove ESLint config and use biome',
+					message: `Orphaned ESLint config: ${found.join(', ')}`,
+					hint: 'ESLint is not installed but config exists. Remove config files.',
 					fix: async () => {
 						for (const f of found) {
 							unlinkSync(join(ctx.cwd, f))
@@ -169,8 +193,8 @@ export const formatModule: CheckModule = defineCheckModule(
 		},
 
 		{
-			name: 'format/no-prettier-config',
-			description: 'Check that Prettier config does not exist (use biome)',
+			name: 'format/prettier-config-orphan',
+			description: 'Check for orphaned Prettier config (no prettier in deps)',
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
@@ -192,13 +216,30 @@ export const formatModule: CheckModule = defineCheckModule(
 				const found = prettierFiles.filter((f) => fileExists(join(ctx.cwd, f)))
 
 				if (found.length === 0) {
-					return { passed: true, message: 'No Prettier config files (good)' }
+					return { passed: true, message: 'No Prettier config files' }
 				}
 
+				// Check if prettier is actually installed
+				const deps = {
+					...ctx.packageJson?.dependencies,
+					...ctx.packageJson?.devDependencies,
+				}
+				const hasPrettier = 'prettier' in deps
+
+				// If prettier is installed, config is expected - skip
+				if (hasPrettier) {
+					return {
+						passed: true,
+						message: 'Prettier config exists (prettier installed)',
+						skipped: true,
+					}
+				}
+
+				// Orphaned config - prettier not installed but config exists
 				return {
 					passed: false,
-					message: `Found Prettier config: ${found.join(', ')}`,
-					hint: 'Remove Prettier config and use biome',
+					message: `Orphaned Prettier config: ${found.join(', ')}`,
+					hint: 'Prettier is not installed but config exists. Remove config files.',
 					fix: async () => {
 						for (const f of found) {
 							unlinkSync(join(ctx.cwd, f))

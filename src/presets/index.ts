@@ -53,14 +53,14 @@ const basePreset: PresetConfig = {
 	'format/biome-format': 'error',
 	'format/typecheck': 'error',
 	'format/biome-dep': 'error',
-	'format/no-eslint': 'error',
-	'format/no-eslint-config': 'error',
-	'format/no-prettier-config': 'error',
+	'format/suggest-biome': 'warn', // Suggestion, not error
+	'format/eslint-config-orphan': 'error',
+	'format/prettier-config-orphan': 'error',
 
 	// Build
 	'build/exports-valid': 'off',
 	'build/bunup-dep': 'error',
-	'build/no-legacy-bundlers': 'error',
+	'build/suggest-bunup': 'warn', // Suggestion, not error
 
 	// Runtime
 	'runtime/bun-lock': 'error',

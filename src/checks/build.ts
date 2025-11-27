@@ -1,8 +1,67 @@
-import type { PackageJson } from '../types'
+import type { CheckContext, PackageJson } from '../types'
 import { isMonorepoRoot } from '../utils/context'
 import { formatPackageIssues, type PackageIssue } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
+
+/**
+ * Detect if project is a native module (Rust/C++ bindings)
+ * Native modules use napi-rs, node-pre-gyp, or similar - not standard JS bundlers
+ */
+function isNativeModule(ctx: CheckContext): boolean {
+	const deps = {
+		...ctx.packageJson?.dependencies,
+		...ctx.packageJson?.devDependencies,
+	}
+
+	// Native module indicators
+	const nativeIndicators = [
+		'@napi-rs/cli',
+		'napi',
+		'node-pre-gyp',
+		'node-gyp',
+		'prebuild',
+		'prebuildify',
+		'@aspect-build/rules_js', // Bazel native
+	]
+
+	for (const indicator of nativeIndicators) {
+		if (indicator in deps) return true
+	}
+
+	// Check build script for napi
+	const buildScript = ctx.packageJson?.scripts?.build ?? ''
+	if (buildScript.includes('napi build')) return true
+
+	return false
+}
+
+/**
+ * Legacy bundlers that bunup can replace
+ */
+const LEGACY_BUNDLERS = [
+	'esbuild',
+	'tsup',
+	'rollup',
+	'webpack',
+	'parcel',
+	'@rollup/plugin-node-resolve',
+	'@rollup/plugin-commonjs',
+	'rollup-plugin-dts',
+	'unbuild',
+	'pkgroll',
+]
+
+/**
+ * Check if project uses any legacy bundlers
+ */
+function usesLegacyBundlers(ctx: CheckContext): string[] {
+	const deps = {
+		...ctx.packageJson?.dependencies,
+		...ctx.packageJson?.devDependencies,
+	}
+	return LEGACY_BUNDLERS.filter((pkg) => pkg in deps)
+}
 
 function checkExports(pkg: PackageJson, location: string): PackageIssue | null {
 	const exports = pkg?.exports
@@ -129,44 +188,32 @@ export const buildModule: CheckModule = defineCheckModule(
 		},
 
 		{
-			name: 'build/no-legacy-bundlers',
-			description: 'Check for legacy bundlers (use bunup instead)',
-			fixable: true,
+			name: 'build/suggest-bunup',
+			description: 'Suggest bunup for projects using other JS/TS bundlers',
+			fixable: false,
 			async check(ctx) {
-				const { readPackageJson } = await import('../utils/fs')
-				const { exec } = await import('../utils/exec')
-
-				const banned = [
-					'esbuild',
-					'tsup',
-					'rollup',
-					'webpack',
-					'parcel',
-					'@rollup/plugin-node-resolve',
-					'@rollup/plugin-commonjs',
-					'rollup-plugin-dts',
-				]
-
-				// Read fresh from disk to handle post-fix verification
-				const packageJson = readPackageJson(ctx.cwd)
-				const allDeps = {
-					...packageJson?.dependencies,
-					...packageJson?.devDependencies,
+				// Skip native modules - they use specialized build tools (napi, node-gyp, etc)
+				if (isNativeModule(ctx)) {
+					return {
+						passed: true,
+						message: 'Native module detected (skipped)',
+						skipped: true,
+					}
 				}
 
-				const found = banned.filter((pkg) => pkg in allDeps)
+				// Check for legacy bundlers
+				const legacyBundlers = usesLegacyBundlers(ctx)
 
-				if (found.length === 0) {
-					return { passed: true, message: 'No legacy bundlers' }
+				if (legacyBundlers.length === 0) {
+					return { passed: true, message: 'No legacy bundlers detected' }
 				}
 
+				// This is a suggestion, not an error - use 'warn' severity
 				return {
 					passed: false,
-					message: `Found legacy bundlers: ${found.join(', ')}`,
-					hint: `Use bunup instead. Run: bun remove ${found.join(' ')}`,
-					fix: async () => {
-						await exec('bun', ['remove', ...found], ctx.cwd)
-					},
+					message: `Using legacy bundlers: ${legacyBundlers.join(', ')}`,
+					hint: 'Consider migrating to bunup for simpler config and faster builds. See: https://github.com/AminDevs/bunup',
+					severity: 'warn',
 				}
 			},
 		},
