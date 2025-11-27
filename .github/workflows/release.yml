@@ -7,6 +7,4 @@ on:
 jobs:
   release:
     uses: SylphxAI/.github/.github/workflows/release.yml@main
-    with:
-      build-command: bun run build
     secrets: inherit
