@@ -281,23 +281,19 @@ export const depsModule: CheckModule = defineCheckModule(
 
 		{
 			name: 'deps/required',
-			description: 'Check if required devDependencies are installed',
+			description: 'Check if shared config packages are installed',
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
 				const { fileExists, readFile, readJson } = await import('../utils/fs')
 
-				// Required packages based on what's used in the project
+				// Only check config packages - tool deps are checked in their category
+				// (format/biome-dep, build/bunup-dep, hooks/lefthook-dep, monorepo/turbo-dep)
 				const missing: { pkg: string; reason: string }[] = []
 				const devDeps = ctx.packageJson?.devDependencies ?? {}
 
-				// Check biome
-				const hasBiomeConfig = fileExists(join(ctx.cwd, 'biome.json'))
-				if (hasBiomeConfig && !('@biomejs/biome' in devDeps)) {
-					missing.push({ pkg: '@biomejs/biome', reason: 'biome.json exists' })
-				}
-
 				// Check @sylphx/biome-config if biome.json extends it
+				const hasBiomeConfig = fileExists(join(ctx.cwd, 'biome.json'))
 				if (hasBiomeConfig) {
 					const biomeConfig = readJson<{ extends?: string[] }>(join(ctx.cwd, 'biome.json'))
 					if (biomeConfig?.extends?.includes('@sylphx/biome-config')) {
@@ -318,34 +314,16 @@ export const depsModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				// Check turbo for monorepos
-				if (ctx.isMonorepo && !('turbo' in devDeps)) {
-					missing.push({ pkg: 'turbo', reason: 'monorepo detected' })
-				}
-
-				// Check bunup if build script uses it
-				const buildScript = ctx.packageJson?.scripts?.build ?? ''
-				if (buildScript.includes('bunup') && !('bunup' in devDeps)) {
-					missing.push({ pkg: 'bunup', reason: 'build script uses bunup' })
-				}
-
-				// Check lefthook if lefthook.yml exists
-				const hasLefthook =
-					fileExists(join(ctx.cwd, 'lefthook.yml')) || fileExists(join(ctx.cwd, 'lefthook.yaml'))
-				if (hasLefthook && !('lefthook' in devDeps)) {
-					missing.push({ pkg: 'lefthook', reason: 'lefthook.yml exists' })
-				}
-
 				if (missing.length === 0) {
 					return {
 						passed: true,
-						message: 'All required devDependencies installed',
+						message: 'All shared config packages installed',
 					}
 				}
 
 				return {
 					passed: false,
-					message: `Missing ${missing.length} required devDependencies`,
+					message: `Missing ${missing.length} shared config package(s)`,
 					hint: missing.map((m) => `${m.pkg} (${m.reason})`).join('\n'),
 					fix: async () => {
 						const { exec } = await import('../utils/exec')

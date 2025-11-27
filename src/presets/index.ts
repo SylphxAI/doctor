@@ -48,9 +48,11 @@ const basePreset: PresetConfig = {
 	// Formatting
 	'format/biome-check': 'error',
 	'format/biome-format': 'error',
+	'format/biome-dep': 'error',
 
 	// Build
 	'build/exports-valid': 'off',
+	'build/bunup-dep': 'error',
 
 	// Runtime
 	'runtime/bun-lock': 'error',
@@ -71,6 +73,7 @@ const basePreset: PresetConfig = {
 	'hooks/lefthook-pre-push': 'error',
 	'hooks/lefthook-doctor': 'error',
 	'hooks/lefthook-installed': 'error',
+	'hooks/lefthook-dep': 'error',
 
 	// GitHub
 	'github/description': 'warn',
@@ -82,6 +85,7 @@ const basePreset: PresetConfig = {
 	'monorepo/workspace-protocol': 'off',
 	'monorepo/consistent-versions': 'off',
 	'monorepo/turbo-tasks': 'off',
+	'monorepo/turbo-dep': 'error',
 	'monorepo/packages-readme': 'off',
 	'monorepo/packages-license': 'off',
 

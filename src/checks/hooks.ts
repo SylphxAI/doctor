@@ -230,5 +230,39 @@ export const hooksModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'hooks/lefthook-dep',
+			description: 'Check if lefthook is in devDependencies',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { fileExists } = await import('../utils/fs')
+				const { exec } = await import('../utils/exec')
+
+				const lefthookPath = join(ctx.cwd, 'lefthook.yml')
+				const lefthookYamlPath = join(ctx.cwd, 'lefthook.yaml')
+				const hasConfig = fileExists(lefthookPath) || fileExists(lefthookYamlPath)
+
+				// Skip if no lefthook config
+				if (!hasConfig) {
+					return { passed: true, message: 'No lefthook config (skipped)', skipped: true }
+				}
+
+				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				const hasLefthook = 'lefthook' in devDeps
+
+				return {
+					passed: hasLefthook,
+					message: hasLefthook
+						? 'lefthook in devDependencies'
+						: 'lefthook missing from devDependencies',
+					hint: hasLefthook ? undefined : 'Run: bun add -D lefthook',
+					fix: async () => {
+						await exec('bun', ['add', '-D', 'lefthook'], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )

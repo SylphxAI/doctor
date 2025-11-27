@@ -95,5 +95,34 @@ export const buildModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'build/bunup-dep',
+			description: 'Check if bunup is in devDependencies when build uses it',
+			fixable: true,
+			async check(ctx) {
+				const { exec } = await import('../utils/exec')
+
+				const buildScript = ctx.packageJson?.scripts?.build ?? ''
+				const usesBunup = buildScript.includes('bunup')
+
+				// Skip if build doesn't use bunup
+				if (!usesBunup) {
+					return { passed: true, message: 'Build does not use bunup (skipped)', skipped: true }
+				}
+
+				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				const hasBunup = 'bunup' in devDeps
+
+				return {
+					passed: hasBunup,
+					message: hasBunup ? 'bunup in devDependencies' : 'bunup missing from devDependencies',
+					hint: hasBunup ? undefined : 'Run: bun add -D bunup',
+					fix: async () => {
+						await exec('bun', ['add', '-D', 'bunup'], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )

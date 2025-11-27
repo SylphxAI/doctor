@@ -233,5 +233,28 @@ export const monorepoModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'monorepo/turbo-dep',
+			description: 'Check if turbo is in devDependencies',
+			fixable: true,
+			async check(ctx) {
+				const { exec } = await import('../utils/exec')
+
+				if (!ctx.isMonorepo) return skipResult()
+
+				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				const hasTurbo = 'turbo' in devDeps
+
+				return {
+					passed: hasTurbo,
+					message: hasTurbo ? 'turbo in devDependencies' : 'turbo missing from devDependencies',
+					hint: hasTurbo ? undefined : 'Run: bun add -D turbo',
+					fix: async () => {
+						await exec('bun', ['add', '-D', 'turbo'], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )

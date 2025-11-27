@@ -8,10 +8,12 @@ pre-commit:
       glob: "*.{js,ts,jsx,tsx,json,md}"
       run: bunx biome format --write {staged_files}
       stage_fixed: true
+      skip_empty: true
 
     lint:
       glob: "*.{js,ts,jsx,tsx}"
       run: bunx biome check {staged_files}
+      skip_empty: true
 
     doctor:
       run: bunx @sylphx/doctor check --pre-commit

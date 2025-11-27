@@ -49,5 +49,37 @@ export const formatModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'format/biome-dep',
+			description: 'Check if biome is in devDependencies',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { fileExists } = await import('../utils/fs')
+				const { exec } = await import('../utils/exec')
+
+				const hasBiomeConfig = fileExists(join(ctx.cwd, 'biome.json'))
+
+				// Skip if no biome config
+				if (!hasBiomeConfig) {
+					return { passed: true, message: 'No biome.json (skipped)', skipped: true }
+				}
+
+				const devDeps = ctx.packageJson?.devDependencies ?? {}
+				const hasBiome = '@biomejs/biome' in devDeps
+
+				return {
+					passed: hasBiome,
+					message: hasBiome
+						? '@biomejs/biome in devDependencies'
+						: '@biomejs/biome missing from devDependencies',
+					hint: hasBiome ? undefined : 'Run: bun add -D @biomejs/biome',
+					fix: async () => {
+						await exec('bun', ['add', '-D', '@biomejs/biome'], ctx.cwd)
+					},
+				}
+			},
+		},
 	]
 )
