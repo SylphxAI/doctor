@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.16.1 (2025-11-27)
+
+### ♻️ Refactoring
+
+- **deps:** split banned package checks by category ([805cdf8](https://github.com/SylphxAI/doctor/commit/805cdf870627fbdff24fbb686e0b4ee2f492dd48))
+
 ## 1.16.0 (2025-11-27)
 
 ### ✨ Features
