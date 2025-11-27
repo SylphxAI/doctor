@@ -1,5 +1,17 @@
 # sylphx-doctor
 
+## 1.16.1 (2025-11-27)
+
+### ♻️ Refactoring
+
+- **deps:** move shared config dep checks to config category ([6eb6e9f](https://github.com/SylphxAI/doctor/commit/6eb6e9f48b35a8633f9710f1256acc0b4b56760c))
+- **deps:** move package manager check to runtime category ([638773e](https://github.com/SylphxAI/doctor/commit/638773e9914aad0a2d7331a2f2779bc8c68d0bc6))
+- **deps:** split banned package checks by category ([805cdf8](https://github.com/SylphxAI/doctor/commit/805cdf870627fbdff24fbb686e0b4ee2f492dd48))
+
+### 🔧 Chores
+
+- trigger release ([51f5c57](https://github.com/SylphxAI/doctor/commit/51f5c57820df3a3968dad675f5044a8ef91b99af))
+
 ## 1.16.0 (2025-11-27)
 
 ### ✨ Features
