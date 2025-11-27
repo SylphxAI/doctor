@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.14.7 (2025-11-27)
+
+### 🐛 Bug Fixes
+
+- **hooks:** report ALL missing components at once ([2649cfd](https://github.com/SylphxAI/doctor/commit/2649cfdbd2bb784c57db0321452109619e53e62d))
+
 ## 1.14.6 (2025-11-27)
 
 ### 🐛 Bug Fixes
