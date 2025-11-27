@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.23.1 (2025-11-27)
+
+### 🐛 Bug Fixes
+
+- **checks:** read package.json fresh from disk for all dep checks ([dd69f4d](https://github.com/SylphxAI/doctor/commit/dd69f4dac3e6fe6d4a050c625c9ebb6eb793198b))
+
 ## 1.23.0 (2025-11-27)
 
 ### ✨ Features
