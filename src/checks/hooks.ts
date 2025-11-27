@@ -69,9 +69,11 @@ export const hooksModule: CheckModule = defineCheckModule(
 			},
 		},
 
+		// Split into separate checks so users can granularly override
+		// e.g., `rules: { 'hooks/lefthook-pre-push': 'off' }` to skip pre-push check
 		{
-			name: 'hooks/lefthook-config',
-			description: 'Check if lefthook.yml exists and is properly configured',
+			name: 'hooks/lefthook-pre-commit',
+			description: 'Check if lefthook has pre-commit hook',
 			fixable: true,
 			async check(ctx) {
 				const { join } = await import('node:path')
@@ -80,44 +82,92 @@ export const hooksModule: CheckModule = defineCheckModule(
 
 				const lefthookPath = join(ctx.cwd, 'lefthook.yml')
 				const lefthookYamlPath = join(ctx.cwd, 'lefthook.yaml')
-
 				const exists = fileExists(lefthookPath) || fileExists(lefthookYamlPath)
 
 				if (!exists) {
 					return {
 						passed: false,
 						message: 'Missing lefthook.yml',
-						fix: async () => {
-							writeFileSync(lefthookPath, defaultLefthookConfig, 'utf-8')
-						},
+						fix: async () => writeFileSync(lefthookPath, defaultLefthookConfig, 'utf-8'),
 					}
 				}
 
 				const content = readFile(lefthookPath) || readFile(lefthookYamlPath) || ''
 				const hasPreCommit = content.includes('pre-commit')
-				const hasPrePush = content.includes('pre-push')
-				const hasDoctor = content.includes('@sylphx/doctor') || content.includes('sylphx-doctor')
-
-				// Must have both pre-commit and pre-push with doctor
-				const isComplete = hasPreCommit && hasPrePush && hasDoctor
-
-				// Collect ALL missing components (not just the first one)
-				const missing: string[] = []
-				if (!hasPreCommit) missing.push('pre-commit')
-				if (!hasPrePush) missing.push('pre-push')
-				if (!hasDoctor) missing.push('@sylphx/doctor')
-
-				const message = isComplete
-					? 'lefthook.yml configured with pre-commit + pre-push'
-					: `lefthook.yml missing: ${missing.join(', ')}`
 
 				return {
-					passed: isComplete,
-					message,
-					hint: isComplete ? undefined : 'Run --fix to update lefthook.yml',
-					fix: async () => {
-						writeFileSync(lefthookPath, defaultLefthookConfig, 'utf-8')
-					},
+					passed: hasPreCommit,
+					message: hasPreCommit
+						? 'lefthook has pre-commit hook'
+						: 'lefthook missing pre-commit hook',
+					hint: hasPreCommit ? undefined : 'Run --fix to update lefthook.yml',
+					fix: async () => writeFileSync(lefthookPath, defaultLefthookConfig, 'utf-8'),
+				}
+			},
+		},
+
+		{
+			name: 'hooks/lefthook-pre-push',
+			description: 'Check if lefthook has pre-push hook',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { writeFileSync } = await import('node:fs')
+				const { fileExists, readFile } = await import('../utils/fs')
+
+				const lefthookPath = join(ctx.cwd, 'lefthook.yml')
+				const lefthookYamlPath = join(ctx.cwd, 'lefthook.yaml')
+				const exists = fileExists(lefthookPath) || fileExists(lefthookYamlPath)
+
+				if (!exists) {
+					return {
+						passed: false,
+						message: 'Missing lefthook.yml',
+						fix: async () => writeFileSync(lefthookPath, defaultLefthookConfig, 'utf-8'),
+					}
+				}
+
+				const content = readFile(lefthookPath) || readFile(lefthookYamlPath) || ''
+				const hasPrePush = content.includes('pre-push')
+
+				return {
+					passed: hasPrePush,
+					message: hasPrePush ? 'lefthook has pre-push hook' : 'lefthook missing pre-push hook',
+					hint: hasPrePush ? undefined : 'Run --fix to update lefthook.yml',
+					fix: async () => writeFileSync(lefthookPath, defaultLefthookConfig, 'utf-8'),
+				}
+			},
+		},
+
+		{
+			name: 'hooks/lefthook-doctor',
+			description: 'Check if lefthook runs @sylphx/doctor',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { writeFileSync } = await import('node:fs')
+				const { fileExists, readFile } = await import('../utils/fs')
+
+				const lefthookPath = join(ctx.cwd, 'lefthook.yml')
+				const lefthookYamlPath = join(ctx.cwd, 'lefthook.yaml')
+				const exists = fileExists(lefthookPath) || fileExists(lefthookYamlPath)
+
+				if (!exists) {
+					return {
+						passed: false,
+						message: 'Missing lefthook.yml',
+						fix: async () => writeFileSync(lefthookPath, defaultLefthookConfig, 'utf-8'),
+					}
+				}
+
+				const content = readFile(lefthookPath) || readFile(lefthookYamlPath) || ''
+				const hasDoctor = content.includes('@sylphx/doctor') || content.includes('sylphx-doctor')
+
+				return {
+					passed: hasDoctor,
+					message: hasDoctor ? 'lefthook runs @sylphx/doctor' : 'lefthook missing @sylphx/doctor',
+					hint: hasDoctor ? undefined : 'Run --fix to update lefthook.yml',
+					fix: async () => writeFileSync(lefthookPath, defaultLefthookConfig, 'utf-8'),
 				}
 			},
 		},
