@@ -1,5 +1,15 @@
 # sylphx-doctor
 
+## 1.19.2 (2025-11-27)
+
+### ♻️ Refactoring
+
+- **checks:** remove cleanup module, distribute checks to categories ([6d85281](https://github.com/SylphxAI/doctor/commit/6d8528171d50540746a25033880631b04ee02d1d))
+
+### ✅ Tests
+
+- **presets:** add completeness check for checks ↔ presets sync ([7d74524](https://github.com/SylphxAI/doctor/commit/7d745246500f1eb9dc6c756d98f6969fc791de16))
+
 ## 1.19.1 (2025-11-27)
 
 ### 🐛 Bug Fixes
