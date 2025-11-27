@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.14.9 (2025-11-27)
+
+### 🐛 Bug Fixes
+
+- **checks:** report ALL issues at once in ci and build checks ([065246d](https://github.com/SylphxAI/doctor/commit/065246ddfb669fdc9553ea730bb7985bf2a10a86))
+
 ## 1.14.8 (2025-11-27)
 
 ### ♻️ Refactoring
