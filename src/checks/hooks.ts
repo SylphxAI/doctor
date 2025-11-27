@@ -95,15 +95,26 @@ export const hooksModule: CheckModule = defineCheckModule(
 
 				const content = readFile(lefthookPath) || readFile(lefthookYamlPath) || ''
 				const hasPreCommit = content.includes('pre-commit')
+				const hasPrePush = content.includes('pre-push')
 				const hasDoctor = content.includes('@sylphx/doctor') || content.includes('sylphx-doctor')
 
+				// Must have both pre-commit and pre-push with doctor
+				const isComplete = hasPreCommit && hasPrePush && hasDoctor
+
+				// Collect ALL missing components (not just the first one)
+				const missing: string[] = []
+				if (!hasPreCommit) missing.push('pre-commit')
+				if (!hasPrePush) missing.push('pre-push')
+				if (!hasDoctor) missing.push('@sylphx/doctor')
+
+				const message = isComplete
+					? 'lefthook.yml configured with pre-commit + pre-push'
+					: `lefthook.yml missing: ${missing.join(', ')}`
+
 				return {
-					passed: hasPreCommit,
-					message: hasPreCommit
-						? hasDoctor
-							? 'lefthook.yml configured with @sylphx/doctor'
-							: 'lefthook.yml configured (consider adding @sylphx/doctor)'
-						: 'lefthook.yml missing pre-commit hook',
+					passed: isComplete,
+					message,
+					hint: isComplete ? undefined : 'Run --fix to update lefthook.yml',
 					fix: async () => {
 						writeFileSync(lefthookPath, defaultLefthookConfig, 'utf-8')
 					},
