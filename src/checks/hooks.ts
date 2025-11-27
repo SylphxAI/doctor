@@ -272,13 +272,16 @@ export const hooksModule: CheckModule = defineCheckModule(
 			description: 'Check for legacy git hook tools (use lefthook instead)',
 			fixable: true,
 			async check(ctx) {
+				const { readPackageJson } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')
 
 				const banned = ['husky', 'simple-git-hooks', 'lint-staged']
 
+				// Read fresh from disk to handle post-fix verification
+				const packageJson = readPackageJson(ctx.cwd)
 				const allDeps = {
-					...ctx.packageJson?.dependencies,
-					...ctx.packageJson?.devDependencies,
+					...packageJson?.dependencies,
+					...packageJson?.devDependencies,
 				}
 
 				const found = banned.filter((pkg) => pkg in allDeps)

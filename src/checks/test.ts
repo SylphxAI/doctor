@@ -217,13 +217,16 @@ export const testModule: CheckModule = defineCheckModule(
 			description: 'Check for legacy test frameworks (use bun test instead)',
 			fixable: true,
 			async check(ctx) {
+				const { readPackageJson } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')
 
 				const banned = ['jest', 'vitest', 'mocha', 'chai', 'ts-jest', '@types/jest']
 
+				// Read fresh from disk to handle post-fix verification
+				const packageJson = readPackageJson(ctx.cwd)
 				const allDeps = {
-					...ctx.packageJson?.dependencies,
-					...ctx.packageJson?.devDependencies,
+					...packageJson?.dependencies,
+					...packageJson?.devDependencies,
 				}
 
 				const found = banned.filter((pkg) => pkg in allDeps)

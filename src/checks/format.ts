@@ -91,6 +91,7 @@ export const formatModule: CheckModule = defineCheckModule(
 			description: 'Check for legacy linting tools (use biome instead)',
 			fixable: true,
 			async check(ctx) {
+				const { readPackageJson } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')
 
 				// Banned linting/formatting packages
@@ -103,9 +104,11 @@ export const formatModule: CheckModule = defineCheckModule(
 					'eslint-plugin-prettier',
 				]
 
+				// Read fresh from disk to handle post-fix verification
+				const packageJson = readPackageJson(ctx.cwd)
 				const allDeps = {
-					...ctx.packageJson?.dependencies,
-					...ctx.packageJson?.devDependencies,
+					...packageJson?.dependencies,
+					...packageJson?.devDependencies,
 				}
 
 				const found = banned.filter((pkg) => pkg in allDeps)

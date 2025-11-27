@@ -105,13 +105,16 @@ export const runtimeModule: CheckModule = defineCheckModule(
 			description: 'Check for legacy TS execution tools (use bun instead)',
 			fixable: true,
 			async check(ctx) {
+				const { readPackageJson } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')
 
 				const banned = ['ts-node', 'tsx', 'ts-node-dev']
 
+				// Read fresh from disk to handle post-fix verification
+				const packageJson = readPackageJson(ctx.cwd)
 				const allDeps = {
-					...ctx.packageJson?.dependencies,
-					...ctx.packageJson?.devDependencies,
+					...packageJson?.dependencies,
+					...packageJson?.devDependencies,
 				}
 
 				const found = banned.filter((pkg) => pkg in allDeps)
@@ -136,13 +139,16 @@ export const runtimeModule: CheckModule = defineCheckModule(
 			description: 'Check for other package managers in dependencies (use bun instead)',
 			fixable: true,
 			async check(ctx) {
+				const { readPackageJson } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')
 
 				const banned = ['npm', 'yarn', 'pnpm']
 
+				// Read fresh from disk to handle post-fix verification
+				const packageJson = readPackageJson(ctx.cwd)
 				const allDeps = {
-					...ctx.packageJson?.dependencies,
-					...ctx.packageJson?.devDependencies,
+					...packageJson?.dependencies,
+					...packageJson?.devDependencies,
 				}
 
 				const found = banned.filter((pkg) => pkg in allDeps)

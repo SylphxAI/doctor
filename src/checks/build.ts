@@ -133,6 +133,7 @@ export const buildModule: CheckModule = defineCheckModule(
 			description: 'Check for legacy bundlers (use bunup instead)',
 			fixable: true,
 			async check(ctx) {
+				const { readPackageJson } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')
 
 				const banned = [
@@ -146,9 +147,11 @@ export const buildModule: CheckModule = defineCheckModule(
 					'rollup-plugin-dts',
 				]
 
+				// Read fresh from disk to handle post-fix verification
+				const packageJson = readPackageJson(ctx.cwd)
 				const allDeps = {
-					...ctx.packageJson?.dependencies,
-					...ctx.packageJson?.devDependencies,
+					...packageJson?.dependencies,
+					...packageJson?.devDependencies,
 				}
 
 				const found = banned.filter((pkg) => pkg in allDeps)

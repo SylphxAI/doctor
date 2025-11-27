@@ -318,8 +318,11 @@ export const releaseModule: CheckModule = defineCheckModule(
 			description: 'Check that @changesets packages are not installed (use @sylphx/bump)',
 			fixable: true,
 			async check(ctx) {
+				const { readPackageJson } = await import('../utils/fs')
 				const { exec } = await import('../utils/exec')
-				const pkg = ctx.packageJson
+
+				// Read fresh from disk to handle post-fix verification
+				const pkg = readPackageJson(ctx.cwd)
 				if (!pkg) {
 					return { passed: true, message: 'No package.json', skipped: true }
 				}
