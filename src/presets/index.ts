@@ -104,7 +104,8 @@ const basePreset: PresetConfig = {
 	'release/bump-dep': 'warn',
 
 	// Credits
-	'credits/readme-sylphx': 'warn',
+	'credits/has-section': 'warn',
+	'credits/mentions-packages': 'warn',
 }
 
 /**
