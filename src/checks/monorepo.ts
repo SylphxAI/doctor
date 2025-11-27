@@ -126,7 +126,47 @@ export const monorepoModule: CheckModule = defineCheckModule(
 						issues.length === 0
 							? 'All internal dependencies use workspace: protocol'
 							: `Should use workspace: for: ${issues.slice(0, 3).join(', ')}${issues.length > 3 ? ` (+${issues.length - 3} more)` : ''}`,
-					hint: 'Use "workspace:*" for internal package dependencies (workspace:^ also accepted)',
+					hint: 'Use "workspace:*" for internal package dependencies',
+				}
+			},
+		},
+
+		{
+			name: 'monorepo/workspace-star',
+			description: 'Check if internal dependencies use workspace:* (not workspace:^)',
+			fixable: false,
+			async check(ctx) {
+				if (!ctx.isMonorepo) return skipResult()
+				if (ctx.workspacePackages.length === 0) return skipResult('No workspace packages found')
+
+				const packageNames = new Set(ctx.workspacePackages.map((p) => p.name))
+				const issues: string[] = []
+
+				for (const pkg of ctx.workspacePackages) {
+					const allDeps = {
+						...pkg.packageJson.dependencies,
+						...pkg.packageJson.devDependencies,
+					}
+
+					for (const [depName, version] of Object.entries(allDeps)) {
+						// Only check internal packages that use workspace: but not workspace:*
+						if (
+							packageNames.has(depName) &&
+							version?.startsWith('workspace:') &&
+							version !== 'workspace:*'
+						) {
+							issues.push(`${pkg.relativePath}: ${depName}@${version}`)
+						}
+					}
+				}
+
+				return {
+					passed: issues.length === 0,
+					message:
+						issues.length === 0
+							? 'All internal dependencies use workspace:*'
+							: `Should use workspace:* for: ${issues.slice(0, 3).join(', ')}${issues.length > 3 ? ` (+${issues.length - 3} more)` : ''}`,
+					hint: 'Use "workspace:*" instead of "workspace:^" for consistent co-releases',
 				}
 			},
 		},

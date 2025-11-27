@@ -95,6 +95,7 @@ const basePreset: PresetConfig = {
 	// Monorepo
 	'monorepo/root-private': 'off',
 	'monorepo/workspace-protocol': 'off',
+	'monorepo/workspace-star': 'off',
 	'monorepo/consistent-versions': 'off',
 	'monorepo/turbo-tasks': 'off',
 	'monorepo/turbo-dep': 'error',
@@ -173,6 +174,7 @@ const devPreset: PresetConfig = extendPreset(basePreset, {
 	// Monorepo - proper structure
 	'monorepo/root-private': 'error',
 	'monorepo/workspace-protocol': 'warn',
+	'monorepo/workspace-star': 'warn',
 	'monorepo/consistent-versions': 'warn',
 	'monorepo/turbo-tasks': 'error',
 	'monorepo/packages-readme': 'warn',
