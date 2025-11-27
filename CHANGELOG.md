@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.21.2 (2025-11-27)
+
+### 🐛 Bug Fixes
+
+- add build to prepublishOnly ([9bfb84b](https://github.com/SylphxAI/doctor/commit/9bfb84b4d524be5f1d8144dc747515684545ce83))
+
 ## 1.21.1 (2025-11-27)
 
 ### 🐛 Bug Fixes
