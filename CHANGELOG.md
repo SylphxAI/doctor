@@ -1,5 +1,15 @@
 # sylphx-doctor
 
+## 1.23.0 (2025-11-27)
+
+### ✨ Features
+
+- upgrade to biome 2.x and add biome-config dep ([35b5575](https://github.com/SylphxAI/doctor/commit/35b55758189b90c40aca8b4387f2ad9635a7dd31))
+
+### 🐛 Bug Fixes
+
+- **checks:** read package.json fresh from disk for dep checks ([3c669e9](https://github.com/SylphxAI/doctor/commit/3c669e93a4326a9877957d96c974d7f53cc40586))
+
 ## 1.22.0 (2025-11-27)
 
 ### ✨ Features
