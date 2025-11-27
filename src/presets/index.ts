@@ -64,9 +64,11 @@ const basePreset: PresetConfig = {
 	'ci/has-workflow': 'warn',
 	'ci/publish-workflow': 'off',
 
-	// Hooks
+	// Hooks (split into granular checks for user override flexibility)
 	'hooks/pre-commit': 'error',
-	'hooks/lefthook-config': 'error',
+	'hooks/lefthook-pre-commit': 'error',
+	'hooks/lefthook-pre-push': 'error',
+	'hooks/lefthook-doctor': 'error',
 
 	// GitHub
 	'github/description': 'warn',
