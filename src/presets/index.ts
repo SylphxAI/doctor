@@ -69,6 +69,7 @@ const basePreset: PresetConfig = {
 	'hooks/lefthook-pre-commit': 'error',
 	'hooks/lefthook-pre-push': 'error',
 	'hooks/lefthook-doctor': 'error',
+	'hooks/lefthook-installed': 'error',
 
 	// GitHub
 	'github/description': 'warn',

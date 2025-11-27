@@ -171,5 +171,64 @@ export const hooksModule: CheckModule = defineCheckModule(
 				}
 			},
 		},
+
+		{
+			name: 'hooks/lefthook-installed',
+			description: 'Check if lefthook is installed and git hooks are set up',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { execSync } = await import('node:child_process')
+				const { fileExists, readFile } = await import('../utils/fs')
+
+				const lefthookPath = join(ctx.cwd, 'lefthook.yml')
+				const lefthookYamlPath = join(ctx.cwd, 'lefthook.yaml')
+				const hasConfig = fileExists(lefthookPath) || fileExists(lefthookYamlPath)
+
+				// Skip if no lefthook config
+				if (!hasConfig) {
+					return {
+						passed: true,
+						message: 'No lefthook config (skipped)',
+						skipped: true,
+					}
+				}
+
+				// Check if git hooks are installed by looking at .git/hooks/pre-commit
+				const gitHookPath = join(ctx.cwd, '.git', 'hooks', 'pre-commit')
+				const hookExists = fileExists(gitHookPath)
+
+				if (!hookExists) {
+					return {
+						passed: false,
+						message: 'Git hooks not installed',
+						hint: 'Run: lefthook install',
+						fix: async () => {
+							execSync('bunx lefthook install', { cwd: ctx.cwd, stdio: 'ignore' })
+						},
+					}
+				}
+
+				// Check if hook contains lefthook (not just a sample file)
+				const hookContent = readFile(gitHookPath) || ''
+				const isLefthook = hookContent.includes('lefthook')
+
+				if (!isLefthook) {
+					return {
+						passed: false,
+						message: 'Git hooks not using lefthook',
+						hint: 'Run: lefthook install',
+						fix: async () => {
+							execSync('bunx lefthook install', { cwd: ctx.cwd, stdio: 'ignore' })
+						},
+					}
+				}
+
+				return {
+					passed: true,
+					message: 'lefthook installed and git hooks set up',
+				}
+			},
+		},
 	]
 )
