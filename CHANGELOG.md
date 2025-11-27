@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.14.10 (2025-11-27)
+
+### 🐛 Bug Fixes
+
+- **presets:** add new hooks check names to presets ([62fbb00](https://github.com/SylphxAI/doctor/commit/62fbb00af7ccc3e090e902f56e7f836a8a39dc14))
+
 ## 1.14.9 (2025-11-27)
 
 ### 🐛 Bug Fixes
