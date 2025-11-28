@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.25.0 (2025-11-28)
+
+### ✨ Features
+
+- **info:** add squash merge reminder for release PRs ([1bb71c2](https://github.com/SylphxAI/doctor/commit/1bb71c2e385a5edede9adab9bf70be60e22d604c))
+
 ## 1.24.1 (2025-11-28)
 
 ### ♻️ Refactoring
