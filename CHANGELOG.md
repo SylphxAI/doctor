@@ -1,5 +1,16 @@
 # sylphx-doctor
 
+## 1.24.1 (2025-11-28)
+
+### ♻️ Refactoring
+
+- **hooks:** doctor manages all git hooks ([18988d1](https://github.com/SylphxAI/doctor/commit/18988d1024bf5bf8611b91accb7aeeb4523cbd17))
+
+### 🔧 Chores
+
+- trigger release ([57b0beb](https://github.com/SylphxAI/doctor/commit/57b0beb2f4b0b3dcf594120015b5fa3711937879))
+- update lefthook.yml to use doctor-only hooks ([503aeb6](https://github.com/SylphxAI/doctor/commit/503aeb6a4bcdf7bfaf5a377273084209d0e53f96))
+
 ## 1.24.0 (2025-11-27)
 
 ### ✨ Features
