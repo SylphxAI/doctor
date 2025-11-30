@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.26.0 (2025-11-30)
+
+### ✨ Features
+
+- **checks:** add build/esm-only check ([ebec5a4](https://github.com/SylphxAI/doctor/commit/ebec5a4979d890b5859941bb08310996de2572bb))
+
 ## 1.25.0 (2025-11-28)
 
 ### ✨ Features
