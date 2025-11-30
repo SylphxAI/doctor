@@ -58,6 +58,7 @@ const basePreset: PresetConfig = {
 	'format/prettier-config-orphan': 'error',
 
 	// Build
+	'build/esm-only': 'error', // ESM only, no CJS - reduces bundle size
 	'build/exports-valid': 'off',
 	'build/bunup-dep': 'error',
 	'build/suggest-bunup': 'error', // If using legacy bundlers, must switch to bunup

@@ -144,7 +144,7 @@ pre-commit:
 - `format/biome-format` - biome format passes
 
 ### Build
-- `build/bunup-config` - build.config.ts exists
+- `build/esm-only` - no CJS output (ESM only, auto-fix removes require conditions)
 - `build/exports-valid` - package.json exports properly configured
 
 ### Runtime

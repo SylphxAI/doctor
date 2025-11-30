@@ -37,6 +37,38 @@ function usesLegacyBundlers(ctx: CheckContext): { deps: string[]; usesBunBuild: 
 	return { deps, usesBunBuild }
 }
 
+/**
+ * CJS indicators in package.json
+ */
+function checkCjsIndicators(pkg: PackageJson, location: string): PackageIssue | null {
+	const issues: string[] = []
+
+	// Check main field pointing to .cjs
+	const main = pkg.main as string | undefined
+	if (main?.endsWith('.cjs')) {
+		issues.push(`main points to .cjs (${main})`)
+	}
+
+	// Check exports for require conditions
+	const exports = pkg.exports as Record<string, unknown> | undefined
+	if (exports && typeof exports === 'object') {
+		for (const [key, value] of Object.entries(exports)) {
+			if (typeof value === 'object' && value !== null) {
+				const exportEntry = value as Record<string, unknown>
+				if ('require' in exportEntry) {
+					issues.push(`exports["${key}"] has require condition`)
+				}
+			}
+		}
+	}
+
+	if (issues.length > 0) {
+		return { location, issue: issues.join(', ') }
+	}
+
+	return null
+}
+
 function checkExports(pkg: PackageJson, location: string): PackageIssue | null {
 	const exports = pkg?.exports
 
@@ -72,6 +104,135 @@ export const buildModule: CheckModule = defineCheckModule(
 	},
 	[
 		// Note: bunup config check removed - bunup works fine with defaults
+
+		{
+			name: 'build/esm-only',
+			description: 'Check that package only builds ESM (no CJS)',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { writeFileSync } = await import('node:fs')
+				const { fileExists, readFile, readPackageJson } = await import('../utils/fs')
+
+				// For monorepo root, check all workspace packages
+				if (isMonorepoRoot(ctx)) {
+					const issues: PackageIssue[] = []
+					const packagesToFix: Array<{ path: string; pkg: PackageJson }> = []
+
+					for (const pkg of ctx.workspacePackages) {
+						// Skip private packages
+						if (pkg.packageJson.private) continue
+
+						const issue = checkCjsIndicators(pkg.packageJson, pkg.relativePath)
+						if (issue) {
+							issues.push(issue)
+							packagesToFix.push({ path: pkg.path, pkg: pkg.packageJson })
+						}
+					}
+
+					// Also check build.config.ts at root for cjs format
+					const buildConfigPath = join(ctx.cwd, 'build.config.ts')
+					if (fileExists(buildConfigPath)) {
+						const content = readFile(buildConfigPath) ?? ''
+						if (content.includes("'cjs'") || content.includes('"cjs"')) {
+							issues.push({ location: 'build.config.ts', issue: 'format includes cjs' })
+						}
+					}
+
+					if (issues.length === 0) {
+						return {
+							passed: true,
+							message: 'All packages are ESM-only',
+						}
+					}
+
+					return {
+						passed: false,
+						message: `${issues.length} package(s) have CJS indicators`,
+						hint: formatPackageIssues(issues),
+						fix: async () => {
+							for (const { path } of packagesToFix) {
+								const pkgPath = join(path, 'package.json')
+								const currentPkg = readPackageJson(path) ?? {}
+
+								// Remove main if it points to .cjs
+								if ((currentPkg.main as string)?.endsWith('.cjs')) {
+									delete currentPkg.main
+								}
+
+								// Remove require from exports
+								const exports = currentPkg.exports as Record<string, unknown> | undefined
+								if (exports && typeof exports === 'object') {
+									for (const value of Object.values(exports)) {
+										if (typeof value === 'object' && value !== null) {
+											delete (value as Record<string, unknown>).require
+										}
+									}
+								}
+
+								writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+							}
+						},
+					}
+				}
+
+				// Single package - check root
+				if (!ctx.packageJson) {
+					return { passed: true, message: 'No package.json (skipped)', skipped: true }
+				}
+
+				const issues: string[] = []
+
+				// Check package.json for CJS indicators
+				const cjsIssue = checkCjsIndicators(ctx.packageJson, 'root')
+				if (cjsIssue) {
+					issues.push(cjsIssue.issue)
+				}
+
+				// Check build.config.ts for cjs format
+				const buildConfigPath = join(ctx.cwd, 'build.config.ts')
+				if (fileExists(buildConfigPath)) {
+					const content = readFile(buildConfigPath) ?? ''
+					if (content.includes("'cjs'") || content.includes('"cjs"')) {
+						issues.push('build.config.ts format includes cjs')
+					}
+				}
+
+				if (issues.length === 0) {
+					return {
+						passed: true,
+						message: 'Package is ESM-only (no CJS)',
+					}
+				}
+
+				return {
+					passed: false,
+					message: `CJS indicators found: ${issues.join(', ')}`,
+					hint: 'Remove CJS from exports and build config. Modern Node.js supports ESM.',
+					fix: async () => {
+						const pkgPath = join(ctx.cwd, 'package.json')
+						const currentPkg = readPackageJson(ctx.cwd) ?? {}
+
+						// Remove main if it points to .cjs
+						if ((currentPkg.main as string)?.endsWith('.cjs')) {
+							delete currentPkg.main
+						}
+
+						// Remove require from exports
+						const exports = currentPkg.exports as Record<string, unknown> | undefined
+						if (exports && typeof exports === 'object') {
+							for (const value of Object.values(exports)) {
+								if (typeof value === 'object' && value !== null) {
+									delete (value as Record<string, unknown>).require
+								}
+							}
+						}
+
+						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+					},
+				}
+			},
+		},
 
 		{
 			name: 'build/exports-valid',
