@@ -118,8 +118,10 @@ const basePreset: PresetConfig = {
 	'release/no-changesets': 'error',
 	'release/no-changesets-dep': 'error',
 
-	// Branding (Sylphx ecosystem cross-promotion)
-	'branding/section': 'warn',
+	// Branding (Sylphx ecosystem consistency)
+	'branding/header': 'warn',
+	'branding/footer': 'warn',
+	'branding/npm-badge': 'warn',
 	'branding/packages': 'warn',
 
 	// Rust

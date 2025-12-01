@@ -285,8 +285,10 @@ pre-commit:
 ### Branding
 | Check | Description | Fixable |
 |-------|-------------|---------|
-| `branding/section` | README has "Powered by Sylphx" section | ❌ |
-| `branding/packages` | Section mentions all @sylphx packages used | ❌ |
+| `branding/header` | README has centered header with emoji title | ❌ |
+| `branding/footer` | README has footer with Star History + Sylphx | ❌ |
+| `branding/npm-badge` | README has npm version badge | ❌ |
+| `branding/packages` | README mentions all @sylphx packages used | ❌ |
 
 ### Rust
 | Check | Description | Fixable |
