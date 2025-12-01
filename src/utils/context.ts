@@ -19,9 +19,36 @@ const SHARED_CONFIG_PATTERNS = [
 ]
 
 /**
- * Detect project type from package.json exports
+ * Patterns that indicate an example/demo package
  */
-export function detectProjectType(pkg: PackageJson, hasSourceCode: boolean): ProjectType {
+const EXAMPLE_PATH_PATTERNS = [
+	/^examples?\//i,
+	/\/examples?\//i,
+	/^demos?\//i,
+	/\/demos?\//i,
+	/[-_]example$/i,
+	/[-_]demo$/i,
+]
+
+/**
+ * Check if a path indicates an example/demo package
+ */
+export function isExamplePath(relativePath: string): boolean {
+	return EXAMPLE_PATH_PATTERNS.some((pattern) => pattern.test(relativePath))
+}
+
+/**
+ * Detect project type from package.json exports and path
+ */
+export function detectProjectType(
+	pkg: PackageJson,
+	hasSourceCode: boolean,
+	relativePath?: string
+): ProjectType {
+	// Check if this is an example based on path
+	if (relativePath && isExamplePath(relativePath)) {
+		return 'example'
+	}
 	// Private packages with no exports are typically apps
 	if (pkg.private && !pkg.exports) {
 		return 'app'
@@ -114,7 +141,7 @@ export function isConfigOnlyMonorepo(ctx: CheckContext): boolean {
 
 /**
  * Check if the project needs build/test/typecheck scripts
- * Config-only projects don't need these
+ * Config-only and example projects don't need these
  */
 export function needsBuildScripts(ctx: CheckContext): boolean {
 	// Single package - check its type
@@ -126,6 +153,22 @@ export function needsBuildScripts(ctx: CheckContext): boolean {
 	return ctx.workspacePackages.some(
 		(pkg) => pkg.projectType === 'library' || pkg.projectType === 'app'
 	)
+}
+
+/**
+ * Check if a package needs credits section
+ * Config and example packages don't need credits
+ */
+export function needsCredits(pkg: WorkspacePackage): boolean {
+	return pkg.projectType === 'library' || pkg.projectType === 'app'
+}
+
+/**
+ * Check if a package needs tests
+ * Config and example packages don't need tests
+ */
+export function needsTests(pkg: WorkspacePackage): boolean {
+	return pkg.projectType === 'library' || pkg.projectType === 'app'
 }
 
 /**

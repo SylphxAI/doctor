@@ -1,4 +1,4 @@
-import { getAllPackages, isMonorepoRoot, needsBuildScripts } from '../utils/context'
+import { getAllPackages, isMonorepoRoot, needsBuildScripts, needsTests } from '../utils/context'
 import { formatPackageIssues, type PackageIssue } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
@@ -28,16 +28,13 @@ export const testModule: CheckModule = defineCheckModule(
 
 				// For monorepo, check all packages
 				if (isMonorepoRoot(ctx)) {
-					const allPackages = getAllPackages(ctx)
-					// Filter to only packages that need tests (not config-only)
-					const packagesToCheck = allPackages.filter(
-						(pkg) => pkg.projectType === 'library' || pkg.projectType === 'app'
-					)
+					// Filter to only packages that need tests (not config/example)
+					const packagesToCheck = getAllPackages(ctx).filter(needsTests)
 
 					if (packagesToCheck.length === 0) {
 						return {
 							passed: true,
-							message: 'All packages are config-only (no tests expected)',
+							message: 'All packages are config/example (no tests expected)',
 							skipped: true,
 						}
 					}

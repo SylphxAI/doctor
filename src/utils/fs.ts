@@ -163,12 +163,13 @@ export function discoverWorkspacePackages(cwd: string): WorkspacePackage[] {
 
 				const pkgJson = readPackageJson(dir)
 				if (pkgJson?.name) {
+					const relPath = relative(cwd, dir)
 					packages.push({
 						name: pkgJson.name,
 						path: dir,
-						relativePath: relative(cwd, dir),
+						relativePath: relPath,
 						packageJson: pkgJson,
-						projectType: detectProjectType(pkgJson, hasSourceCode(dir)),
+						projectType: detectProjectType(pkgJson, hasSourceCode(dir), relPath),
 					})
 				}
 			}
@@ -188,12 +189,13 @@ export function discoverWorkspacePackages(cwd: string): WorkspacePackage[] {
 
 						const pkgJson = readPackageJson(pkgPath)
 						if (pkgJson?.name) {
+							const relPath = relative(cwd, pkgPath)
 							packages.push({
 								name: pkgJson.name,
 								path: pkgPath,
-								relativePath: relative(cwd, pkgPath),
+								relativePath: relPath,
 								packageJson: pkgJson,
-								projectType: detectProjectType(pkgJson, hasSourceCode(pkgPath)),
+								projectType: detectProjectType(pkgJson, hasSourceCode(pkgPath), relPath),
 							})
 						}
 					}

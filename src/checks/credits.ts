@@ -1,4 +1,4 @@
-import { getAllPackages, isMonorepoRoot } from '../utils/context'
+import { getAllPackages, isMonorepoRoot, needsCredits } from '../utils/context'
 import { formatPackageIssues, type PackageIssue } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
@@ -47,9 +47,9 @@ export const creditsModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				// For monorepo, check all packages
+				// For monorepo, check all packages (except config/example)
 				if (isMonorepoRoot(ctx)) {
-					const allPackages = getAllPackages(ctx)
+					const allPackages = getAllPackages(ctx).filter(needsCredits)
 					const issues: PackageIssue[] = []
 
 					for (const pkg of allPackages) {
@@ -135,9 +135,9 @@ export const creditsModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				// For monorepo, check all packages
+				// For monorepo, check all packages (except config/example)
 				if (isMonorepoRoot(ctx)) {
-					const allPackages = getAllPackages(ctx)
+					const allPackages = getAllPackages(ctx).filter(needsCredits)
 					const issues: PackageIssue[] = []
 
 					for (const pkg of allPackages) {

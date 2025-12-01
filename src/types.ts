@@ -5,9 +5,10 @@ export type Severity = 'error' | 'warn' | 'info' | 'off'
  * - 'config': Config-only packages (export JSON/YAML files, no TS/JS source)
  * - 'library': Regular packages with TS/JS code exports
  * - 'app': Applications (private, typically no exports)
+ * - 'example': Example/demo packages (in examples/ directory, no tests/credits needed)
  * - 'unknown': Could not determine type
  */
-export type ProjectType = 'config' | 'library' | 'app' | 'unknown'
+export type ProjectType = 'config' | 'library' | 'app' | 'example' | 'unknown'
 
 /**
  * All hook stages in the project lifecycle
