@@ -121,7 +121,11 @@ const basePreset: PresetConfig = {
 	// Branding (Sylphx ecosystem consistency)
 	'branding/header': 'warn',
 	'branding/footer': 'warn',
-	'branding/npm-badge': 'warn',
+	'branding/version-badge': 'warn',
+	'branding/license-badge': 'warn',
+	'branding/ci-badge': 'warn',
+	'branding/coverage-badge': 'warn',
+	'branding/typescript-badge': 'warn',
 	'branding/packages': 'warn',
 
 	// Rust

@@ -287,7 +287,11 @@ pre-commit:
 |-------|-------------|---------|
 | `branding/header` | README has centered header with emoji title | ❌ |
 | `branding/footer` | README has footer with Star History + Sylphx | ❌ |
-| `branding/npm-badge` | README has npm version badge | ❌ |
+| `branding/version-badge` | Version badge (npm/crates.io) | ❌ |
+| `branding/license-badge` | MIT license badge | ❌ |
+| `branding/ci-badge` | CI status badge (if has workflow) | ❌ |
+| `branding/coverage-badge` | Coverage badge (for libraries) | ❌ |
+| `branding/typescript-badge` | TypeScript badge (for TS libraries) | ❌ |
 | `branding/packages` | README mentions all @sylphx packages used | ❌ |
 
 ### Rust
