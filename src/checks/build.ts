@@ -350,7 +350,68 @@ export const buildModule: CheckModule = defineCheckModule(
 			async check(ctx) {
 				const { exec } = await import('../utils/exec')
 
-				// Check for legacy bundlers (deps and build script)
+				// For monorepo, check all workspace packages
+				if (isMonorepoRoot(ctx)) {
+					const issues: PackageIssue[] = []
+					const allDepsToRemove: string[] = []
+
+					for (const pkg of ctx.workspacePackages) {
+						const allDeps = {
+							...pkg.packageJson?.dependencies,
+							...pkg.packageJson?.devDependencies,
+						}
+						const legacyDeps = LEGACY_BUNDLER_DEPS.filter((dep) => dep in allDeps)
+
+						const buildScript = pkg.packageJson?.scripts?.build ?? ''
+						const usesBunBuild =
+							buildScript.includes('bun build') && !buildScript.includes('bunup')
+
+						if (legacyDeps.length > 0) {
+							issues.push({
+								location: pkg.relativePath,
+								issue: `legacy deps: ${legacyDeps.join(', ')}`,
+							})
+							allDepsToRemove.push(...legacyDeps)
+						}
+						if (usesBunBuild) {
+							issues.push({
+								location: pkg.relativePath,
+								issue: '"bun build" in build script',
+							})
+						}
+					}
+
+					// Also check root
+					const { deps: rootDeps, usesBunBuild: rootUsesBunBuild } = usesLegacyBundlers(ctx)
+					if (rootDeps.length > 0) {
+						issues.push({ location: '.', issue: `legacy deps: ${rootDeps.join(', ')}` })
+						allDepsToRemove.push(...rootDeps)
+					}
+					if (rootUsesBunBuild) {
+						issues.push({ location: '.', issue: '"bun build" in build script' })
+					}
+
+					if (issues.length === 0) {
+						return { passed: true, message: 'No legacy bundlers', skipped: true }
+					}
+
+					const uniqueDeps = [...new Set(allDepsToRemove)]
+
+					return {
+						passed: false,
+						message: `${issues.length} package(s) using legacy bundlers`,
+						hint: formatPackageIssues(issues),
+						fix:
+							uniqueDeps.length > 0
+								? async () => {
+										await exec('bun', ['remove', ...uniqueDeps], ctx.cwd)
+										await exec('bun', ['add', '-D', 'bunup'], ctx.cwd)
+									}
+								: undefined,
+					}
+				}
+
+				// Single package - check root
 				const { deps, usesBunBuild } = usesLegacyBundlers(ctx)
 
 				// No legacy bundlers = nothing to check, skip silently
