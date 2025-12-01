@@ -1,8 +1,8 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { readdir, stat } from 'node:fs/promises'
-import { dirname, join, parse, relative } from 'node:path'
-import type { PackageJson, WorkspacePackage } from '../types'
-import { detectProjectType } from './context'
+import { basename, dirname, join, parse, relative } from 'node:path'
+import type { Ecosystem, PackageJson, WorkspacePackage } from '../types'
+import { detectEcosystem, detectProjectType } from './context'
 
 export function fileExists(path: string): boolean {
 	return existsSync(path)
@@ -19,6 +19,64 @@ export function readJson<T>(path: string): T | null {
 
 export function readPackageJson(cwd: string): PackageJson | null {
 	return readJson<PackageJson>(join(cwd, 'package.json'))
+}
+
+/**
+ * Read package name from Cargo.toml
+ */
+function readCargoName(dir: string): string | null {
+	const content = readFile(join(dir, 'Cargo.toml'))
+	if (!content) return null
+
+	// Simple TOML parsing for name field
+	const match = content.match(/^\s*name\s*=\s*"([^"]+)"/m)
+	return match?.[1] ?? null
+}
+
+/**
+ * Read module name from go.mod
+ */
+function readGoModName(dir: string): string | null {
+	const content = readFile(join(dir, 'go.mod'))
+	if (!content) return null
+
+	// Parse module line
+	const match = content.match(/^module\s+(\S+)/m)
+	if (!match?.[1]) return null
+
+	// Return last part of module path
+	const parts = match[1].split('/')
+	return parts[parts.length - 1] ?? null
+}
+
+/**
+ * Read package name from pyproject.toml
+ */
+function readPyProjectName(dir: string): string | null {
+	const content = readFile(join(dir, 'pyproject.toml'))
+	if (!content) return null
+
+	// Simple TOML parsing for name field in [project] or [tool.poetry]
+	const match = content.match(/^\s*name\s*=\s*"([^"]+)"/m)
+	return match?.[1] ?? null
+}
+
+/**
+ * Get package name based on ecosystem
+ */
+function getPackageName(dir: string, ecosystem: Ecosystem): string | null {
+	switch (ecosystem) {
+		case 'typescript':
+			return readPackageJson(dir)?.name ?? null
+		case 'rust':
+			return readCargoName(dir)
+		case 'go':
+			return readGoModName(dir)
+		case 'python':
+			return readPyProjectName(dir)
+		default:
+			return null
+	}
 }
 
 export function writePackageJson(cwd: string, pkg: PackageJson): void {
@@ -144,14 +202,58 @@ export function getWorkspacePatterns(cwd: string): string[] {
 }
 
 /**
+ * Create a WorkspacePackage from a directory
+ * Handles multiple ecosystems (TypeScript, Rust, Go, Python)
+ */
+function createWorkspacePackage(dir: string, cwd: string): WorkspacePackage | null {
+	const relPath = relative(cwd, dir)
+	const ecosystem = detectEcosystem(dir, fileExists)
+
+	// Get package name based on ecosystem
+	const name = getPackageName(dir, ecosystem) ?? basename(dir)
+
+	// For TypeScript, we need package.json
+	const pkgJson = ecosystem === 'typescript' ? readPackageJson(dir) : null
+
+	// Determine project type (only meaningful for TypeScript)
+	const projectType =
+		ecosystem === 'typescript' && pkgJson
+			? detectProjectType(pkgJson, hasSourceCode(dir), relPath)
+			: 'unknown'
+
+	return {
+		name,
+		path: dir,
+		relativePath: relPath,
+		packageJson: pkgJson,
+		projectType,
+		ecosystem,
+	}
+}
+
+/**
+ * Check if a directory is a valid package (has manifest file)
+ */
+function isPackageDir(dir: string): boolean {
+	return (
+		fileExists(join(dir, 'package.json')) ||
+		fileExists(join(dir, 'Cargo.toml')) ||
+		fileExists(join(dir, 'go.mod')) ||
+		fileExists(join(dir, 'pyproject.toml')) ||
+		fileExists(join(dir, 'setup.py'))
+	)
+}
+
+/**
  * Discover all workspace packages in a monorepo
  * Uses workspaces field from package.json, falls back to common directories
+ * Supports polyglot monorepos (TypeScript, Rust, Go, Python)
  */
 export function discoverWorkspacePackages(cwd: string): WorkspacePackage[] {
 	const packages: WorkspacePackage[] = []
 	const seen = new Set<string>()
 
-	// First, try workspaces field
+	// First, try workspaces field (for TypeScript packages)
 	const workspacePatterns = getWorkspacePatterns(cwd)
 
 	if (workspacePatterns.length > 0) {
@@ -161,48 +263,33 @@ export function discoverWorkspacePackages(cwd: string): WorkspacePackage[] {
 				if (seen.has(dir)) continue
 				seen.add(dir)
 
-				const pkgJson = readPackageJson(dir)
-				if (pkgJson?.name) {
-					const relPath = relative(cwd, dir)
-					packages.push({
-						name: pkgJson.name,
-						path: dir,
-						relativePath: relPath,
-						packageJson: pkgJson,
-						projectType: detectProjectType(pkgJson, hasSourceCode(dir), relPath),
-					})
-				}
+				const pkg = createWorkspacePackage(dir, cwd)
+				if (pkg) packages.push(pkg)
 			}
 		}
-	} else {
-		// Fallback: check common directories
-		const commonDirs = ['packages', 'apps', 'libs', 'services', 'tools']
-		for (const dir of commonDirs) {
-			const dirPath = join(cwd, dir)
-			try {
-				const entries = readdirSync(dirPath, { withFileTypes: true })
-				for (const entry of entries) {
-					if (entry.isDirectory() && !entry.name.startsWith('.')) {
-						const pkgPath = join(dirPath, entry.name)
-						if (seen.has(pkgPath)) continue
-						seen.add(pkgPath)
+	}
 
-						const pkgJson = readPackageJson(pkgPath)
-						if (pkgJson?.name) {
-							const relPath = relative(cwd, pkgPath)
-							packages.push({
-								name: pkgJson.name,
-								path: pkgPath,
-								relativePath: relPath,
-								packageJson: pkgJson,
-								projectType: detectProjectType(pkgJson, hasSourceCode(pkgPath), relPath),
-							})
-						}
-					}
+	// Also check common directories for all ecosystems
+	const commonDirs = ['packages', 'apps', 'libs', 'services', 'tools', 'crates', 'go', 'python']
+	for (const dir of commonDirs) {
+		const dirPath = join(cwd, dir)
+		try {
+			const entries = readdirSync(dirPath, { withFileTypes: true })
+			for (const entry of entries) {
+				if (entry.isDirectory() && !entry.name.startsWith('.')) {
+					const pkgPath = join(dirPath, entry.name)
+					if (seen.has(pkgPath)) continue
+
+					// Only add if it's a valid package directory
+					if (!isPackageDir(pkgPath)) continue
+					seen.add(pkgPath)
+
+					const pkg = createWorkspacePackage(pkgPath, cwd)
+					if (pkg) packages.push(pkg)
 				}
-			} catch {
-				// Directory doesn't exist
 			}
+		} catch {
+			// Directory doesn't exist
 		}
 	}
 

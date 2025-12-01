@@ -1,4 +1,4 @@
-import { isConfigOnlyMonorepo } from '../utils/context'
+import { isConfigOnlyMonorepo, isTypeScriptPackage } from '../utils/context'
 import type { CheckModule, CheckReturnValue } from './define'
 import { defineCheckModule } from './define'
 
@@ -105,13 +105,16 @@ export const monorepoModule: CheckModule = defineCheckModule(
 				if (!ctx.isMonorepo) return skipResult()
 				if (ctx.workspacePackages.length === 0) return skipResult('No workspace packages found')
 
+				const tsPackages = ctx.workspacePackages.filter(isTypeScriptPackage)
+				if (tsPackages.length === 0) return skipResult('No TypeScript packages found')
+
 				const packageNames = new Set(ctx.workspacePackages.map((p) => p.name))
 				const issues: string[] = []
 
-				for (const pkg of ctx.workspacePackages) {
+				for (const pkg of tsPackages) {
 					const allDeps = {
-						...pkg.packageJson.dependencies,
-						...pkg.packageJson.devDependencies,
+						...pkg.packageJson?.dependencies,
+						...pkg.packageJson?.devDependencies,
 					}
 
 					for (const [depName, version] of Object.entries(allDeps)) {
@@ -140,13 +143,16 @@ export const monorepoModule: CheckModule = defineCheckModule(
 				if (!ctx.isMonorepo) return skipResult()
 				if (ctx.workspacePackages.length === 0) return skipResult('No workspace packages found')
 
+				const tsPackages = ctx.workspacePackages.filter(isTypeScriptPackage)
+				if (tsPackages.length === 0) return skipResult('No TypeScript packages found')
+
 				const packageNames = new Set(ctx.workspacePackages.map((p) => p.name))
 				const issues: string[] = []
 
-				for (const pkg of ctx.workspacePackages) {
+				for (const pkg of tsPackages) {
 					const allDeps = {
-						...pkg.packageJson.dependencies,
-						...pkg.packageJson.devDependencies,
+						...pkg.packageJson?.dependencies,
+						...pkg.packageJson?.devDependencies,
 					}
 
 					for (const [depName, version] of Object.entries(allDeps)) {
@@ -180,13 +186,16 @@ export const monorepoModule: CheckModule = defineCheckModule(
 				if (!ctx.isMonorepo) return skipResult()
 				if (ctx.workspacePackages.length === 0) return skipResult('No workspace packages found')
 
+				const tsPackages = ctx.workspacePackages.filter(isTypeScriptPackage)
+				if (tsPackages.length === 0) return skipResult('No TypeScript packages found')
+
 				const packageNames = new Set(ctx.workspacePackages.map((p) => p.name))
 				const depVersions = new Map<string, Map<string, string[]>>() // dep -> version -> packages
 
-				for (const pkg of ctx.workspacePackages) {
+				for (const pkg of tsPackages) {
 					const allDeps = {
-						...pkg.packageJson.dependencies,
-						...pkg.packageJson.devDependencies,
+						...pkg.packageJson?.dependencies,
+						...pkg.packageJson?.devDependencies,
 					}
 
 					for (const [depName, version] of Object.entries(allDeps)) {

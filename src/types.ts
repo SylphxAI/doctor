@@ -11,6 +11,16 @@ export type Severity = 'error' | 'warn' | 'info' | 'off'
 export type ProjectType = 'config' | 'library' | 'app' | 'example' | 'unknown'
 
 /**
+ * Ecosystem/language for polyglot monorepo support
+ * - 'typescript': Has package.json (TypeScript/JavaScript)
+ * - 'rust': Has Cargo.toml
+ * - 'go': Has go.mod
+ * - 'python': Has pyproject.toml or setup.py
+ * - 'unknown': Could not determine ecosystem
+ */
+export type Ecosystem = 'typescript' | 'rust' | 'go' | 'python' | 'unknown'
+
+/**
  * All hook stages in the project lifecycle
  * - 'precommit': Before committing code (format, typecheck, lint)
  * - 'prepush': Before pushing to remote (test, validation)
@@ -54,16 +64,18 @@ export interface CheckResult {
 
 /** Info about a package in a monorepo */
 export interface WorkspacePackage {
-	/** Package name from package.json */
+	/** Package name from package.json or Cargo.toml etc */
 	name: string
 	/** Absolute path to package directory */
 	path: string
 	/** Relative path from root (e.g., "packages/foo") */
 	relativePath: string
-	/** Package.json contents */
-	packageJson: PackageJson
+	/** Package.json contents (null for non-TS packages) */
+	packageJson: PackageJson | null
 	/** Detected project type */
 	projectType: ProjectType
+	/** Detected ecosystem (typescript, rust, go, python) */
+	ecosystem: Ecosystem
 }
 
 export interface CheckContext {

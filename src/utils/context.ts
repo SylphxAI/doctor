@@ -2,7 +2,7 @@
  * Context helper utilities
  */
 
-import type { CheckContext, PackageJson, ProjectType, WorkspacePackage } from '../types'
+import type { CheckContext, Ecosystem, PackageJson, ProjectType, WorkspacePackage } from '../types'
 
 /**
  * File extensions that indicate non-code exports (config files)
@@ -35,6 +35,27 @@ const EXAMPLE_PATH_PATTERNS = [
  */
 export function isExamplePath(relativePath: string): boolean {
 	return EXAMPLE_PATH_PATTERNS.some((pattern) => pattern.test(relativePath))
+}
+
+/**
+ * Detect ecosystem from directory contents
+ */
+export function detectEcosystem(dir: string, fileExists: (path: string) => boolean): Ecosystem {
+	const { join } = require('node:path') as typeof import('node:path')
+
+	if (fileExists(join(dir, 'package.json'))) return 'typescript'
+	if (fileExists(join(dir, 'Cargo.toml'))) return 'rust'
+	if (fileExists(join(dir, 'go.mod'))) return 'go'
+	if (fileExists(join(dir, 'pyproject.toml')) || fileExists(join(dir, 'setup.py'))) return 'python'
+
+	return 'unknown'
+}
+
+/**
+ * Check if a package is TypeScript/JavaScript ecosystem
+ */
+export function isTypeScriptPackage(pkg: WorkspacePackage): boolean {
+	return pkg.ecosystem === 'typescript'
 }
 
 /**
@@ -224,6 +245,7 @@ export function getAllPackages(ctx: CheckContext): WorkspacePackage[] {
 			relativePath: '.',
 			packageJson: ctx.packageJson,
 			projectType: ctx.projectType,
+			ecosystem: 'typescript',
 		})
 	}
 

@@ -1,12 +1,14 @@
 import type { CheckContext, WorkspacePackage } from '../types'
-import { isMonorepoRoot, needsBuildScripts } from '../utils/context'
+import { isMonorepoRoot, isTypeScriptPackage, needsBuildScripts } from '../utils/context'
 import { formatPackageIssues, type PackageIssue } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
-/** Get public packages only (non-private) */
+/** Get public TypeScript packages only (non-private, has package.json) */
 function getPublicPackages(ctx: CheckContext): WorkspacePackage[] {
-	return ctx.workspacePackages.filter((pkg) => !pkg.packageJson.private)
+	return ctx.workspacePackages.filter(
+		(pkg) => isTypeScriptPackage(pkg) && !pkg.packageJson?.private
+	)
 }
 
 export const packageModule: CheckModule = defineCheckModule(
@@ -81,7 +83,7 @@ export const packageModule: CheckModule = defineCheckModule(
 
 					const issues: PackageIssue[] = []
 					for (const pkg of publicPackages) {
-						const keywords = pkg.packageJson.keywords as string[] | undefined
+						const keywords = pkg.packageJson?.keywords as string[] | undefined
 						const hasKeywords = !!(keywords && Array.isArray(keywords) && keywords.length > 0)
 						if (!hasKeywords) {
 							issues.push({ location: pkg.relativePath, issue: 'missing keywords' })
@@ -128,13 +130,21 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { readPackageJson } = await import('../utils/fs')
 				const { getAllPackages } = await import('../utils/context')
 
-				// For monorepo, check all packages including root
+				// For monorepo, check all TypeScript packages including root
 				if (isMonorepoRoot(ctx)) {
-					const allPackages = getAllPackages(ctx)
+					const allPackages = getAllPackages(ctx).filter(isTypeScriptPackage)
+					if (allPackages.length === 0) {
+						return {
+							passed: true,
+							message: 'No TypeScript packages to check',
+							skipped: true,
+						}
+					}
+
 					const issues: PackageIssue[] = []
 
 					for (const pkg of allPackages) {
-						if (pkg.packageJson.type !== 'module') {
+						if (pkg.packageJson?.type !== 'module') {
 							issues.push({ location: pkg.relativePath, issue: 'missing type: module' })
 						}
 					}
@@ -152,7 +162,7 @@ export const packageModule: CheckModule = defineCheckModule(
 						hint: formatPackageIssues(issues),
 						fix: async () => {
 							for (const pkg of allPackages) {
-								if (pkg.packageJson.type !== 'module') {
+								if (pkg.packageJson?.type !== 'module') {
 									const pkgPath = join(pkg.path, 'package.json')
 									const currentPkg = readPackageJson(pkg.path) ?? {}
 									currentPkg.type = 'module'
@@ -201,7 +211,8 @@ export const packageModule: CheckModule = defineCheckModule(
 
 					const issues: PackageIssue[] = []
 					for (const pkg of publicPackages) {
-						const hasExports = 'exports' in pkg.packageJson && pkg.packageJson.exports
+						const hasExports =
+							pkg.packageJson && 'exports' in pkg.packageJson && pkg.packageJson.exports
 						if (!hasExports) {
 							issues.push({ location: pkg.relativePath, issue: 'missing exports' })
 						}
@@ -536,13 +547,22 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { writeFileSync } = await import('node:fs')
 				const { readPackageJson } = await import('../utils/fs')
 
-				// For monorepo root, check all workspace packages
+				// For monorepo root, check all TypeScript workspace packages
 				if (isMonorepoRoot(ctx)) {
+					const tsPackages = ctx.workspacePackages.filter(isTypeScriptPackage)
+					if (tsPackages.length === 0) {
+						return {
+							passed: true,
+							message: 'No TypeScript packages to check',
+							skipped: true,
+						}
+					}
+
 					const issues: PackageIssue[] = []
 					const packagesToFix: WorkspacePackage[] = []
 
-					for (const pkg of ctx.workspacePackages) {
-						const script = pkg.packageJson.scripts?.['test:coverage']
+					for (const pkg of tsPackages) {
+						const script = pkg.packageJson?.scripts?.['test:coverage']
 						const usesBunTestCoverage =
 							script?.includes('bun test') && script?.includes('--coverage')
 
@@ -561,7 +581,7 @@ export const packageModule: CheckModule = defineCheckModule(
 					if (issues.length === 0) {
 						return {
 							passed: true,
-							message: `All ${ctx.workspacePackages.length} package(s) have valid test:coverage script`,
+							message: `All ${tsPackages.length} package(s) have valid test:coverage script`,
 						}
 					}
 

@@ -1,4 +1,10 @@
-import { getAllPackages, isMonorepoRoot, needsBuildScripts, needsTests } from '../utils/context'
+import {
+	getAllPackages,
+	isMonorepoRoot,
+	isTypeScriptPackage,
+	needsBuildScripts,
+	needsTests,
+} from '../utils/context'
 import { formatPackageIssues, type PackageIssue } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
@@ -162,15 +168,15 @@ export const testModule: CheckModule = defineCheckModule(
 			async check(ctx) {
 				const { findFiles } = await import('../utils/fs')
 
-				// For monorepo, check all packages that have bench script
+				// For monorepo, check all packages that have bench script (TypeScript only)
 				if (isMonorepoRoot(ctx)) {
-					const allPackages = getAllPackages(ctx)
+					const allPackages = getAllPackages(ctx).filter(isTypeScriptPackage)
 					const issues: PackageIssue[] = []
 					let packagesWithBench = 0
 					let totalBenchFiles = 0
 
 					for (const pkg of allPackages) {
-						const hasBenchScript = pkg.packageJson.scripts?.bench
+						const hasBenchScript = pkg.packageJson?.scripts?.bench
 						if (!hasBenchScript) continue
 
 						packagesWithBench++

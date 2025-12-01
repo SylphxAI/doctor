@@ -1,5 +1,5 @@
 import type { CheckContext, PackageJson } from '../types'
-import { isMonorepoRoot } from '../utils/context'
+import { isMonorepoRoot, isTypeScriptPackage } from '../utils/context'
 import { formatPackageIssues, type PackageIssue } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
@@ -132,14 +132,15 @@ export const buildModule: CheckModule = defineCheckModule(
 				const { writeFileSync } = await import('node:fs')
 				const { fileExists, readFile, readPackageJson } = await import('../utils/fs')
 
-				// For monorepo root, check all workspace packages
+				// For monorepo root, check all workspace packages (TypeScript only)
 				if (isMonorepoRoot(ctx)) {
 					const issues: PackageIssue[] = []
 					const packagesToFix: Array<{ path: string; pkg: PackageJson }> = []
 
-					for (const pkg of ctx.workspacePackages) {
+					for (const pkg of ctx.workspacePackages.filter(isTypeScriptPackage)) {
 						// Skip private packages
-						if (pkg.packageJson.private) continue
+						if (pkg.packageJson?.private) continue
+						if (!pkg.packageJson) continue
 
 						const issue = checkCjsIndicators(pkg.packageJson, pkg.relativePath)
 						if (issue) {
@@ -259,12 +260,14 @@ export const buildModule: CheckModule = defineCheckModule(
 			async check(ctx) {
 				// Skip for monorepo root - exports are per-package
 				if (isMonorepoRoot(ctx)) {
-					// Check all workspace packages instead
+					// Check all TypeScript workspace packages
 					const issues: PackageIssue[] = []
+					const tsPackages = ctx.workspacePackages.filter(isTypeScriptPackage)
 
-					for (const pkg of ctx.workspacePackages) {
+					for (const pkg of tsPackages) {
 						// Skip private packages
-						if (pkg.packageJson.private) continue
+						if (pkg.packageJson?.private) continue
+						if (!pkg.packageJson) continue
 
 						const issue = checkExports(pkg.packageJson, pkg.relativePath)
 						if (issue) {

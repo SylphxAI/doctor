@@ -24,6 +24,7 @@ function createWorkspacePackage(name: string, relativePath: string): WorkspacePa
 		relativePath,
 		packageJson: { name, version: '1.0.0' },
 		projectType: 'library',
+		ecosystem: 'typescript',
 	}
 }
 
