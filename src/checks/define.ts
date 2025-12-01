@@ -369,6 +369,7 @@ export function createMonorepoCheck<T>(
 					path: ctx.cwd,
 					relativePath: '.',
 					packageJson: ctx.packageJson,
+					projectType: ctx.projectType,
 				}
 				const issue = await checkPackage(rootPkg, ctx)
 				if (!issue) {

@@ -1,6 +1,15 @@
 export type Severity = 'error' | 'warn' | 'info' | 'off'
 
 /**
+ * Project types for intelligent check filtering
+ * - 'config': Config-only packages (export JSON/YAML files, no TS/JS source)
+ * - 'library': Regular packages with TS/JS code exports
+ * - 'app': Applications (private, typically no exports)
+ * - 'unknown': Could not determine type
+ */
+export type ProjectType = 'config' | 'library' | 'app' | 'unknown'
+
+/**
  * All hook stages in the project lifecycle
  * - 'precommit': Before committing code (format, typecheck, lint)
  * - 'prepush': Before pushing to remote (test, validation)
@@ -52,6 +61,8 @@ export interface WorkspacePackage {
 	relativePath: string
 	/** Package.json contents */
 	packageJson: PackageJson
+	/** Detected project type */
+	projectType: ProjectType
 }
 
 export interface CheckContext {
@@ -67,6 +78,10 @@ export interface CheckContext {
 	workspacePatterns: string[]
 	/** Root directory of the workspace (if running from within a workspace package) */
 	workspaceRoot?: string
+	/** Detected project type for root package */
+	projectType: ProjectType
+	/** Whether this project IS a shared config source (e.g., @sylphx/biome-config) */
+	isSharedConfigSource: boolean
 }
 
 export interface Check {

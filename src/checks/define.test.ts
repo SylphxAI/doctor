@@ -11,6 +11,8 @@ function createMockContext(overrides: Partial<CheckContext> = {}): CheckContext 
 		isMonorepo: false,
 		workspacePackages: [],
 		workspacePatterns: [],
+		projectType: 'library',
+		isSharedConfigSource: false,
 		...overrides,
 	}
 }

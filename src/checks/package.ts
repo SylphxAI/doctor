@@ -1,5 +1,5 @@
 import type { CheckContext, WorkspacePackage } from '../types'
-import { isMonorepoRoot } from '../utils/context'
+import { isMonorepoRoot, needsBuildScripts } from '../utils/context'
 import { formatPackageIssues, type PackageIssue } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
@@ -325,6 +325,15 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { writeFileSync } = await import('node:fs')
 				const { readPackageJson } = await import('../utils/fs')
 
+				// Skip for config-only projects (no build needed)
+				if (!needsBuildScripts(ctx)) {
+					return {
+						passed: true,
+						message: 'Config-only project (no build needed)',
+						skipped: true,
+					}
+				}
+
 				const script = ctx.packageJson?.scripts?.build
 				// Monorepo root: use turbo for orchestration + caching
 				// - Build is slow, caching provides real benefit
@@ -371,6 +380,15 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { writeFileSync } = await import('node:fs')
 				const { readPackageJson } = await import('../utils/fs')
 
+				// Skip for config-only projects (no tests needed)
+				if (!needsBuildScripts(ctx)) {
+					return {
+						passed: true,
+						message: 'Config-only project (no tests needed)',
+						skipped: true,
+					}
+				}
+
 				const script = ctx.packageJson?.scripts?.test
 				// Monorepo root: MUST use turbo (not just for caching)
 				// - Each package needs its own tsconfig context (e.g., JSX settings)
@@ -415,6 +433,15 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { join } = await import('node:path')
 				const { writeFileSync } = await import('node:fs')
 				const { readPackageJson } = await import('../utils/fs')
+
+				// Skip for config-only projects (no typecheck needed)
+				if (!needsBuildScripts(ctx)) {
+					return {
+						passed: true,
+						message: 'Config-only project (no typecheck needed)',
+						skipped: true,
+					}
+				}
 
 				const script = ctx.packageJson?.scripts?.typecheck
 				// Monorepo root: MUST use turbo (same reason as test)

@@ -11,6 +11,8 @@ function createMockContext(overrides: Partial<CheckContext> = {}): CheckContext 
 		isMonorepo: false,
 		workspacePackages: [],
 		workspacePatterns: [],
+		projectType: 'library',
+		isSharedConfigSource: false,
 		...overrides,
 	}
 }
@@ -21,6 +23,7 @@ function createWorkspacePackage(name: string, relativePath: string): WorkspacePa
 		path: `/tmp/test/${relativePath}`,
 		relativePath,
 		packageJson: { name, version: '1.0.0' },
+		projectType: 'library',
 	}
 }
 

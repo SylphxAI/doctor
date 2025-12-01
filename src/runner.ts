@@ -10,10 +10,12 @@ import type {
 	HookName,
 	PresetName,
 } from './types'
+import { detectIsSharedConfigSource, detectProjectType } from './utils/context'
 import {
 	discoverWorkspacePackages,
 	findWorkspaceRoot,
 	getWorkspacePatterns,
+	hasSourceCode,
 	isMonorepo,
 	readPackageJson,
 } from './utils/fs'
@@ -44,6 +46,15 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 	const workspacePatterns = monorepo ? getWorkspacePatterns(cwd) : []
 	const workspaceRoot = findWorkspaceRoot(cwd)
 
+	// Detect project type for root
+	const projectType = packageJson ? detectProjectType(packageJson, hasSourceCode(cwd)) : 'unknown'
+
+	// Check if this is a shared config source (contains config packages)
+	const isSharedConfigSource = detectIsSharedConfigSource({
+		packageJson,
+		workspacePackages,
+	})
+
 	// Filter checks based on severity
 	const checksToRun: { check: Check; ctx: CheckContext }[] = []
 
@@ -70,6 +81,8 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 			workspacePackages,
 			workspacePatterns,
 			workspaceRoot,
+			projectType,
+			isSharedConfigSource,
 		}
 
 		checksToRun.push({ check, ctx })

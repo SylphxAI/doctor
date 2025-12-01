@@ -1,5 +1,32 @@
+import type { CheckContext } from '../types'
 import type { CheckModule } from './define'
-import { createJsonConfigCheck, defineCheckModule } from './define'
+import { defineCheckModule } from './define'
+
+/**
+ * Check if this project is a biome-config source
+ */
+function isBiomeConfigSource(ctx: CheckContext): boolean {
+	// Check if any workspace package is biome-config
+	for (const pkg of ctx.workspacePackages) {
+		if (pkg.name.includes('biome-config')) return true
+	}
+	// Check root package name
+	if (ctx.packageJson?.name?.includes('biome-config')) return true
+	return false
+}
+
+/**
+ * Check if this project is a tsconfig source
+ */
+function isTsconfigSource(ctx: CheckContext): boolean {
+	// Check if any workspace package is tsconfig
+	for (const pkg of ctx.workspacePackages) {
+		if (pkg.name.includes('tsconfig')) return true
+	}
+	// Check root package name
+	if (ctx.packageJson?.name?.includes('tsconfig')) return true
+	return false
+}
 
 export const configModule: CheckModule = defineCheckModule(
 	{
@@ -8,42 +35,92 @@ export const configModule: CheckModule = defineCheckModule(
 		description: 'Check configuration files',
 	},
 	[
-		createJsonConfigCheck({
+		{
 			name: 'config/biome-extends',
-			fileName: 'biome.json',
-			validate: (config) => {
-				const c = config as { extends?: string[] }
-				if (!c?.extends || c.extends.length === 0) {
-					return 'biome.json does not extend shared config'
-				}
-				return null
-			},
-			fix: (config) => ({
-				$schema: 'https://biomejs.dev/schemas/2.3.8/schema.json',
-				extends: ['@sylphx/biome-config'],
-				...(config as object),
-			}),
-			hint: 'Add "extends": ["@sylphx/biome-config"] to biome.json',
-			skipIfMissing: true,
-		}),
+			description: 'Check if biome.json extends shared config',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { writeFileSync } = await import('node:fs')
+				const { fileExists, readJson } = await import('../utils/fs')
 
-		createJsonConfigCheck({
-			name: 'config/tsconfig-extends',
-			fileName: 'tsconfig.json',
-			validate: (config) => {
-				const c = config as { extends?: string }
-				if (!c?.extends) {
-					return 'tsconfig.json does not extend shared config'
+				const biomePath = join(ctx.cwd, 'biome.json')
+				if (!fileExists(biomePath)) {
+					return { passed: true, message: 'No biome.json (skipped)', skipped: true }
 				}
-				return null
+
+				// Skip if this IS the biome-config source
+				if (isBiomeConfigSource(ctx)) {
+					return {
+						passed: true,
+						message: 'This is the biome-config source (skipped)',
+						skipped: true,
+					}
+				}
+
+				const config = readJson<{ extends?: string[] }>(biomePath)
+				if (config?.extends && config.extends.length > 0) {
+					return { passed: true, message: 'biome.json extends shared config' }
+				}
+
+				return {
+					passed: false,
+					message: 'biome.json does not extend shared config',
+					hint: 'Add "extends": ["@sylphx/biome-config"] to biome.json',
+					fix: async () => {
+						const newConfig = {
+							$schema: 'https://biomejs.dev/schemas/2.0.0/schema.json',
+							extends: ['@sylphx/biome-config'],
+							...(config as object),
+						}
+						writeFileSync(biomePath, `${JSON.stringify(newConfig, null, '\t')}\n`, 'utf-8')
+					},
+				}
 			},
-			fix: (config) => ({
-				extends: '@sylphx/tsconfig',
-				...(config as object),
-			}),
-			hint: 'Add "extends": "@sylphx/tsconfig" to tsconfig.json',
-			skipIfMissing: true,
-		}),
+		},
+
+		{
+			name: 'config/tsconfig-extends',
+			description: 'Check if tsconfig.json extends shared config',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { writeFileSync } = await import('node:fs')
+				const { fileExists, readJson } = await import('../utils/fs')
+
+				const tsconfigPath = join(ctx.cwd, 'tsconfig.json')
+				if (!fileExists(tsconfigPath)) {
+					return { passed: true, message: 'No tsconfig.json (skipped)', skipped: true }
+				}
+
+				// Skip if this IS the tsconfig source
+				if (isTsconfigSource(ctx)) {
+					return {
+						passed: true,
+						message: 'This is the tsconfig source (skipped)',
+						skipped: true,
+					}
+				}
+
+				const config = readJson<{ extends?: string }>(tsconfigPath)
+				if (config?.extends) {
+					return { passed: true, message: 'tsconfig.json extends shared config' }
+				}
+
+				return {
+					passed: false,
+					message: 'tsconfig.json does not extend shared config',
+					hint: 'Add "extends": "@sylphx/tsconfig" to tsconfig.json',
+					fix: async () => {
+						const newConfig = {
+							extends: '@sylphx/tsconfig',
+							...(config as object),
+						}
+						writeFileSync(tsconfigPath, `${JSON.stringify(newConfig, null, '\t')}\n`, 'utf-8')
+					},
+				}
+			},
+		},
 
 		{
 			name: 'config/biome-config-dep',

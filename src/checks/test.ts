@@ -1,4 +1,4 @@
-import { getAllPackages, isMonorepoRoot } from '../utils/context'
+import { getAllPackages, isMonorepoRoot, needsBuildScripts } from '../utils/context'
 import { formatPackageIssues, type PackageIssue } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
@@ -17,13 +17,35 @@ export const testModule: CheckModule = defineCheckModule(
 			async check(ctx) {
 				const { findFiles } = await import('../utils/fs')
 
+				// Skip for config-only projects (no tests expected)
+				if (!needsBuildScripts(ctx)) {
+					return {
+						passed: true,
+						message: 'Config-only project (no tests expected)',
+						skipped: true,
+					}
+				}
+
 				// For monorepo, check all packages
 				if (isMonorepoRoot(ctx)) {
 					const allPackages = getAllPackages(ctx)
+					// Filter to only packages that need tests (not config-only)
+					const packagesToCheck = allPackages.filter(
+						(pkg) => pkg.projectType === 'library' || pkg.projectType === 'app'
+					)
+
+					if (packagesToCheck.length === 0) {
+						return {
+							passed: true,
+							message: 'All packages are config-only (no tests expected)',
+							skipped: true,
+						}
+					}
+
 					const issues: PackageIssue[] = []
 					let totalTests = 0
 
-					for (const pkg of allPackages) {
+					for (const pkg of packagesToCheck) {
 						const testFiles = await findFiles(pkg.path, /\.(test|spec)\.(ts|tsx|js|jsx)$/)
 						if (testFiles.length === 0) {
 							issues.push({ location: pkg.relativePath, issue: 'no test files' })
@@ -35,7 +57,7 @@ export const testModule: CheckModule = defineCheckModule(
 					if (issues.length === 0) {
 						return {
 							passed: true,
-							message: `Found ${totalTests} test file(s) across ${allPackages.length} package(s)`,
+							message: `Found ${totalTests} test file(s) across ${packagesToCheck.length} package(s)`,
 						}
 					}
 

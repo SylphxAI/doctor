@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { readdir, stat } from 'node:fs/promises'
 import { dirname, join, parse, relative } from 'node:path'
 import type { PackageJson, WorkspacePackage } from '../types'
+import { detectProjectType } from './context'
 
 export function fileExists(path: string): boolean {
 	return existsSync(path)
@@ -59,6 +60,39 @@ export async function directoryExists(path: string): Promise<boolean> {
 	try {
 		const stats = await stat(path)
 		return stats.isDirectory()
+	} catch {
+		return false
+	}
+}
+
+/**
+ * Check if a directory has TypeScript/JavaScript source code
+ * Looks for src/ directory or .ts/.js files in root
+ */
+export function hasSourceCode(dir: string): boolean {
+	// Check for src/ directory
+	const srcDir = join(dir, 'src')
+	if (existsSync(srcDir)) {
+		try {
+			const entries = readdirSync(srcDir)
+			const hasCode = entries.some(
+				(e) => e.endsWith('.ts') || e.endsWith('.tsx') || e.endsWith('.js') || e.endsWith('.jsx')
+			)
+			if (hasCode) return true
+		} catch {
+			// Ignore
+		}
+	}
+
+	// Check for .ts/.js files in root
+	try {
+		const entries = readdirSync(dir)
+		return entries.some(
+			(e) =>
+				(e.endsWith('.ts') || e.endsWith('.tsx') || e.endsWith('.js') || e.endsWith('.jsx')) &&
+				!e.endsWith('.config.ts') &&
+				!e.endsWith('.config.js')
+		)
 	} catch {
 		return false
 	}
@@ -134,6 +168,7 @@ export function discoverWorkspacePackages(cwd: string): WorkspacePackage[] {
 						path: dir,
 						relativePath: relative(cwd, dir),
 						packageJson: pkgJson,
+						projectType: detectProjectType(pkgJson, hasSourceCode(dir)),
 					})
 				}
 			}
@@ -158,6 +193,7 @@ export function discoverWorkspacePackages(cwd: string): WorkspacePackage[] {
 								path: pkgPath,
 								relativePath: relative(cwd, pkgPath),
 								packageJson: pkgJson,
+								projectType: detectProjectType(pkgJson, hasSourceCode(pkgPath)),
 							})
 						}
 					}

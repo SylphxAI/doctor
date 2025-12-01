@@ -1,3 +1,4 @@
+import { isConfigOnlyMonorepo } from '../utils/context'
 import type { CheckModule, CheckReturnValue } from './define'
 import { defineCheckModule } from './define'
 
@@ -247,11 +248,20 @@ export const monorepoModule: CheckModule = defineCheckModule(
 				}
 
 				const config = readJson<{ tasks?: Record<string, unknown> }>(configPath)
-				const requiredTasks = ['build', 'lint', 'test']
+
+				// Config-only monorepos only need build and lint
+				// (they don't have tests or typechecking)
+				const isConfigOnly = isConfigOnlyMonorepo(ctx)
+				const requiredTasks = isConfigOnly ? ['build', 'lint'] : ['build', 'lint', 'test']
 				const missingTasks = requiredTasks.filter((task) => !config?.tasks?.[task])
 
 				if (missingTasks.length === 0) {
-					return { passed: true, message: 'turbo.json has standard tasks' }
+					return {
+						passed: true,
+						message: isConfigOnly
+							? 'turbo.json has tasks (config-only: build, lint)'
+							: 'turbo.json has standard tasks',
+					}
 				}
 
 				return {
@@ -261,13 +271,17 @@ export const monorepoModule: CheckModule = defineCheckModule(
 					fix: async () => {
 						const currentConfig = readJson<Record<string, unknown>>(configPath) ?? {}
 						currentConfig.$schema = 'https://turbo.build/schema.json'
-						currentConfig.tasks = {
+						const tasks: Record<string, unknown> = {
 							build: { dependsOn: ['^build'], outputs: ['dist/**'] },
 							lint: { dependsOn: ['^lint'] },
-							test: { dependsOn: ['^build'] },
-							typecheck: { dependsOn: ['^typecheck'] },
 							...(currentConfig.tasks as Record<string, unknown>),
 						}
+						// Only add test/typecheck for non-config monorepos
+						if (!isConfigOnly) {
+							tasks.test = { dependsOn: ['^build'] }
+							tasks.typecheck = { dependsOn: ['^typecheck'] }
+						}
+						currentConfig.tasks = tasks
 						writeFileSync(configPath, JSON.stringify(currentConfig, null, 2), 'utf-8')
 					},
 				}
