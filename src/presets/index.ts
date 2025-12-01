@@ -118,9 +118,9 @@ const basePreset: PresetConfig = {
 	'release/no-changesets': 'error',
 	'release/no-changesets-dep': 'error',
 
-	// Credits
-	'credits/has-section': 'warn',
-	'credits/mentions-packages': 'warn',
+	// Branding (Sylphx ecosystem cross-promotion)
+	'branding/section': 'warn',
+	'branding/packages': 'warn',
 
 	// Rust
 	'rust/has-cargo': 'off',

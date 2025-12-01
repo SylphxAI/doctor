@@ -1,9 +1,9 @@
 import type { Check } from '../types'
+import { brandingModule } from './branding'
 // Import all check modules (new modular format)
 import { buildModule } from './build'
 import { ciModule } from './ci'
 import { configModule } from './config'
-import { creditsModule } from './credits'
 import type { CheckModule } from './define'
 import { depsModule } from './deps'
 import { docsModule } from './docs'
@@ -36,7 +36,7 @@ export const checkModules: CheckModule[] = [
 	githubModule,
 	monorepoModule,
 	releaseModule,
-	creditsModule,
+	brandingModule,
 	rustModule,
 ]
 
@@ -89,7 +89,7 @@ export {
 	githubModule,
 	monorepoModule,
 	releaseModule,
-	creditsModule,
+	brandingModule,
 	rustModule,
 }
 

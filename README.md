@@ -282,11 +282,11 @@ pre-commit:
 | `deps/security` | No security vulnerabilities | ❌ |
 | `deps/has-knip` | knip configured for unused deps | ❌ |
 
-### Credits
+### Branding
 | Check | Description | Fixable |
 |-------|-------------|---------|
-| `credits/has-section` | README has Sylphx credits | ❌ |
-| `credits/mentions-packages` | Credits mention all @sylphx packages | ❌ |
+| `branding/section` | README has "Powered by Sylphx" section | ❌ |
+| `branding/packages` | Section mentions all @sylphx packages used | ❌ |
 
 ### Rust
 | Check | Description | Fixable |

@@ -63,7 +63,7 @@ const categoryLabels: Record<string, string> = {
 	github: '🐙 GitHub',
 	monorepo: '📦 Monorepo',
 	release: '🚀 Release',
-	credits: '✨ Credits',
+	branding: '✨ Branding',
 }
 
 interface IssueSummary {

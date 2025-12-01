@@ -1,10 +1,14 @@
+import { join } from 'node:path'
 import { getAllPackages, isMonorepoRoot, needsCredits } from '../utils/context'
 import { formatPackageIssues, type PackageIssue } from '../utils/format'
+import { fileExists, readFile } from '../utils/fs'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
+const SECTION_HEADER = 'Powered by Sylphx'
+
 /**
- * Detect any @sylphx/* packages used in a package (dynamic)
+ * Detect @sylphx/* packages in dependencies
  */
 function detectSylphxPackages(packageJson: Record<string, unknown> | null | undefined): string[] {
 	if (!packageJson) return []
@@ -14,28 +18,35 @@ function detectSylphxPackages(packageJson: Record<string, unknown> | null | unde
 		...(packageJson.devDependencies as Record<string, string> | undefined),
 	}
 
-	// Detect any package starting with @sylphx/
 	return Object.keys(allDeps)
 		.filter((pkg) => pkg.startsWith('@sylphx/'))
 		.sort()
 }
 
-export const creditsModule: CheckModule = defineCheckModule(
+/**
+ * Generate template for Sylphx credits section
+ */
+function generateTemplate(packages: string[]): string {
+	const lines = ['## Powered by Sylphx', '']
+	for (const pkg of packages) {
+		const name = pkg.replace('@sylphx/', '')
+		lines.push(`- [${pkg}](https://github.com/SylphxAI/${name})`)
+	}
+	return lines.join('\n')
+}
+
+export const brandingModule: CheckModule = defineCheckModule(
 	{
-		category: 'credits',
-		label: '✨ Credits',
-		description: 'Check for @sylphx credits in README',
+		category: 'branding',
+		label: '✨ Branding',
+		description: 'Ensure Sylphx ecosystem cross-promotion',
 	},
 	[
 		{
-			name: 'credits/has-section',
-			description: 'Check if README has a "Powered by Sylphx" credits section',
+			name: 'section',
+			description: 'README has "Powered by Sylphx" section',
 			fixable: false,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { fileExists, readFile } = await import('../utils/fs')
-
-				// Detect @sylphx packages used
+			check(ctx) {
 				const sylphxPackages = detectSylphxPackages(ctx.packageJson)
 
 				// Skip if no @sylphx packages used
@@ -47,12 +58,12 @@ export const creditsModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				// For monorepo, check all packages (except config/example)
+				// Monorepo: check all packages
 				if (isMonorepoRoot(ctx)) {
-					const allPackages = getAllPackages(ctx).filter(needsCredits)
+					const packages = getAllPackages(ctx).filter(needsCredits)
 					const issues: PackageIssue[] = []
 
-					for (const pkg of allPackages) {
+					for (const pkg of packages) {
 						const pkgSylphx = detectSylphxPackages(pkg.packageJson)
 						if (pkgSylphx.length === 0) continue
 
@@ -62,13 +73,11 @@ export const creditsModule: CheckModule = defineCheckModule(
 							continue
 						}
 
-						const content = readFile(readmePath) || ''
-						const hasCreditsSection = content.includes('Powered by Sylphx')
-
-						if (!hasCreditsSection) {
+						const content = readFile(readmePath) ?? ''
+						if (!content.includes(SECTION_HEADER)) {
 							issues.push({
 								location: pkg.relativePath,
-								issue: 'missing "Powered by Sylphx" section',
+								issue: `missing "${SECTION_HEADER}" section`,
 							})
 						}
 					}
@@ -76,13 +85,13 @@ export const creditsModule: CheckModule = defineCheckModule(
 					if (issues.length === 0) {
 						return {
 							passed: true,
-							message: 'All packages have credits section in README',
+							message: 'All packages have Sylphx branding section',
 						}
 					}
 
 					return {
 						passed: false,
-						message: `${issues.length} package(s) missing credits section`,
+						message: `${issues.length} package(s) missing branding section`,
 						hint: formatPackageIssues(issues),
 					}
 				}
@@ -93,37 +102,31 @@ export const creditsModule: CheckModule = defineCheckModule(
 					return {
 						passed: false,
 						message: 'No README.md found',
-						hint: 'Create a README.md file first',
+						hint: 'Create README.md first',
 					}
 				}
 
-				const content = readFile(readmePath) || ''
-				const hasCreditsSection = content.includes('Powered by Sylphx')
-
-				if (hasCreditsSection) {
+				const content = readFile(readmePath) ?? ''
+				if (content.includes(SECTION_HEADER)) {
 					return {
 						passed: true,
-						message: 'README has "Powered by Sylphx" section',
+						message: `README has "${SECTION_HEADER}" section`,
 					}
 				}
 
 				return {
 					passed: false,
-					message: 'README missing "Powered by Sylphx" section',
-					hint: 'Add a credits section to README.md with "## Powered by Sylphx" header',
+					message: `README missing "${SECTION_HEADER}" section`,
+					hint: `Add to README:\n\n${generateTemplate(sylphxPackages)}`,
 				}
 			},
 		},
 
 		{
-			name: 'credits/mentions-packages',
-			description: 'Check if README credits section mentions all @sylphx packages used',
+			name: 'packages',
+			description: 'README mentions all @sylphx packages used',
 			fixable: false,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { fileExists, readFile } = await import('../utils/fs')
-
-				// Detect @sylphx packages used
+			check(ctx) {
 				const sylphxPackages = detectSylphxPackages(ctx.packageJson)
 
 				// Skip if no @sylphx packages used
@@ -135,25 +138,25 @@ export const creditsModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				// For monorepo, check all packages (except config/example)
+				// Monorepo: check all packages
 				if (isMonorepoRoot(ctx)) {
-					const allPackages = getAllPackages(ctx).filter(needsCredits)
+					const packages = getAllPackages(ctx).filter(needsCredits)
 					const issues: PackageIssue[] = []
 
-					for (const pkg of allPackages) {
+					for (const pkg of packages) {
 						const pkgSylphx = detectSylphxPackages(pkg.packageJson)
 						if (pkgSylphx.length === 0) continue
 
 						const readmePath = join(pkg.path, 'README.md')
 						if (!fileExists(readmePath)) continue
 
-						const content = readFile(readmePath) || ''
-						const missingPkgs = pkgSylphx.filter((p) => !content.includes(p))
+						const content = readFile(readmePath) ?? ''
+						const missing = pkgSylphx.filter((p) => !content.includes(p))
 
-						if (missingPkgs.length > 0) {
+						if (missing.length > 0) {
 							issues.push({
 								location: pkg.relativePath,
-								issue: `missing: ${missingPkgs.join(', ')}`,
+								issue: `missing: ${missing.join(', ')}`,
 							})
 						}
 					}
@@ -167,7 +170,7 @@ export const creditsModule: CheckModule = defineCheckModule(
 
 					return {
 						passed: false,
-						message: `${issues.length} package(s) missing @sylphx package mentions`,
+						message: `${issues.length} package(s) missing @sylphx mentions`,
 						hint: formatPackageIssues(issues),
 					}
 				}
@@ -182,10 +185,10 @@ export const creditsModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				const content = readFile(readmePath) || ''
-				const missingPkgs = sylphxPackages.filter((p) => !content.includes(p))
+				const content = readFile(readmePath) ?? ''
+				const missing = sylphxPackages.filter((p) => !content.includes(p))
 
-				if (missingPkgs.length === 0) {
+				if (missing.length === 0) {
 					return {
 						passed: true,
 						message: `README mentions all ${sylphxPackages.length} @sylphx package(s)`,
@@ -194,8 +197,8 @@ export const creditsModule: CheckModule = defineCheckModule(
 
 				return {
 					passed: false,
-					message: `README missing ${missingPkgs.length} @sylphx package mention(s)`,
-					hint: `Add to credits: ${missingPkgs.join(', ')}`,
+					message: `README missing ${missing.length} @sylphx package(s)`,
+					hint: `Add to "${SECTION_HEADER}" section: ${missing.join(', ')}`,
 				}
 			},
 		},
