@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.30.0 (2025-12-01)
+
+### ✨ Features
+
+- **branding:** add downloads, stars badges and package-links checks ([3328425](https://github.com/SylphxAI/doctor/commit/3328425b16b14b81044c6721dc834175b7cb6cd1))
+
 ## 1.29.0 (2025-12-01)
 
 ### ✨ Features
