@@ -1,5 +1,21 @@
 # sylphx-doctor
 
+## 1.28.0 (2025-12-01)
+
+### ✨ Features
+
+- add 12 new checks for TypeScript and Rust ([27daea7](https://github.com/SylphxAI/doctor/commit/27daea763dd34762b0ad3fbf472c4667cda45b3e))
+- **polyglot:** add Ecosystem detection for polyglot monorepos ([3d998e3](https://github.com/SylphxAI/doctor/commit/3d998e33e360dabe01d2dbabefe1d164ff853417))
+- add 'example' project type detection ([38bf292](https://github.com/SylphxAI/doctor/commit/38bf292f2d0205f3b06ab29cbdc2e10857ab7cc5))
+
+### ♻️ Refactoring
+
+- **arch:** improve module architecture with ecosystem auto-skip ([5ca8307](https://github.com/SylphxAI/doctor/commit/5ca83075679a8c665f48855faf4ab817e396b34a))
+
+### 📚 Documentation
+
+- rewrite README with clear positioning ([e8206c9](https://github.com/SylphxAI/doctor/commit/e8206c97d10ba2f9be2f33198f6bf87f183b4ab1))
+
 ## 1.27.0 (2025-12-01)
 
 ### ✨ Features
