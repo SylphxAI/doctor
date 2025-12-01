@@ -1,5 +1,16 @@
 # sylphx-doctor
 
+## 1.29.0 (2025-12-01)
+
+### ✨ Features
+
+- **branding:** add comprehensive badge checks ([65343ab](https://github.com/SylphxAI/doctor/commit/65343aba36920f9589debd2e835fc1bbbdbdd97c))
+- **branding:** add comprehensive README branding checks ([1a43197](https://github.com/SylphxAI/doctor/commit/1a431977dab447b274b6c2a90dab22057c283005))
+
+### ♻️ Refactoring
+
+- **branding:** rename credits module to branding ([112ef63](https://github.com/SylphxAI/doctor/commit/112ef63c44728fe09ad89eb5a28d6ecdecfeda1f))
+
 ## 1.28.0 (2025-12-01)
 
 ### ✨ Features
