@@ -1,3 +1,5 @@
+import { join } from 'node:path'
+import { fileExists, findFiles, readFile } from '../utils/fs'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
@@ -24,22 +26,14 @@ export const rustModule: CheckModule = defineCheckModule(
 		category: 'rust',
 		label: '🦀 Rust',
 		description: 'Check Rust project configuration',
-		// Only enable for projects with Cargo.toml
-		enabled: (ctx) => {
-			const { join } = require('node:path') as typeof import('node:path')
-			const { existsSync } = require('node:fs') as typeof import('node:fs')
-			return existsSync(join(ctx.cwd, 'Cargo.toml'))
-		},
+		ecosystem: 'rust', // Auto-skip for non-Rust projects
 	},
 	[
 		{
-			name: 'rust/has-cargo',
+			name: 'has-cargo',
 			description: 'Check if Cargo.toml exists',
 			fixable: false,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { fileExists } = await import('../utils/fs')
-
+			check(ctx) {
 				const hasCargoToml = fileExists(join(ctx.cwd, 'Cargo.toml'))
 
 				return {
@@ -51,13 +45,10 @@ export const rustModule: CheckModule = defineCheckModule(
 		},
 
 		{
-			name: 'rust/edition',
+			name: 'edition',
 			description: 'Check if Cargo.toml uses modern Rust edition (2021+)',
 			fixable: false,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { readFile } = await import('../utils/fs')
-
+			check(ctx) {
 				const cargoPath = join(ctx.cwd, 'Cargo.toml')
 				const content = readFile(cargoPath)
 
@@ -93,13 +84,10 @@ export const rustModule: CheckModule = defineCheckModule(
 		},
 
 		{
-			name: 'rust/has-rustfmt',
+			name: 'has-rustfmt',
 			description: 'Check if rustfmt.toml exists for formatting config',
 			fixable: false,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { fileExists } = await import('../utils/fs')
-
+			check(ctx) {
 				const hasRustfmt =
 					fileExists(join(ctx.cwd, 'rustfmt.toml')) || fileExists(join(ctx.cwd, '.rustfmt.toml'))
 
@@ -112,18 +100,14 @@ export const rustModule: CheckModule = defineCheckModule(
 		},
 
 		{
-			name: 'rust/has-clippy',
+			name: 'has-clippy',
 			description: 'Check if clippy config exists for linting',
 			fixable: false,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { fileExists } = await import('../utils/fs')
-
+			check(ctx) {
 				const hasClippy =
 					fileExists(join(ctx.cwd, 'clippy.toml')) || fileExists(join(ctx.cwd, '.clippy.toml'))
 
 				// Also check Cargo.toml for [lints.clippy] section
-				const { readFile } = await import('../utils/fs')
 				const cargoContent = readFile(join(ctx.cwd, 'Cargo.toml')) ?? ''
 				const hasClippyInCargo = cargoContent.includes('[lints.clippy]')
 
@@ -143,13 +127,10 @@ export const rustModule: CheckModule = defineCheckModule(
 		},
 
 		{
-			name: 'rust/has-tests',
+			name: 'has-tests',
 			description: 'Check if Rust tests exist',
 			fixable: false,
 			async check(ctx) {
-				const { join } = await import('node:path')
-				const { fileExists, readFile, findFiles } = await import('../utils/fs')
-
 				// Check for tests/ directory
 				const hasTestsDir = fileExists(join(ctx.cwd, 'tests'))
 
@@ -180,13 +161,10 @@ export const rustModule: CheckModule = defineCheckModule(
 		},
 
 		{
-			name: 'rust/deny',
+			name: 'deny',
 			description: 'Check if cargo-deny is configured for security/license auditing',
 			fixable: false,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { fileExists } = await import('../utils/fs')
-
+			check(ctx) {
 				const hasDeny = fileExists(join(ctx.cwd, 'deny.toml'))
 
 				return {
@@ -200,13 +178,10 @@ export const rustModule: CheckModule = defineCheckModule(
 		},
 
 		{
-			name: 'rust/cargo-lock',
+			name: 'cargo-lock',
 			description: 'Check if binary crates have Cargo.lock committed',
 			fixable: false,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { fileExists, readFile } = await import('../utils/fs')
-
+			check(ctx) {
 				const cargoContent = readFile(join(ctx.cwd, 'Cargo.toml'))
 
 				if (!cargoContent) {

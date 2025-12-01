@@ -261,7 +261,20 @@ export function getPreset(name: PresetName): PresetConfig {
 }
 
 /**
+ * Match a check name against a pattern (supports wildcards like 'rust/*')
+ */
+function matchPattern(checkName: string, pattern: string): boolean {
+	if (pattern === checkName) return true
+	if (pattern.endsWith('/*')) {
+		const prefix = pattern.slice(0, -1) // 'rust/*' -> 'rust/'
+		return checkName.startsWith(prefix)
+	}
+	return false
+}
+
+/**
  * Get severity for a check, with optional overrides
+ * Supports wildcard patterns like 'rust/*' in overrides
  */
 export function getSeverity(
 	checkName: string,
@@ -269,7 +282,32 @@ export function getSeverity(
 	overrides?: Partial<Record<string, Severity>>
 ): Severity {
 	const presetConfig = getPreset(preset)
-	return (overrides?.[checkName] ?? presetConfig[checkName] ?? 'off') as Severity
+
+	// Check overrides first (exact match, then wildcard)
+	if (overrides) {
+		// Exact match takes priority
+		if (checkName in overrides) {
+			return overrides[checkName] as Severity
+		}
+		// Then check wildcard patterns
+		for (const [pattern, severity] of Object.entries(overrides)) {
+			if (pattern.includes('*') && matchPattern(checkName, pattern)) {
+				return severity as Severity
+			}
+		}
+	}
+
+	// Then check preset config (exact match, then wildcard)
+	if (checkName in presetConfig) {
+		return presetConfig[checkName] as Severity
+	}
+	for (const [pattern, severity] of Object.entries(presetConfig)) {
+		if (pattern.includes('*') && matchPattern(checkName, pattern)) {
+			return severity as Severity
+		}
+	}
+
+	return 'off'
 }
 
 /**

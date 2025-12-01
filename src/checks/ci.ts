@@ -1,3 +1,6 @@
+import { mkdirSync, readdirSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { fileExists, readFile } from '../utils/fs'
 import type { CheckModule } from './define'
 import { createFileCheck, defineCheckModule } from './define'
 
@@ -92,7 +95,7 @@ export const ciModule: CheckModule = defineCheckModule(
 	},
 	[
 		createFileCheck({
-			name: 'ci/has-workflow',
+			name: 'has-workflow',
 			fileName: '.github/workflows/ci.yml',
 			fixable: true,
 			fixContent: defaultCiWorkflow,
@@ -102,14 +105,10 @@ export const ciModule: CheckModule = defineCheckModule(
 		}),
 
 		{
-			name: 'ci/publish-workflow',
+			name: 'publish-workflow',
 			description: 'Check if using shared release workflow',
 			fixable: true,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { mkdirSync, writeFileSync } = await import('node:fs')
-				const { fileExists, readFile } = await import('../utils/fs')
-
+			check(ctx) {
 				const workflowDir = join(ctx.cwd, '.github', 'workflows')
 				const releasePath = join(workflowDir, 'release.yml')
 				const releaseYamlPath = join(workflowDir, 'release.yaml')
@@ -158,14 +157,10 @@ export const ciModule: CheckModule = defineCheckModule(
 		},
 
 		{
-			name: 'ci/rust-workflow',
+			name: 'rust-workflow',
 			description: 'Check if Rust CI workflow exists (for Rust projects)',
 			fixable: true,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { mkdirSync, writeFileSync, readdirSync } = await import('node:fs')
-				const { fileExists } = await import('../utils/fs')
-
+			check(ctx) {
 				// Only check if this is a Rust project
 				const hasCargoToml = fileExists(join(ctx.cwd, 'Cargo.toml'))
 				if (!hasCargoToml) {
@@ -184,7 +179,6 @@ export const ciModule: CheckModule = defineCheckModule(
 						const files = readdirSync(workflowDir)
 						for (const file of files) {
 							if (file.endsWith('.yml') || file.endsWith('.yaml')) {
-								const { readFile } = await import('../utils/fs')
 								const content = readFile(join(workflowDir, file)) ?? ''
 								// Check for common Rust CI indicators
 								if (

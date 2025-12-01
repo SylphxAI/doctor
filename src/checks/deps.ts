@@ -1,3 +1,6 @@
+import { join } from 'node:path'
+import { exec } from '../utils/exec'
+import { fileExists } from '../utils/fs'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
 
@@ -56,12 +59,10 @@ export const depsModule: CheckModule = defineCheckModule(
 	},
 	[
 		{
-			name: 'deps/outdated',
+			name: 'outdated',
 			description: 'Check for outdated dependencies',
 			fixable: true,
 			async check(ctx) {
-				const { exec } = await import('../utils/exec')
-
 				const result = await exec('bun', ['outdated'], ctx.cwd)
 
 				// bun outdated returns exit code 0 even with outdated packages
@@ -126,13 +127,10 @@ export const depsModule: CheckModule = defineCheckModule(
 		},
 
 		{
-			name: 'deps/has-knip',
+			name: 'has-knip',
 			description: 'Check if knip is configured for unused dependency detection',
 			fixable: false,
-			async check(ctx) {
-				const { join } = await import('node:path')
-				const { fileExists } = await import('../utils/fs')
-
+			check(ctx) {
 				const knipConfigs = [
 					'knip.json',
 					'knip.jsonc',
@@ -163,12 +161,10 @@ export const depsModule: CheckModule = defineCheckModule(
 		},
 
 		{
-			name: 'deps/security',
+			name: 'security',
 			description: 'Check for security vulnerabilities',
 			fixable: false,
 			async check(ctx) {
-				const { exec } = await import('../utils/exec')
-
 				// Use bun audit (available since bun 1.2+)
 				const result = await exec('bun', ['audit', '--json'], ctx.cwd)
 

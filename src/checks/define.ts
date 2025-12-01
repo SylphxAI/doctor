@@ -1,11 +1,11 @@
-import type { Check, CheckContext, CheckResult, HookName, Severity } from '../types'
+import type { Check, CheckContext, CheckResult, Ecosystem, HookName, Severity } from '../types'
 import type { PackageIssue } from '../utils/format'
 
 /**
  * Check module definition
  */
 export interface CheckModule {
-	/** Category ID (e.g., 'files', 'config') */
+	/** Category ID (e.g., 'files', 'config') - also used as name prefix */
 	category: string
 	/** Display label (e.g., '📁 Files') */
 	label: string
@@ -13,7 +13,14 @@ export interface CheckModule {
 	description: string
 	/** Checks in this module */
 	checks: Check[]
-	/** Optional: Only enable module if this returns true */
+	/**
+	 * Ecosystem this module applies to.
+	 * If set, module is auto-skipped for projects without this ecosystem.
+	 * - 'typescript': requires package.json
+	 * - 'rust': requires Cargo.toml
+	 */
+	ecosystem?: Ecosystem
+	/** Optional: Custom enable function (overrides ecosystem check) */
 	enabled?: (ctx: CheckContext) => boolean | Promise<boolean>
 }
 
@@ -84,6 +91,8 @@ export function defineCheck(options: DefineCheckOptions): Check {
 
 /**
  * Define a check module with multiple checks
+ * Check names are auto-prefixed with category if not already prefixed.
+ * e.g., { category: 'rust', name: 'edition' } -> name becomes 'rust/edition'
  */
 export function defineCheckModule(
 	meta: Omit<CheckModule, 'checks'>,
@@ -91,12 +100,15 @@ export function defineCheckModule(
 ): CheckModule {
 	return {
 		...meta,
-		checks: checks.map((check) =>
-			defineCheck({
+		checks: checks.map((check) => {
+			// Auto-prefix name with category if not already prefixed
+			const fullName = check.name.includes('/') ? check.name : `${meta.category}/${check.name}`
+			return defineCheck({
 				...check,
+				name: fullName,
 				category: meta.category,
 			})
-		),
+		}),
 	}
 }
 

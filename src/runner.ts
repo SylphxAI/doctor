@@ -1,4 +1,5 @@
-import { allChecks } from './checks'
+import { join } from 'node:path'
+import { checkModules } from './checks'
 import { loadConfig } from './config'
 import { getNextPreset, getSeverity } from './presets'
 import type {
@@ -7,18 +8,38 @@ import type {
 	CheckReport,
 	CheckResult,
 	DoctorConfig,
+	Ecosystem,
 	HookName,
 	PresetName,
 } from './types'
 import { detectIsSharedConfigSource, detectProjectType } from './utils/context'
 import {
 	discoverWorkspacePackages,
+	fileExists,
 	findWorkspaceRoot,
 	getWorkspacePatterns,
 	hasSourceCode,
 	isMonorepo,
 	readPackageJson,
 } from './utils/fs'
+
+/**
+ * Check if project has the specified ecosystem
+ */
+function hasEcosystem(cwd: string, ecosystem: Ecosystem): boolean {
+	switch (ecosystem) {
+		case 'typescript':
+			return fileExists(join(cwd, 'package.json'))
+		case 'rust':
+			return fileExists(join(cwd, 'Cargo.toml'))
+		case 'go':
+			return fileExists(join(cwd, 'go.mod'))
+		case 'python':
+			return fileExists(join(cwd, 'pyproject.toml')) || fileExists(join(cwd, 'setup.py'))
+		default:
+			return true
+	}
+}
 
 export interface RunOptions {
 	cwd: string
@@ -55,37 +76,62 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 		workspacePackages,
 	})
 
-	// Filter checks based on severity
+	// Filter checks based on module ecosystem/enabled and severity
 	const checksToRun: { check: Check; ctx: CheckContext }[] = []
 
-	for (const check of allChecks) {
-		// Filter by hook if specified (otherwise run all checks)
-		// If check has hooks defined, it must include the specified hook
-		// If check has no hooks (empty/undefined), it runs on all hooks
-		if (hook && check.hooks && check.hooks.length > 0 && !check.hooks.includes(hook)) continue
-
-		const severity = getSeverity(check.name, preset, config.rules)
-
-		// Skip if severity is 'off'
-		if (severity === 'off') continue
-
-		// In pre-commit mode, skip warnings
-		if (preCommit && severity === 'warn') continue
-
-		const ctx: CheckContext = {
-			cwd,
-			packageJson,
-			severity,
-			options: config.options?.[check.name],
-			isMonorepo: monorepo,
-			workspacePackages,
-			workspacePatterns,
-			workspaceRoot,
-			projectType,
-			isSharedConfigSource,
+	for (const module of checkModules) {
+		// Check module ecosystem filter
+		if (module.ecosystem && !hasEcosystem(cwd, module.ecosystem)) {
+			continue // Skip entire module if ecosystem doesn't match
 		}
 
-		checksToRun.push({ check, ctx })
+		// Check module custom enabled function
+		if (module.enabled) {
+			const baseCtx: CheckContext = {
+				cwd,
+				packageJson,
+				severity: 'error', // placeholder
+				isMonorepo: monorepo,
+				workspacePackages,
+				workspacePatterns,
+				workspaceRoot,
+				projectType,
+				isSharedConfigSource,
+			}
+			const enabled = await module.enabled(baseCtx)
+			if (!enabled) continue // Skip entire module if disabled
+		}
+
+		// Process checks in this module
+		for (const check of module.checks) {
+			// Filter by hook if specified (otherwise run all checks)
+			// If check has hooks defined, it must include the specified hook
+			// If check has no hooks (empty/undefined), it runs on all hooks
+			if (hook && check.hooks && check.hooks.length > 0 && !check.hooks.includes(hook)) continue
+
+			const severity = getSeverity(check.name, preset, config.rules)
+
+			// Skip if severity is 'off'
+			if (severity === 'off') continue
+
+			// In pre-commit mode, skip warnings
+			if (preCommit && severity === 'warn') continue
+
+			const ctx: CheckContext = {
+				cwd,
+				packageJson,
+				severity,
+				options: config.options?.[check.name],
+				isMonorepo: monorepo,
+				workspacePackages,
+				workspacePatterns,
+				workspaceRoot,
+				projectType,
+				isSharedConfigSource,
+			}
+
+			checksToRun.push({ check, ctx })
+		}
 	}
 
 	// Run all checks in parallel
