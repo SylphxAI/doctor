@@ -122,10 +122,13 @@ const basePreset: PresetConfig = {
 	'branding/header': 'warn',
 	'branding/footer': 'warn',
 	'branding/version-badge': 'warn',
+	'branding/downloads-badge': 'warn',
+	'branding/stars-badge': 'warn',
 	'branding/license-badge': 'warn',
 	'branding/ci-badge': 'warn',
 	'branding/coverage-badge': 'warn',
 	'branding/typescript-badge': 'warn',
+	'branding/package-links': 'warn',
 	'branding/packages': 'warn',
 
 	// Rust

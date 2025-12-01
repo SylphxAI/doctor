@@ -288,10 +288,13 @@ pre-commit:
 | `branding/header` | README has centered header with emoji title | ❌ |
 | `branding/footer` | README has footer with Star History + Sylphx | ❌ |
 | `branding/version-badge` | Version badge (npm/crates.io) | ❌ |
+| `branding/downloads-badge` | Downloads badge (npm/crates.io) | ❌ |
+| `branding/stars-badge` | GitHub stars badge | ❌ |
 | `branding/license-badge` | MIT license badge | ❌ |
 | `branding/ci-badge` | CI status badge (if has workflow) | ❌ |
 | `branding/coverage-badge` | Coverage badge (for libraries) | ❌ |
 | `branding/typescript-badge` | TypeScript badge (for TS libraries) | ❌ |
+| `branding/package-links` | Monorepo root has package links table | ❌ |
 | `branding/packages` | README mentions all @sylphx packages used | ❌ |
 
 ### Rust
