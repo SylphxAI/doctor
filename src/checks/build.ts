@@ -69,6 +69,12 @@ function checkCjsIndicators(pkg: PackageJson, location: string): PackageIssue | 
 	return null
 }
 
+/**
+ * File extensions that don't require types/import conditions
+ * (config files, JSON, etc.)
+ */
+const NON_JS_EXTENSIONS = ['.json', '.yaml', '.yml', '.toml', '.css', '.scss', '.less']
+
 function checkExports(pkg: PackageJson, location: string): PackageIssue | null {
 	const exports = pkg?.exports
 
@@ -83,7 +89,19 @@ function checkExports(pkg: PackageJson, location: string): PackageIssue | null {
 		return { location, issue: 'exports missing "." entry' }
 	}
 
-	// Collect ALL missing fields (not just the first one)
+	// String export (e.g., "./biome.json", "./tsconfig.json")
+	// Valid for config packages that export non-JS files
+	if (typeof mainExport === 'string') {
+		const isNonJsFile = NON_JS_EXTENSIONS.some((ext) => mainExport.endsWith(ext))
+		if (isNonJsFile) {
+			// Config/JSON exports don't need types/import conditions
+			return null
+		}
+		// JS/TS file exported as string - should have proper conditions
+		return { location, issue: 'exports["."] should use object format with types/import conditions' }
+	}
+
+	// Object export - check for required conditions
 	const exportObj = mainExport as Record<string, unknown>
 	const missing: string[] = []
 	if (!('types' in exportObj)) missing.push('types')
