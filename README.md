@@ -35,8 +35,8 @@ Doctor ensures your **project structure and configuration** is correct. It compl
 
 | Ecosystem | Status | Checks |
 |-----------|--------|--------|
-| TypeScript | ✅ Full | 60+ checks |
-| Rust | 🚧 Planned | Coming soon |
+| TypeScript | ✅ Full | 80+ checks |
+| Rust | ✅ Basic | 7 checks |
 | Go | ❌ Not planned | - |
 | Python | ❌ Not planned | - |
 
@@ -158,6 +158,9 @@ pre-commit:
 | `pkg/name` | Has name field | ❌ |
 | `pkg/description` | Has description field | ❌ |
 | `pkg/repository` | Has repository field | ❌ |
+| `pkg/author` | Has author field | ❌ |
+| `pkg/license-field` | Has license field | ❌ |
+| `pkg/engines` | Has engines.node field | ❌ |
 | `pkg/keywords` | Has keywords array | ❌ |
 | `pkg/type-module` | Has "type": "module" | ✅ |
 | `pkg/exports` | Has exports field | ❌ |
@@ -257,6 +260,7 @@ pre-commit:
 |-------|-------------|---------|
 | `ci/has-workflow` | CI workflow exists | ❌ |
 | `ci/publish-workflow` | Publish workflow exists | ❌ |
+| `ci/rust-workflow` | Rust CI workflow exists | ✅ |
 
 ### GitHub
 | Check | Description | Fixable |
@@ -276,12 +280,24 @@ pre-commit:
 |-------|-------------|---------|
 | `deps/outdated` | No outdated dependencies | ❌ |
 | `deps/security` | No security vulnerabilities | ❌ |
+| `deps/has-knip` | knip configured for unused deps | ❌ |
 
 ### Credits
 | Check | Description | Fixable |
 |-------|-------------|---------|
 | `credits/has-section` | README has Sylphx credits | ❌ |
 | `credits/mentions-packages` | Credits mention all @sylphx packages | ❌ |
+
+### Rust
+| Check | Description | Fixable |
+|-------|-------------|---------|
+| `rust/has-cargo` | Cargo.toml exists | ❌ |
+| `rust/edition` | Uses modern Rust edition (2021+) | ❌ |
+| `rust/has-rustfmt` | rustfmt.toml exists | ❌ |
+| `rust/has-clippy` | clippy config exists | ❌ |
+| `rust/has-tests` | Rust tests exist | ❌ |
+| `rust/deny` | deny.toml for security audit | ❌ |
+| `rust/cargo-lock` | Binary crate has Cargo.lock | ❌ |
 
 ## License
 

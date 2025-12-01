@@ -126,6 +126,43 @@ export const depsModule: CheckModule = defineCheckModule(
 		},
 
 		{
+			name: 'deps/has-knip',
+			description: 'Check if knip is configured for unused dependency detection',
+			fixable: false,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { fileExists } = await import('../utils/fs')
+
+				const knipConfigs = [
+					'knip.json',
+					'knip.jsonc',
+					'knip.ts',
+					'knip.js',
+					'knip.config.ts',
+					'knip.config.js',
+				]
+
+				const hasKnipConfig = knipConfigs.some((f) => fileExists(join(ctx.cwd, f)))
+
+				// Also check package.json for knip config
+				const hasKnipInPkg = ctx.packageJson && 'knip' in ctx.packageJson
+
+				if (hasKnipConfig || hasKnipInPkg) {
+					return {
+						passed: true,
+						message: 'knip configured for unused dependency detection',
+					}
+				}
+
+				return {
+					passed: false,
+					message: 'No knip config found',
+					hint: 'Add knip.json or run: bunx knip --init',
+				}
+			},
+		},
+
+		{
 			name: 'deps/security',
 			description: 'Check for security vulnerabilities',
 			fixable: false,

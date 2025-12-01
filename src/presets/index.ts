@@ -25,6 +25,9 @@ const basePreset: PresetConfig = {
 	'pkg/name': 'error',
 	'pkg/description': 'error',
 	'pkg/repository': 'off',
+	'pkg/author': 'off',
+	'pkg/license-field': 'off',
+	'pkg/engines': 'off',
 	'pkg/keywords': 'off',
 	'pkg/type-module': 'error',
 	'pkg/scripts-lint': 'error',
@@ -39,6 +42,7 @@ const basePreset: PresetConfig = {
 	// Dependencies
 	'deps/outdated': 'off',
 	'deps/security': 'off',
+	'deps/has-knip': 'off',
 
 	// Testing
 	'test/has-tests': 'off',
@@ -78,6 +82,7 @@ const basePreset: PresetConfig = {
 	// CI/CD
 	'ci/has-workflow': 'warn',
 	'ci/publish-workflow': 'off',
+	'ci/rust-workflow': 'off',
 
 	// Hooks (split into granular checks for user override flexibility)
 	'hooks/pre-commit': 'error',
@@ -116,6 +121,15 @@ const basePreset: PresetConfig = {
 	// Credits
 	'credits/has-section': 'warn',
 	'credits/mentions-packages': 'warn',
+
+	// Rust
+	'rust/has-cargo': 'off',
+	'rust/edition': 'off',
+	'rust/has-rustfmt': 'off',
+	'rust/has-clippy': 'off',
+	'rust/has-tests': 'off',
+	'rust/deny': 'off',
+	'rust/cargo-lock': 'off',
 }
 
 /**

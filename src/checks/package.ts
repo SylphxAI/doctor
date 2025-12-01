@@ -66,6 +66,74 @@ export const packageModule: CheckModule = defineCheckModule(
 		},
 
 		{
+			name: 'pkg/author',
+			description: 'Check if package.json has author field',
+			fixable: false,
+			async check(ctx) {
+				// Skip for private packages
+				if (ctx.packageJson?.private) {
+					return {
+						passed: true,
+						message: 'Private package (author not required)',
+						skipped: true,
+					}
+				}
+
+				const hasAuthor = !!ctx.packageJson?.author
+				return {
+					passed: hasAuthor,
+					message: hasAuthor ? 'package.json has "author"' : 'package.json missing "author"',
+					hint: hasAuthor
+						? undefined
+						: 'Add "author": "Name <email>" or "author": { "name": "...", "email": "..." }',
+				}
+			},
+		},
+
+		{
+			name: 'pkg/license-field',
+			description: 'Check if package.json has license field',
+			fixable: false,
+			async check(ctx) {
+				// Skip for private packages
+				if (ctx.packageJson?.private) {
+					return {
+						passed: true,
+						message: 'Private package (license field not required)',
+						skipped: true,
+					}
+				}
+
+				const hasLicense = !!ctx.packageJson?.license
+				return {
+					passed: hasLicense,
+					message: hasLicense
+						? `package.json has license: ${ctx.packageJson?.license}`
+						: 'package.json missing "license"',
+					hint: hasLicense ? undefined : 'Add "license": "MIT" (or your license)',
+				}
+			},
+		},
+
+		{
+			name: 'pkg/engines',
+			description: 'Check if package.json has engines.node field',
+			fixable: false,
+			async check(ctx) {
+				const engines = ctx.packageJson?.engines as Record<string, string> | undefined
+				const hasNode = !!engines?.node
+
+				return {
+					passed: hasNode,
+					message: hasNode
+						? `package.json has engines.node: ${engines?.node}`
+						: 'package.json missing "engines.node"',
+					hint: hasNode ? undefined : 'Add "engines": { "node": ">=20" }',
+				}
+			},
+		},
+
+		{
 			name: 'pkg/keywords',
 			description: 'Check if package.json has keywords',
 			fixable: false,

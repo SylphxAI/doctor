@@ -37,6 +37,41 @@ jobs:
         run: bun run build
 `
 
+const defaultRustCiWorkflow = `name: Rust CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Test
+        run: cargo test --all-features
+
+      - name: Build
+        run: cargo build --release
+`
+
 const defaultReleaseWorkflow = `name: Release
 
 on:
@@ -118,6 +153,68 @@ export const ciModule: CheckModule = defineCheckModule(
 				return {
 					passed: true,
 					message: 'Using shared release workflow with secrets: inherit',
+				}
+			},
+		},
+
+		{
+			name: 'ci/rust-workflow',
+			description: 'Check if Rust CI workflow exists (for Rust projects)',
+			fixable: true,
+			async check(ctx) {
+				const { join } = await import('node:path')
+				const { mkdirSync, writeFileSync, readdirSync } = await import('node:fs')
+				const { fileExists } = await import('../utils/fs')
+
+				// Only check if this is a Rust project
+				const hasCargoToml = fileExists(join(ctx.cwd, 'Cargo.toml'))
+				if (!hasCargoToml) {
+					return {
+						passed: true,
+						message: 'Not a Rust project (skipped)',
+						skipped: true,
+					}
+				}
+
+				const workflowDir = join(ctx.cwd, '.github', 'workflows')
+
+				// Check if any workflow file contains Rust CI steps
+				if (fileExists(workflowDir)) {
+					try {
+						const files = readdirSync(workflowDir)
+						for (const file of files) {
+							if (file.endsWith('.yml') || file.endsWith('.yaml')) {
+								const { readFile } = await import('../utils/fs')
+								const content = readFile(join(workflowDir, file)) ?? ''
+								// Check for common Rust CI indicators
+								if (
+									content.includes('cargo test') ||
+									content.includes('cargo clippy') ||
+									content.includes('rust-toolchain') ||
+									content.includes('dtolnay/rust-toolchain')
+								) {
+									return {
+										passed: true,
+										message: `Rust CI workflow found in ${file}`,
+									}
+								}
+							}
+						}
+					} catch {
+						// Ignore errors
+					}
+				}
+
+				const rustCiPath = join(workflowDir, 'rust.yml')
+
+				return {
+					passed: false,
+					message: 'Missing Rust CI workflow',
+					hint: 'Run with --fix to create Rust CI workflow',
+					fix: async () => {
+						mkdirSync(workflowDir, { recursive: true })
+						writeFileSync(rustCiPath, defaultRustCiWorkflow, 'utf-8')
+					},
 				}
 			},
 		},

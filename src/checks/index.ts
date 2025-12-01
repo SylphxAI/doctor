@@ -15,6 +15,7 @@ import { monorepoModule } from './monorepo'
 import { packageModule } from './package'
 import { releaseModule } from './release'
 import { runtimeModule } from './runtime'
+import { rustModule } from './rust'
 import { testModule } from './test'
 
 /**
@@ -36,6 +37,7 @@ export const checkModules: CheckModule[] = [
 	monorepoModule,
 	releaseModule,
 	creditsModule,
+	rustModule,
 ]
 
 /**
@@ -88,6 +90,7 @@ export {
 	monorepoModule,
 	releaseModule,
 	creditsModule,
+	rustModule,
 }
 
 export type {
