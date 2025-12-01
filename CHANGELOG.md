@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.26.1 (2025-12-01)
+
+### 🐛 Bug Fixes
+
+- **build:** handle string exports for config packages ([c55f6a1](https://github.com/SylphxAI/doctor/commit/c55f6a1f7eb6801140da94ff775889fbd9db15b8))
+
 ## 1.26.0 (2025-11-30)
 
 ### ✨ Features
