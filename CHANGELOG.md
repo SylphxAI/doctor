@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.27.0 (2025-12-01)
+
+### ✨ Features
+
+- add intelligent project type detection ([67e2e46](https://github.com/SylphxAI/doctor/commit/67e2e46e3983dca56f4b7c4aff8f3ac379ddbbf2))
+
 ## 1.26.1 (2025-12-01)
 
 ### 🐛 Bug Fixes
