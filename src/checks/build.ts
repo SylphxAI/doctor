@@ -363,8 +363,7 @@ export const buildModule: CheckModule = defineCheckModule(
 						const legacyDeps = LEGACY_BUNDLER_DEPS.filter((dep) => dep in allDeps)
 
 						const buildScript = pkg.packageJson?.scripts?.build ?? ''
-						const usesBunBuild =
-							buildScript.includes('bun build') && !buildScript.includes('bunup')
+						const usesBunBuild = buildScript.includes('bun build') && !buildScript.includes('bunup')
 
 						if (legacyDeps.length > 0) {
 							issues.push({
