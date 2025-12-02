@@ -104,7 +104,9 @@ doctor upgrade --target=stable
 
 ## Configuration
 
-Create `sylphx-doctor.config.ts`:
+### TypeScript/JavaScript projects
+
+Create `doctor.config.ts` (or `.js`, `.mjs`):
 
 ```ts
 import { defineConfig } from '@sylphx/doctor'
@@ -126,6 +128,57 @@ export default defineConfig({
   },
 })
 ```
+
+### JSON config (for non-TS projects)
+
+Create `doctor.config.json`:
+
+```json
+{
+  "preset": "dev",
+  "rules": {
+    "docs/vitepress": "off",
+    "github/topics": "warn"
+  }
+}
+```
+
+### Rust projects
+
+Add to `Cargo.toml`:
+
+```toml
+[package.metadata.doctor]
+preset = "dev"
+
+[package.metadata.doctor.rules]
+"rust/deny" = "off"
+```
+
+### Per-package config (monorepos)
+
+Each package can have its own config that inherits from root:
+
+```
+my-monorepo/
+├── doctor.config.ts         # Root config (preset: "dev")
+├── packages/
+│   ├── core/
+│   │   └── doctor.config.ts  # Inherits from root, can override
+│   └── cli/
+│       └── doctor.config.json # JSON also works
+```
+
+Child configs inherit all settings from root and can override specific rules.
+
+### Config file priority
+
+1. `doctor.config.ts`
+2. `doctor.config.js`
+3. `doctor.config.mjs`
+4. `doctor.config.json`
+5. `Cargo.toml` `[package.metadata.doctor]`
+6. Legacy: `sylphx-doctor.config.*` (backward compatible)
 
 ## Pre-commit Hook
 

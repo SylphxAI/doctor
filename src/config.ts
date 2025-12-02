@@ -17,6 +17,7 @@ const CONFIG_FILES = [
 	'sylphx-doctor.config.ts',
 	'sylphx-doctor.config.js',
 	'sylphx-doctor.config.mjs',
+	'sylphx-doctor.config.json',
 ]
 
 /**
@@ -57,8 +58,8 @@ function loadCargoConfig(cwd: string): DoctorConfig | null {
 			config.preset = presetMatch[1] as DoctorConfig['preset']
 		}
 
-		// Parse rules (simple key = "value" format)
-		const rulesMatch = section.match(/\[package\.metadata\.doctor\.rules\]([\s\S]*?)(?=\n\[|$)/)
+		// Parse rules section (search in full content since it's a separate TOML section)
+		const rulesMatch = content.match(/\[package\.metadata\.doctor\.rules\]([\s\S]*?)(?=\n\[|$)/)
 		if (rulesMatch?.[1]) {
 			config.rules = {}
 			const rulesSection = rulesMatch[1]
