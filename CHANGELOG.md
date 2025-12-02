@@ -1,5 +1,20 @@
 # sylphx-doctor
 
+## 1.30.1 (2025-12-02)
+
+### 🐛 Bug Fixes
+
+- **checks:** add monorepo support to build/suggest-bunup ([3a84af4](https://github.com/SylphxAI/doctor/commit/3a84af4b34408f896172d66e429e4198fd8d13f1))
+
+### ♻️ Refactoring
+
+- **checks:** simplify package.ts, branding.ts, and define.ts ([9966bdb](https://github.com/SylphxAI/doctor/commit/9966bdb87de17d03c48a6b73c5f92ba8fb3438d2))
+- **checks:** add getPackagesToCheck helper and fix missing monorepo support ([fcf2fb1](https://github.com/SylphxAI/doctor/commit/fcf2fb1bc1d966aabd4fe6f009b76f3bde6dcdca))
+
+### 💅 Styles
+
+- format ([06d6daa](https://github.com/SylphxAI/doctor/commit/06d6daa030de5da1006d8b1a0e7e6935226bd225))
+
 ## 1.30.0 (2025-12-01)
 
 ### ✨ Features
