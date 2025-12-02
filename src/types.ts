@@ -76,6 +76,8 @@ export interface WorkspacePackage {
 	projectType: ProjectType
 	/** Detected ecosystem (typescript, rust, go, python) */
 	ecosystem: Ecosystem
+	/** Per-package config (merged with root config) */
+	config?: DoctorConfig
 }
 
 export interface CheckContext {

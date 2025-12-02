@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { checkModules } from './checks'
-import { loadConfig } from './config'
+import { loadConfig, loadRootConfig } from './config'
 import { getNextPreset, getSeverity } from './presets'
 import type {
 	Check,
@@ -11,6 +11,7 @@ import type {
 	Ecosystem,
 	HookName,
 	PresetName,
+	WorkspacePackage,
 } from './types'
 import { detectIsSharedConfigSource, detectProjectType } from './utils/context'
 import {
@@ -51,11 +52,28 @@ export interface RunOptions {
 	hook?: HookName
 }
 
+/**
+ * Load per-package configs for workspace packages
+ * Each package inherits from root config and can override
+ */
+async function loadPackageConfigs(
+	packages: WorkspacePackage[],
+	rootConfig: DoctorConfig
+): Promise<WorkspacePackage[]> {
+	return Promise.all(
+		packages.map(async (pkg) => {
+			const pkgConfig = await loadConfig(pkg.path, rootConfig)
+			return { ...pkg, config: pkgConfig }
+		})
+	)
+}
+
 export async function runChecks(options: RunOptions): Promise<CheckReport> {
 	const { cwd, fix = false, preCommit = false, hook } = options
 
-	// Load config
-	const config = options.config ?? (await loadConfig(cwd))
+	// Load root config first
+	const rootConfig = options.config ?? (await loadRootConfig(cwd))
+	const config = rootConfig
 	const preset = options.preset ?? config.preset ?? 'dev'
 
 	// Load package.json
@@ -63,7 +81,9 @@ export async function runChecks(options: RunOptions): Promise<CheckReport> {
 
 	// Detect if monorepo and discover packages once
 	const monorepo = await isMonorepo(cwd)
-	const workspacePackages = monorepo ? discoverWorkspacePackages(cwd) : []
+	const discoveredPackages = monorepo ? discoverWorkspacePackages(cwd) : []
+	// Load per-package configs (each inherits from root)
+	const workspacePackages = monorepo ? await loadPackageConfigs(discoveredPackages, rootConfig) : []
 	const workspacePatterns = monorepo ? getWorkspacePatterns(cwd) : []
 	const workspaceRoot = findWorkspaceRoot(cwd)
 
