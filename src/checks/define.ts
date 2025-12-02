@@ -329,11 +329,14 @@ export interface MonorepoCheckOptions<T> {
 	) => Promise<T | null> | T | null
 	/** Format the issue for display */
 	formatIssue: (issue: T, pkg: import('../types').WorkspacePackage) => string
-	/** Optional: filter which packages to check (default: all) */
-	filterPackages?: (
-		packages: import('../types').WorkspacePackage[],
-		ctx: CheckContext
-	) => import('../types').WorkspacePackage[]
+	/** Optional: filter which packages to check */
+	filter?: (pkg: import('../types').WorkspacePackage) => boolean
+	/** Include private packages (default: true) */
+	includePrivate?: boolean
+	/** Include root for monorepo (default: false) */
+	includeRoot?: boolean
+	/** Only TypeScript packages (default: false) */
+	typescript?: boolean
 	/** Optional: fix function for a single package */
 	fixPackage?: (
 		pkg: import('../types').WorkspacePackage,
@@ -356,9 +359,12 @@ export function createMonorepoCheck<T>(
 		hooks,
 		checkPackage,
 		formatIssue,
-		filterPackages,
+		filter,
+		includePrivate = true,
+		includeRoot = false,
+		typescript = false,
 		fixPackage,
-		successMessage = (count) => `All ${count} package(s) passed`,
+		successMessage = (count) => (count === 1 ? 'Check passed' : `All ${count} package(s) passed`),
 		failureMessage = (issues, total) => `${issues}/${total} package(s) have issues`,
 	} = options
 
@@ -368,35 +374,16 @@ export function createMonorepoCheck<T>(
 		fixable: fixable && !!fixPackage,
 		hooks,
 		async check(ctx) {
-			const { getAllPackages, isMonorepoRoot } = await import('../utils/context')
+			const { getPackagesToCheck } = await import('../utils/context')
 			const { formatPackageIssues } = await import('../utils/format')
 
-			// Get packages to check
-			const allPackages = isMonorepoRoot(ctx) ? getAllPackages(ctx) : []
-
-			// For single package, just check root
-			if (allPackages.length === 0 && ctx.packageJson) {
-				const rootPkg: import('../types').WorkspacePackage = {
-					name: ctx.packageJson.name ?? 'root',
-					path: ctx.cwd,
-					relativePath: '.',
-					packageJson: ctx.packageJson,
-					projectType: ctx.projectType,
-					ecosystem: 'typescript',
-				}
-				const issue = await checkPackage(rootPkg, ctx)
-				if (!issue) {
-					return { passed: true, message: 'Check passed' }
-				}
-				return {
-					passed: false,
-					message: formatIssue(issue, rootPkg),
-					fix: fixPackage ? async () => fixPackage(rootPkg, issue, ctx) : undefined,
-				}
-			}
-
-			// Filter packages if needed
-			const packages = filterPackages ? filterPackages(allPackages, ctx) : allPackages
+			// Get packages to check using unified helper
+			const packages = getPackagesToCheck(ctx, {
+				includePrivate,
+				includeRoot,
+				typescript,
+				filter,
+			})
 
 			if (packages.length === 0) {
 				return { passed: true, message: 'No packages to check', skipped: true }

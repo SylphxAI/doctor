@@ -1,15 +1,8 @@
-import type { CheckContext, WorkspacePackage } from '../types'
-import { isMonorepoRoot, isTypeScriptPackage, needsBuildScripts } from '../utils/context'
+import type { WorkspacePackage } from '../types'
+import { getPackagesToCheck, isMonorepoRoot, needsBuildScripts } from '../utils/context'
 import { formatPackageIssues, type PackageIssue } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
-
-/** Get public TypeScript packages only (non-private, has package.json) */
-function getPublicPackages(ctx: CheckContext): WorkspacePackage[] {
-	return ctx.workspacePackages.filter(
-		(pkg) => isTypeScriptPackage(pkg) && !pkg.packageJson?.private
-	)
-}
 
 export const packageModule: CheckModule = defineCheckModule(
 	{
@@ -138,52 +131,35 @@ export const packageModule: CheckModule = defineCheckModule(
 			description: 'Check if package.json has keywords',
 			fixable: false,
 			async check(ctx) {
-				// For monorepo root, check all public workspace packages
-				if (isMonorepoRoot(ctx)) {
-					const publicPackages = getPublicPackages(ctx)
-					if (publicPackages.length === 0) {
-						return {
-							passed: true,
-							message: 'No public packages to check',
-							skipped: true,
-						}
-					}
+				const packages = getPackagesToCheck(ctx, { includePrivate: false, typescript: true })
+				if (packages.length === 0) {
+					return { passed: true, message: 'No public packages to check', skipped: true }
+				}
 
-					const issues: PackageIssue[] = []
-					for (const pkg of publicPackages) {
-						const keywords = pkg.packageJson?.keywords as string[] | undefined
-						const hasKeywords = !!(keywords && Array.isArray(keywords) && keywords.length > 0)
-						if (!hasKeywords) {
-							issues.push({ location: pkg.relativePath, issue: 'missing keywords' })
-						}
-					}
-
-					if (issues.length === 0) {
-						return {
-							passed: true,
-							message: `All ${publicPackages.length} public package(s) have keywords`,
-						}
-					}
-
-					return {
-						passed: false,
-						message: `${issues.length} package(s) missing keywords`,
-						hint: formatPackageIssues(issues),
+				const issues: PackageIssue[] = []
+				for (const pkg of packages) {
+					const keywords = pkg.packageJson?.keywords as string[] | undefined
+					const hasKeywords = !!(keywords && Array.isArray(keywords) && keywords.length > 0)
+					if (!hasKeywords) {
+						issues.push({ location: pkg.relativePath, issue: 'missing keywords' })
 					}
 				}
 
-				// Single package - check root
-				const pkg = ctx.packageJson as Record<string, unknown> | null
-				const keywords = pkg?.keywords as string[] | undefined
-				const hasKeywords = !!(keywords && Array.isArray(keywords) && keywords.length > 0)
+				if (issues.length === 0) {
+					const firstPkg = packages[0]
+					return {
+						passed: true,
+						message:
+							packages.length === 1 && firstPkg
+								? `package.json has ${(firstPkg.packageJson?.keywords as string[])?.length ?? 0} keywords`
+								: `All ${packages.length} public package(s) have keywords`,
+					}
+				}
+
 				return {
-					passed: hasKeywords,
-					message: hasKeywords
-						? `package.json has ${keywords?.length} keywords`
-						: 'package.json missing "keywords"',
-					hint: hasKeywords
-						? undefined
-						: 'Add "keywords": ["keyword1", "keyword2"] for npm discoverability',
+					passed: false,
+					message: `${issues.length} package(s) missing keywords`,
+					hint: formatPackageIssues(issues),
 				}
 			},
 		},
@@ -196,66 +172,44 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { join } = await import('node:path')
 				const { writeFileSync } = await import('node:fs')
 				const { readPackageJson } = await import('../utils/fs')
-				const { getAllPackages } = await import('../utils/context')
 
-				// For monorepo, check all TypeScript packages including root
-				if (isMonorepoRoot(ctx)) {
-					const allPackages = getAllPackages(ctx).filter(isTypeScriptPackage)
-					if (allPackages.length === 0) {
-						return {
-							passed: true,
-							message: 'No TypeScript packages to check',
-							skipped: true,
-						}
-					}
+				// Check all TypeScript packages including root
+				const packages = getPackagesToCheck(ctx, { includeRoot: true, typescript: true })
+				if (packages.length === 0) {
+					return { passed: true, message: 'No TypeScript packages to check', skipped: true }
+				}
 
-					const issues: PackageIssue[] = []
+				const issues: PackageIssue[] = []
+				const packagesToFix: WorkspacePackage[] = []
 
-					for (const pkg of allPackages) {
-						if (pkg.packageJson?.type !== 'module') {
-							issues.push({ location: pkg.relativePath, issue: 'missing type: module' })
-						}
-					}
-
-					if (issues.length === 0) {
-						return {
-							passed: true,
-							message: `All ${allPackages.length} package(s) have "type": "module"`,
-						}
-					}
-
-					return {
-						passed: false,
-						message: `${issues.length} package(s) missing "type": "module"`,
-						hint: formatPackageIssues(issues),
-						fix: async () => {
-							for (const pkg of allPackages) {
-								if (pkg.packageJson?.type !== 'module') {
-									const pkgPath = join(pkg.path, 'package.json')
-									const currentPkg = readPackageJson(pkg.path) ?? {}
-									currentPkg.type = 'module'
-									writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
-								}
-							}
-						},
+				for (const pkg of packages) {
+					if (pkg.packageJson?.type !== 'module') {
+						issues.push({ location: pkg.relativePath, issue: 'missing type: module' })
+						packagesToFix.push(pkg)
 					}
 				}
 
-				// Single package - check root
-				const pkg = ctx.packageJson
-				const isModule = pkg?.type === 'module'
+				if (issues.length === 0) {
+					return {
+						passed: true,
+						message:
+							packages.length === 1
+								? 'package.json has "type": "module"'
+								: `All ${packages.length} package(s) have "type": "module"`,
+					}
+				}
 
 				return {
-					passed: isModule,
-					message: isModule
-						? 'package.json has "type": "module"'
-						: 'package.json missing "type": "module"',
-					hint: isModule ? undefined : 'Add "type": "module" to package.json for ESM support',
+					passed: false,
+					message: `${issues.length} package(s) missing "type": "module"`,
+					hint: formatPackageIssues(issues),
 					fix: async () => {
-						const pkgPath = join(ctx.cwd, 'package.json')
-						const currentPkg = readPackageJson(ctx.cwd) ?? {}
-						currentPkg.type = 'module'
-						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+						for (const pkg of packagesToFix) {
+							const pkgPath = join(pkg.path, 'package.json')
+							const currentPkg = readPackageJson(pkg.path) ?? {}
+							currentPkg.type = 'module'
+							writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+						}
 					},
 				}
 			},
@@ -266,46 +220,34 @@ export const packageModule: CheckModule = defineCheckModule(
 			description: 'Check if package.json has exports',
 			fixable: false,
 			async check(ctx) {
-				// For monorepo root, check all public workspace packages
-				if (isMonorepoRoot(ctx)) {
-					const publicPackages = getPublicPackages(ctx)
-					if (publicPackages.length === 0) {
-						return {
-							passed: true,
-							message: 'No public packages to check',
-							skipped: true,
-						}
-					}
+				const packages = getPackagesToCheck(ctx, { includePrivate: false, typescript: true })
+				if (packages.length === 0) {
+					return { passed: true, message: 'No public packages to check', skipped: true }
+				}
 
-					const issues: PackageIssue[] = []
-					for (const pkg of publicPackages) {
-						const hasExports =
-							pkg.packageJson && 'exports' in pkg.packageJson && pkg.packageJson.exports
-						if (!hasExports) {
-							issues.push({ location: pkg.relativePath, issue: 'missing exports' })
-						}
-					}
-
-					if (issues.length === 0) {
-						return {
-							passed: true,
-							message: `All ${publicPackages.length} public package(s) have exports`,
-						}
-					}
-
-					return {
-						passed: false,
-						message: `${issues.length} package(s) missing exports`,
-						hint: formatPackageIssues(issues),
+				const issues: PackageIssue[] = []
+				for (const pkg of packages) {
+					const hasExports =
+						pkg.packageJson && 'exports' in pkg.packageJson && pkg.packageJson.exports
+					if (!hasExports) {
+						issues.push({ location: pkg.relativePath, issue: 'missing exports' })
 					}
 				}
 
-				// Single package - check root
-				const hasField = ctx.packageJson && 'exports' in ctx.packageJson && ctx.packageJson.exports
+				if (issues.length === 0) {
+					return {
+						passed: true,
+						message:
+							packages.length === 1
+								? 'package.json has "exports"'
+								: `All ${packages.length} public package(s) have exports`,
+					}
+				}
+
 				return {
-					passed: !!hasField,
-					message: hasField ? 'package.json has "exports"' : 'package.json missing "exports"',
-					hint: hasField ? undefined : 'Add "exports" field to package.json',
+					passed: false,
+					message: `${issues.length} package(s) missing exports`,
+					hint: formatPackageIssues(issues),
 				}
 			},
 		},
@@ -615,88 +557,55 @@ export const packageModule: CheckModule = defineCheckModule(
 				const { writeFileSync } = await import('node:fs')
 				const { readPackageJson } = await import('../utils/fs')
 
-				// For monorepo root, check all TypeScript workspace packages
-				if (isMonorepoRoot(ctx)) {
-					const tsPackages = ctx.workspacePackages.filter(isTypeScriptPackage)
-					if (tsPackages.length === 0) {
-						return {
-							passed: true,
-							message: 'No TypeScript packages to check',
-							skipped: true,
-						}
-					}
+				// Check all TypeScript workspace packages
+				const packages = getPackagesToCheck(ctx, { typescript: true })
+				if (packages.length === 0) {
+					return { passed: true, message: 'No TypeScript packages to check', skipped: true }
+				}
 
-					const issues: PackageIssue[] = []
-					const packagesToFix: WorkspacePackage[] = []
+				const issues: PackageIssue[] = []
+				const packagesToFix: WorkspacePackage[] = []
 
-					for (const pkg of tsPackages) {
-						const script = pkg.packageJson?.scripts?.['test:coverage']
-						const usesBunTestCoverage =
-							script?.includes('bun test') && script?.includes('--coverage')
+				for (const pkg of packages) {
+					const script = pkg.packageJson?.scripts?.['test:coverage']
+					const usesBunTestCoverage = script?.includes('bun test') && script?.includes('--coverage')
 
-						if (!script) {
-							issues.push({ location: pkg.relativePath, issue: 'missing test:coverage script' })
-							packagesToFix.push(pkg)
-						} else if (!usesBunTestCoverage) {
-							issues.push({
-								location: pkg.relativePath,
-								issue: `invalid script: "${script}"`,
-							})
-							packagesToFix.push(pkg)
-						}
-					}
-
-					if (issues.length === 0) {
-						return {
-							passed: true,
-							message: `All ${tsPackages.length} package(s) have valid test:coverage script`,
-						}
-					}
-
-					return {
-						passed: false,
-						message: `${issues.length} package(s) with invalid test:coverage script`,
-						hint: formatPackageIssues(issues),
-						fix: async () => {
-							for (const pkg of packagesToFix) {
-								const pkgPath = join(pkg.path, 'package.json')
-								const currentPkg = readPackageJson(pkg.path) ?? {}
-								currentPkg.scripts = currentPkg.scripts ?? {}
-								currentPkg.scripts['test:coverage'] = 'bun test --coverage'
-								writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
-							}
-						},
+					if (!script) {
+						issues.push({ location: pkg.relativePath, issue: 'missing test:coverage script' })
+						packagesToFix.push(pkg)
+					} else if (!usesBunTestCoverage) {
+						issues.push({
+							location: pkg.relativePath,
+							issue: `invalid script: "${script}"`,
+						})
+						packagesToFix.push(pkg)
 					}
 				}
 
-				// Single package - check root
-				const script = ctx.packageJson?.scripts?.['test:coverage']
-
-				if (!script) {
+				if (issues.length === 0) {
+					const firstPkg = packages[0]
 					return {
-						passed: false,
-						message: 'Missing "test:coverage" script in package.json',
-						hint: 'Add "test:coverage": "bun test --coverage" to package.json scripts',
-						fix: async () => {
-							const pkgPath = join(ctx.cwd, 'package.json')
-							const currentPkg = readPackageJson(ctx.cwd) ?? {}
+						passed: true,
+						message:
+							packages.length === 1 && firstPkg
+								? `test:coverage script: "${firstPkg.packageJson?.scripts?.['test:coverage']}"`
+								: `All ${packages.length} package(s) have valid test:coverage script`,
+					}
+				}
+
+				return {
+					passed: false,
+					message: `${issues.length} package(s) with invalid test:coverage script`,
+					hint: formatPackageIssues(issues),
+					fix: async () => {
+						for (const pkg of packagesToFix) {
+							const pkgPath = join(pkg.path, 'package.json')
+							const currentPkg = readPackageJson(pkg.path) ?? {}
 							currentPkg.scripts = currentPkg.scripts ?? {}
 							currentPkg.scripts['test:coverage'] = 'bun test --coverage'
 							writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
-						},
-					}
-				}
-
-				const usesBunTestCoverage = script.includes('bun test') && script.includes('--coverage')
-
-				return {
-					passed: usesBunTestCoverage,
-					message: usesBunTestCoverage
-						? `test:coverage script: "${script}"`
-						: `test:coverage script uses "${script}" (expected "bun test --coverage")`,
-					hint: usesBunTestCoverage
-						? undefined
-						: 'Use "bun test --coverage" (not "bun run test --coverage")',
+						}
+					},
 				}
 			},
 		},

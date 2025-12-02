@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { getAllPackages, isMonorepoRoot, needsCredits } from '../utils/context'
+import { getAllPackages, getPackagesToCheck, isMonorepoRoot, needsCredits } from '../utils/context'
 import { formatPackageIssues, type PackageIssue } from '../utils/format'
 import { fileExists, readFile } from '../utils/fs'
 import type { CheckModule } from './define'
@@ -662,78 +662,46 @@ export const brandingModule: CheckModule = defineCheckModule(
 			description: 'README mentions all @sylphx packages used',
 			fixable: false,
 			check(ctx) {
-				const sylphxPackages = detectSylphxPackages(ctx.packageJson)
+				// Get packages that need credits check
+				const packages = getPackagesToCheck(ctx, { filter: needsCredits })
+				if (packages.length === 0) {
+					return { passed: true, message: 'No packages to check', skipped: true }
+				}
 
-				// Skip if no @sylphx packages used
-				if (sylphxPackages.length === 0) {
-					return {
-						passed: true,
-						message: 'No @sylphx packages used (skipped)',
-						skipped: true,
+				const issues: PackageIssue[] = []
+
+				for (const pkg of packages) {
+					const pkgSylphx = detectSylphxPackages(pkg.packageJson)
+					if (pkgSylphx.length === 0) continue
+
+					const readmePath = join(pkg.path, 'README.md')
+					if (!fileExists(readmePath)) continue
+
+					const content = readFile(readmePath) ?? ''
+					const missing = pkgSylphx.filter((p) => !content.includes(p))
+
+					if (missing.length > 0) {
+						issues.push({
+							location: pkg.relativePath,
+							issue: `missing: ${missing.join(', ')}`,
+						})
 					}
 				}
 
-				// Monorepo: check all packages
-				if (isMonorepoRoot(ctx)) {
-					const packages = getAllPackages(ctx).filter(needsCredits)
-					const issues: PackageIssue[] = []
-
-					for (const pkg of packages) {
-						const pkgSylphx = detectSylphxPackages(pkg.packageJson)
-						if (pkgSylphx.length === 0) continue
-
-						const readmePath = join(pkg.path, 'README.md')
-						if (!fileExists(readmePath)) continue
-
-						const content = readFile(readmePath) ?? ''
-						const missing = pkgSylphx.filter((p) => !content.includes(p))
-
-						if (missing.length > 0) {
-							issues.push({
-								location: pkg.relativePath,
-								issue: `missing: ${missing.join(', ')}`,
-							})
-						}
-					}
-
-					if (issues.length === 0) {
-						return {
-							passed: true,
-							message: 'All packages mention their @sylphx dependencies',
-						}
-					}
-
-					return {
-						passed: false,
-						message: `${issues.length} package(s) missing @sylphx mentions`,
-						hint: formatPackageIssues(issues),
-					}
-				}
-
-				// Single package
-				const readmePath = join(ctx.cwd, 'README.md')
-				if (!fileExists(readmePath)) {
+				if (issues.length === 0) {
 					return {
 						passed: true,
-						message: 'No README.md (skipped)',
-						skipped: true,
-					}
-				}
-
-				const content = readFile(readmePath) ?? ''
-				const missing = sylphxPackages.filter((p) => !content.includes(p))
-
-				if (missing.length === 0) {
-					return {
-						passed: true,
-						message: `README mentions all ${sylphxPackages.length} @sylphx package(s)`,
+						message:
+							packages.length === 1
+								? 'README mentions all @sylphx packages'
+								: 'All packages mention their @sylphx dependencies',
 					}
 				}
 
 				return {
 					passed: false,
-					message: `README missing ${missing.length} @sylphx package(s)`,
-					hint: `Add to "Powered by Sylphx" section: ${missing.join(', ')}`,
+					message: `${issues.length} package(s) missing @sylphx mentions`,
+					hint: formatPackageIssues(issues),
 				}
 			},
 		},
