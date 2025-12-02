@@ -255,6 +255,126 @@ export function getAllPackages(ctx: CheckContext): WorkspacePackage[] {
 	return packages
 }
 
+export interface GetPackagesOptions {
+	/** Include private packages (default: true) */
+	includePrivate?: boolean
+	/** Include root package for monorepo (default: false) */
+	includeRoot?: boolean
+	/** Only TypeScript packages (default: false) */
+	typescript?: boolean
+	/** Custom filter */
+	filter?: (pkg: WorkspacePackage) => boolean
+}
+
+/**
+ * Get packages to check - unified helper for monorepo and single package
+ *
+ * For single package: returns [root] as WorkspacePackage
+ * For monorepo: returns workspacePackages (optionally with root)
+ *
+ * This eliminates the need for if/else in every check:
+ * ```typescript
+ * // Before (repetitive)
+ * if (isMonorepoRoot(ctx)) {
+ *   for (const pkg of ctx.workspacePackages) { ... }
+ * } else {
+ *   // check ctx.packageJson
+ * }
+ *
+ * // After (unified)
+ * for (const pkg of getPackagesToCheck(ctx)) { ... }
+ * ```
+ */
+export function getPackagesToCheck(
+	ctx: CheckContext,
+	options: GetPackagesOptions = {}
+): WorkspacePackage[] {
+	const { includePrivate = true, includeRoot = false, typescript = false, filter } = options
+
+	let packages: WorkspacePackage[]
+
+	if (isMonorepoRoot(ctx)) {
+		// Monorepo: start with workspace packages
+		packages = [...ctx.workspacePackages]
+
+		// Optionally include root
+		if (includeRoot && ctx.packageJson) {
+			packages.unshift({
+				name: ctx.packageJson.name ?? 'root',
+				path: ctx.cwd,
+				relativePath: '.',
+				packageJson: ctx.packageJson,
+				projectType: ctx.projectType,
+				ecosystem: 'typescript',
+			})
+		}
+	} else {
+		// Single package: treat root as a "package"
+		if (!ctx.packageJson) return []
+
+		packages = [
+			{
+				name: ctx.packageJson.name ?? 'root',
+				path: ctx.cwd,
+				relativePath: '.',
+				packageJson: ctx.packageJson,
+				projectType: ctx.projectType,
+				ecosystem: 'typescript',
+			},
+		]
+	}
+
+	// Apply filters
+	if (!includePrivate) {
+		packages = packages.filter((pkg) => !pkg.packageJson?.private)
+	}
+
+	if (typescript) {
+		packages = packages.filter(isTypeScriptPackage)
+	}
+
+	if (filter) {
+		packages = packages.filter(filter)
+	}
+
+	return packages
+}
+
+/**
+ * Get public packages only (non-private) - common use case
+ */
+export function getPublicPackages(ctx: CheckContext): WorkspacePackage[] {
+	return getPackagesToCheck(ctx, { includePrivate: false })
+}
+
+/**
+ * Check for banned dependencies across all packages
+ * Returns list of found banned deps with their locations
+ */
+export function checkBannedDeps(
+	ctx: CheckContext,
+	bannedDeps: string[],
+	options: GetPackagesOptions = {}
+): { found: string[]; issues: Array<{ location: string; deps: string[] }> } {
+	const packages = getPackagesToCheck(ctx, options)
+	const allFound: string[] = []
+	const issues: Array<{ location: string; deps: string[] }> = []
+
+	for (const pkg of packages) {
+		const allDeps = {
+			...pkg.packageJson?.dependencies,
+			...pkg.packageJson?.devDependencies,
+		}
+		const found = bannedDeps.filter((dep) => dep in allDeps)
+		if (found.length > 0) {
+			allFound.push(...found)
+			issues.push({ location: pkg.relativePath, deps: found })
+		}
+	}
+
+	return { found: [...new Set(allFound)], issues }
+}
+
 /**
  * Check all packages including root and collect errors
  */

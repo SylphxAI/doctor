@@ -1,10 +1,4 @@
-import {
-	getAllPackages,
-	isMonorepoRoot,
-	isTypeScriptPackage,
-	needsBuildScripts,
-	needsTests,
-} from '../utils/context'
+import { getPackagesToCheck, isMonorepoRoot, needsBuildScripts, needsTests } from '../utils/context'
 import { formatPackageIssues, type PackageIssue } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
@@ -32,53 +26,43 @@ export const testModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				// For monorepo, check all packages
-				if (isMonorepoRoot(ctx)) {
-					// Filter to only packages that need tests (not config/example)
-					const packagesToCheck = getAllPackages(ctx).filter(needsTests)
+				// Get packages that need tests
+				const packages = getPackagesToCheck(ctx, { filter: needsTests })
 
-					if (packagesToCheck.length === 0) {
-						return {
-							passed: true,
-							message: 'All packages are config/example (no tests expected)',
-							skipped: true,
-						}
-					}
-
-					const issues: PackageIssue[] = []
-					let totalTests = 0
-
-					for (const pkg of packagesToCheck) {
-						const testFiles = await findFiles(pkg.path, /\.(test|spec)\.(ts|tsx|js|jsx)$/)
-						if (testFiles.length === 0) {
-							issues.push({ location: pkg.relativePath, issue: 'no test files' })
-						} else {
-							totalTests += testFiles.length
-						}
-					}
-
-					if (issues.length === 0) {
-						return {
-							passed: true,
-							message: `Found ${totalTests} test file(s) across ${packagesToCheck.length} package(s)`,
-						}
-					}
-
+				if (packages.length === 0) {
 					return {
-						passed: false,
-						message: `${issues.length} package(s) have no tests (${totalTests} tests in others)`,
-						hint: formatPackageIssues(issues),
+						passed: true,
+						message: 'All packages are config/example (no tests expected)',
+						skipped: true,
 					}
 				}
 
-				// Single package
-				const testFiles = await findFiles(ctx.cwd, /\.(test|spec)\.(ts|tsx|js|jsx)$/)
-				const hasTests = testFiles.length > 0
+				const issues: PackageIssue[] = []
+				let totalTests = 0
+
+				for (const pkg of packages) {
+					const testFiles = await findFiles(pkg.path, /\.(test|spec)\.(ts|tsx|js|jsx)$/)
+					if (testFiles.length === 0) {
+						issues.push({ location: pkg.relativePath, issue: 'no test files' })
+					} else {
+						totalTests += testFiles.length
+					}
+				}
+
+				if (issues.length === 0) {
+					return {
+						passed: true,
+						message:
+							packages.length === 1
+								? `Found ${totalTests} test file(s)`
+								: `Found ${totalTests} test file(s) across ${packages.length} package(s)`,
+					}
+				}
 
 				return {
-					passed: hasTests,
-					message: hasTests ? `Found ${testFiles.length} test file(s)` : 'No test files found',
-					hint: hasTests ? undefined : 'Create test files with .test.ts or .spec.ts extension',
+					passed: false,
+					message: `${issues.length} package(s) have no tests (${totalTests} tests in others)`,
+					hint: formatPackageIssues(issues),
 				}
 			},
 		},
@@ -168,71 +152,49 @@ export const testModule: CheckModule = defineCheckModule(
 			async check(ctx) {
 				const { findFiles } = await import('../utils/fs')
 
-				// For monorepo, check all packages that have bench script (TypeScript only)
-				if (isMonorepoRoot(ctx)) {
-					const allPackages = getAllPackages(ctx).filter(isTypeScriptPackage)
-					const issues: PackageIssue[] = []
-					let packagesWithBench = 0
-					let totalBenchFiles = 0
+				// Get packages with bench scripts
+				const packages = getPackagesToCheck(ctx, {
+					typescript: true,
+					filter: (pkg) => !!pkg.packageJson?.scripts?.bench,
+				})
 
-					for (const pkg of allPackages) {
-						const hasBenchScript = pkg.packageJson?.scripts?.bench
-						if (!hasBenchScript) continue
-
-						packagesWithBench++
-						const benchFiles = await findFiles(pkg.path, /\.bench\.(ts|tsx|js|jsx)$/)
-						if (benchFiles.length === 0) {
-							issues.push({
-								location: pkg.relativePath,
-								issue: 'has bench script but no .bench.ts files',
-							})
-						} else {
-							totalBenchFiles += benchFiles.length
-						}
-					}
-
-					if (packagesWithBench === 0) {
-						return {
-							passed: true,
-							message: 'No packages have bench script defined (skipped)',
-							skipped: true,
-						}
-					}
-
-					if (issues.length === 0) {
-						return {
-							passed: true,
-							message: `Found ${totalBenchFiles} benchmark file(s) across ${packagesWithBench} package(s)`,
-						}
-					}
-
-					return {
-						passed: false,
-						message: `${issues.length} package(s) missing benchmark files`,
-						hint: formatPackageIssues(issues),
-					}
-				}
-
-				// Single package
-				const hasBenchScript = ctx.packageJson?.scripts?.bench
-
-				if (!hasBenchScript) {
+				if (packages.length === 0) {
 					return {
 						passed: true,
-						message: 'No bench script defined (skipped)',
+						message: 'No packages have bench script defined (skipped)',
 						skipped: true,
 					}
 				}
 
-				const benchFiles = await findFiles(ctx.cwd, /\.bench\.(ts|tsx|js|jsx)$/)
-				const hasFiles = benchFiles.length > 0
+				const issues: PackageIssue[] = []
+				let totalBenchFiles = 0
+
+				for (const pkg of packages) {
+					const benchFiles = await findFiles(pkg.path, /\.bench\.(ts|tsx|js|jsx)$/)
+					if (benchFiles.length === 0) {
+						issues.push({
+							location: pkg.relativePath,
+							issue: 'has bench script but no .bench.ts files',
+						})
+					} else {
+						totalBenchFiles += benchFiles.length
+					}
+				}
+
+				if (issues.length === 0) {
+					return {
+						passed: true,
+						message:
+							packages.length === 1
+								? `Found ${totalBenchFiles} benchmark file(s)`
+								: `Found ${totalBenchFiles} benchmark file(s) across ${packages.length} package(s)`,
+					}
+				}
 
 				return {
-					passed: hasFiles,
-					message: hasFiles
-						? `Found ${benchFiles.length} benchmark file(s)`
-						: 'No benchmark files found (but bench script exists)',
-					hint: hasFiles ? undefined : 'Create benchmark files with .bench.ts extension',
+					passed: false,
+					message: `${issues.length} package(s) missing benchmark files`,
+					hint: formatPackageIssues(issues),
 				}
 			},
 		},
@@ -242,27 +204,24 @@ export const testModule: CheckModule = defineCheckModule(
 			description: 'Check for legacy test frameworks (use bun test instead)',
 			fixable: true,
 			async check(ctx) {
-				const { readPackageJson } = await import('../utils/fs')
+				const { checkBannedDeps } = await import('../utils/context')
 				const { exec } = await import('../utils/exec')
 
 				const banned = ['jest', 'vitest', 'mocha', 'chai', 'ts-jest', '@types/jest']
-
-				// Read fresh from disk to handle post-fix verification
-				const packageJson = readPackageJson(ctx.cwd)
-				const allDeps = {
-					...packageJson?.dependencies,
-					...packageJson?.devDependencies,
-				}
-
-				const found = banned.filter((pkg) => pkg in allDeps)
+				const { found, issues } = checkBannedDeps(ctx, banned)
 
 				if (found.length === 0) {
 					return { passed: true, message: 'No legacy test frameworks' }
 				}
 
+				const message =
+					issues.length === 1
+						? `Found legacy test frameworks: ${found.join(', ')}`
+						: `Found legacy test frameworks in ${issues.length} package(s): ${found.join(', ')}`
+
 				return {
 					passed: false,
-					message: `Found legacy test frameworks: ${found.join(', ')}`,
+					message,
 					hint: `Use bun test instead. Run: bun remove ${found.join(' ')}`,
 					fix: async () => {
 						await exec('bun', ['remove', ...found], ctx.cwd)

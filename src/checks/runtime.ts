@@ -105,27 +105,24 @@ export const runtimeModule: CheckModule = defineCheckModule(
 			description: 'Check for legacy TS execution tools (use bun instead)',
 			fixable: true,
 			async check(ctx) {
-				const { readPackageJson } = await import('../utils/fs')
+				const { checkBannedDeps } = await import('../utils/context')
 				const { exec } = await import('../utils/exec')
 
 				const banned = ['ts-node', 'tsx', 'ts-node-dev']
-
-				// Read fresh from disk to handle post-fix verification
-				const packageJson = readPackageJson(ctx.cwd)
-				const allDeps = {
-					...packageJson?.dependencies,
-					...packageJson?.devDependencies,
-				}
-
-				const found = banned.filter((pkg) => pkg in allDeps)
+				const { found, issues } = checkBannedDeps(ctx, banned)
 
 				if (found.length === 0) {
 					return { passed: true, message: 'No legacy TS execution tools' }
 				}
 
+				const message =
+					issues.length === 1
+						? `Found legacy TS tools: ${found.join(', ')}`
+						: `Found legacy TS tools in ${issues.length} package(s): ${found.join(', ')}`
+
 				return {
 					passed: false,
-					message: `Found legacy TS tools: ${found.join(', ')}`,
+					message,
 					hint: `Use bun instead (bun runs TS natively). Run: bun remove ${found.join(' ')}`,
 					fix: async () => {
 						await exec('bun', ['remove', ...found], ctx.cwd)
@@ -139,27 +136,24 @@ export const runtimeModule: CheckModule = defineCheckModule(
 			description: 'Check for other package managers in dependencies (use bun instead)',
 			fixable: true,
 			async check(ctx) {
-				const { readPackageJson } = await import('../utils/fs')
+				const { checkBannedDeps } = await import('../utils/context')
 				const { exec } = await import('../utils/exec')
 
 				const banned = ['npm', 'yarn', 'pnpm']
-
-				// Read fresh from disk to handle post-fix verification
-				const packageJson = readPackageJson(ctx.cwd)
-				const allDeps = {
-					...packageJson?.dependencies,
-					...packageJson?.devDependencies,
-				}
-
-				const found = banned.filter((pkg) => pkg in allDeps)
+				const { found, issues } = checkBannedDeps(ctx, banned)
 
 				if (found.length === 0) {
 					return { passed: true, message: 'No other package managers in dependencies' }
 				}
 
+				const message =
+					issues.length === 1
+						? `Found other package managers: ${found.join(', ')}`
+						: `Found other package managers in ${issues.length} package(s): ${found.join(', ')}`
+
 				return {
 					passed: false,
-					message: `Found other package managers: ${found.join(', ')}`,
+					message,
 					hint: `Use bun instead. Run: bun remove ${found.join(' ')}`,
 					fix: async () => {
 						await exec('bun', ['remove', ...found], ctx.cwd)

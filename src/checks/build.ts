@@ -1,5 +1,5 @@
-import type { CheckContext, PackageJson } from '../types'
-import { isMonorepoRoot, isTypeScriptPackage } from '../utils/context'
+import type { WorkspacePackage } from '../types'
+import { getPackagesToCheck } from '../utils/context'
 import { formatPackageIssues, type PackageIssue } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
@@ -21,36 +21,22 @@ const LEGACY_BUNDLER_DEPS = [
 ]
 
 /**
- * Check if project uses any legacy bundlers (deps or build script)
- */
-function usesLegacyBundlers(ctx: CheckContext): { deps: string[]; usesBunBuild: boolean } {
-	const allDeps = {
-		...ctx.packageJson?.dependencies,
-		...ctx.packageJson?.devDependencies,
-	}
-	const deps = LEGACY_BUNDLER_DEPS.filter((pkg) => pkg in allDeps)
-
-	// Check if build script uses "bun build" (not bunup)
-	const buildScript = ctx.packageJson?.scripts?.build ?? ''
-	const usesBunBuild = buildScript.includes('bun build') && !buildScript.includes('bunup')
-
-	return { deps, usesBunBuild }
-}
-
-/**
  * CJS indicators in package.json
  */
-function checkCjsIndicators(pkg: PackageJson, location: string): PackageIssue | null {
+function checkCjsIndicators(pkg: WorkspacePackage): PackageIssue | null {
 	const issues: string[] = []
+	const pkgJson = pkg.packageJson
+
+	if (!pkgJson) return null
 
 	// Check main field pointing to .cjs
-	const main = pkg.main as string | undefined
+	const main = pkgJson.main as string | undefined
 	if (main?.endsWith('.cjs')) {
 		issues.push(`main points to .cjs (${main})`)
 	}
 
 	// Check exports for require conditions
-	const exports = pkg.exports as Record<string, unknown> | undefined
+	const exports = pkgJson.exports as Record<string, unknown> | undefined
 	if (exports && typeof exports === 'object') {
 		for (const [key, value] of Object.entries(exports)) {
 			if (typeof value === 'object' && value !== null) {
@@ -63,7 +49,7 @@ function checkCjsIndicators(pkg: PackageJson, location: string): PackageIssue | 
 	}
 
 	if (issues.length > 0) {
-		return { location, issue: issues.join(', ') }
+		return { location: pkg.relativePath, issue: issues.join(', ') }
 	}
 
 	return null
@@ -71,34 +57,30 @@ function checkCjsIndicators(pkg: PackageJson, location: string): PackageIssue | 
 
 /**
  * File extensions that don't require types/import conditions
- * (config files, JSON, etc.)
  */
 const NON_JS_EXTENSIONS = ['.json', '.yaml', '.yml', '.toml', '.css', '.scss', '.less']
 
-function checkExports(pkg: PackageJson, location: string): PackageIssue | null {
-	const exports = pkg?.exports
+function checkExports(pkg: WorkspacePackage): PackageIssue | null {
+	const exports = pkg.packageJson?.exports
 
 	if (!exports) {
-		return { location, issue: 'missing exports field' }
+		return { location: pkg.relativePath, issue: 'missing exports field' }
 	}
 
-	// Check if exports has proper structure
 	const mainExport = typeof exports === 'object' ? (exports as Record<string, unknown>)['.'] : null
 
 	if (!mainExport) {
-		return { location, issue: 'exports missing "." entry' }
+		return { location: pkg.relativePath, issue: 'exports missing "." entry' }
 	}
 
-	// String export (e.g., "./biome.json", "./tsconfig.json")
-	// Valid for config packages that export non-JS files
+	// String export (e.g., "./biome.json") - valid for config packages
 	if (typeof mainExport === 'string') {
 		const isNonJsFile = NON_JS_EXTENSIONS.some((ext) => mainExport.endsWith(ext))
-		if (isNonJsFile) {
-			// Config/JSON exports don't need types/import conditions
-			return null
+		if (isNonJsFile) return null
+		return {
+			location: pkg.relativePath,
+			issue: 'exports["."] should use object format with types/import conditions',
 		}
-		// JS/TS file exported as string - should have proper conditions
-		return { location, issue: 'exports["."] should use object format with types/import conditions' }
 	}
 
 	// Object export - check for required conditions
@@ -108,7 +90,35 @@ function checkExports(pkg: PackageJson, location: string): PackageIssue | null {
 	if (!('import' in exportObj)) missing.push('import')
 
 	if (missing.length > 0) {
-		return { location, issue: `exports["."] missing: ${missing.join(', ')}` }
+		return { location: pkg.relativePath, issue: `exports["."] missing: ${missing.join(', ')}` }
+	}
+
+	return null
+}
+
+/**
+ * Check for legacy bundlers in a package
+ */
+function checkLegacyBundlers(pkg: WorkspacePackage): PackageIssue | null {
+	const allDeps = {
+		...pkg.packageJson?.dependencies,
+		...pkg.packageJson?.devDependencies,
+	}
+	const legacyDeps = LEGACY_BUNDLER_DEPS.filter((dep) => dep in allDeps)
+
+	const buildScript = pkg.packageJson?.scripts?.build ?? ''
+	const usesBunBuild = buildScript.includes('bun build') && !buildScript.includes('bunup')
+
+	const issues: string[] = []
+	if (legacyDeps.length > 0) {
+		issues.push(`legacy deps: ${legacyDeps.join(', ')}`)
+	}
+	if (usesBunBuild) {
+		issues.push('"bun build" in build script')
+	}
+
+	if (issues.length > 0) {
+		return { location: pkg.relativePath, issue: issues.join('; ') }
 	}
 
 	return null
@@ -121,8 +131,6 @@ export const buildModule: CheckModule = defineCheckModule(
 		description: 'Check build configuration',
 	},
 	[
-		// Note: bunup config check removed - bunup works fine with defaults
-
 		{
 			name: 'build/esm-only',
 			description: 'Check that package only builds ESM (no CJS)',
@@ -132,122 +140,65 @@ export const buildModule: CheckModule = defineCheckModule(
 				const { writeFileSync } = await import('node:fs')
 				const { fileExists, readFile, readPackageJson } = await import('../utils/fs')
 
-				// For monorepo root, check all workspace packages (TypeScript only)
-				if (isMonorepoRoot(ctx)) {
-					const issues: PackageIssue[] = []
-					const packagesToFix: Array<{ path: string; pkg: PackageJson }> = []
+				const packages = getPackagesToCheck(ctx, { includePrivate: false, typescript: true })
+				if (packages.length === 0) {
+					return { passed: true, message: 'No packages to check', skipped: true }
+				}
 
-					for (const pkg of ctx.workspacePackages.filter(isTypeScriptPackage)) {
-						// Skip private packages
-						if (pkg.packageJson?.private) continue
-						if (!pkg.packageJson) continue
+				const issues: PackageIssue[] = []
+				const packagesToFix: WorkspacePackage[] = []
 
-						const issue = checkCjsIndicators(pkg.packageJson, pkg.relativePath)
-						if (issue) {
-							issues.push(issue)
-							packagesToFix.push({ path: pkg.path, pkg: pkg.packageJson })
-						}
-					}
-
-					// Also check build.config.ts at root for cjs format
-					const buildConfigPath = join(ctx.cwd, 'build.config.ts')
-					if (fileExists(buildConfigPath)) {
-						const content = readFile(buildConfigPath) ?? ''
-						if (content.includes("'cjs'") || content.includes('"cjs"')) {
-							issues.push({ location: 'build.config.ts', issue: 'format includes cjs' })
-						}
-					}
-
-					if (issues.length === 0) {
-						return {
-							passed: true,
-							message: 'All packages are ESM-only',
-						}
-					}
-
-					return {
-						passed: false,
-						message: `${issues.length} package(s) have CJS indicators`,
-						hint: formatPackageIssues(issues),
-						fix: async () => {
-							for (const { path } of packagesToFix) {
-								const pkgPath = join(path, 'package.json')
-								const currentPkg = readPackageJson(path) ?? {}
-
-								// Remove main if it points to .cjs
-								if ((currentPkg.main as string)?.endsWith('.cjs')) {
-									delete currentPkg.main
-								}
-
-								// Remove require from exports
-								const exports = currentPkg.exports as Record<string, unknown> | undefined
-								if (exports && typeof exports === 'object') {
-									for (const value of Object.values(exports)) {
-										if (typeof value === 'object' && value !== null) {
-											delete (value as Record<string, unknown>).require
-										}
-									}
-								}
-
-								writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
-							}
-						},
+				for (const pkg of packages) {
+					const issue = checkCjsIndicators(pkg)
+					if (issue) {
+						issues.push(issue)
+						packagesToFix.push(pkg)
 					}
 				}
 
-				// Single package - check root
-				if (!ctx.packageJson) {
-					return { passed: true, message: 'No package.json (skipped)', skipped: true }
-				}
-
-				const issues: string[] = []
-
-				// Check package.json for CJS indicators
-				const cjsIssue = checkCjsIndicators(ctx.packageJson, 'root')
-				if (cjsIssue) {
-					issues.push(cjsIssue.issue)
-				}
-
-				// Check build.config.ts for cjs format
+				// Also check build.config.ts at root for cjs format
 				const buildConfigPath = join(ctx.cwd, 'build.config.ts')
 				if (fileExists(buildConfigPath)) {
 					const content = readFile(buildConfigPath) ?? ''
 					if (content.includes("'cjs'") || content.includes('"cjs"')) {
-						issues.push('build.config.ts format includes cjs')
+						issues.push({ location: 'build.config.ts', issue: 'format includes cjs' })
 					}
 				}
 
 				if (issues.length === 0) {
 					return {
 						passed: true,
-						message: 'Package is ESM-only (no CJS)',
+						message:
+							packages.length === 1 ? 'Package is ESM-only (no CJS)' : 'All packages are ESM-only',
 					}
 				}
 
 				return {
 					passed: false,
-					message: `CJS indicators found: ${issues.join(', ')}`,
-					hint: 'Remove CJS from exports and build config. Modern Node.js supports ESM.',
+					message: `${issues.length} issue(s) with CJS indicators`,
+					hint: formatPackageIssues(issues),
 					fix: async () => {
-						const pkgPath = join(ctx.cwd, 'package.json')
-						const currentPkg = readPackageJson(ctx.cwd) ?? {}
+						for (const pkg of packagesToFix) {
+							const pkgPath = join(pkg.path, 'package.json')
+							const currentPkg = readPackageJson(pkg.path) ?? {}
 
-						// Remove main if it points to .cjs
-						if ((currentPkg.main as string)?.endsWith('.cjs')) {
-							delete currentPkg.main
-						}
+							// Remove main if it points to .cjs
+							if ((currentPkg.main as string)?.endsWith('.cjs')) {
+								delete currentPkg.main
+							}
 
-						// Remove require from exports
-						const exports = currentPkg.exports as Record<string, unknown> | undefined
-						if (exports && typeof exports === 'object') {
-							for (const value of Object.values(exports)) {
-								if (typeof value === 'object' && value !== null) {
-									delete (value as Record<string, unknown>).require
+							// Remove require from exports
+							const exports = currentPkg.exports as Record<string, unknown> | undefined
+							if (exports && typeof exports === 'object') {
+								for (const value of Object.values(exports)) {
+									if (typeof value === 'object' && value !== null) {
+										delete (value as Record<string, unknown>).require
+									}
 								}
 							}
-						}
 
-						writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+							writeFileSync(pkgPath, `${JSON.stringify(currentPkg, null, 2)}\n`, 'utf-8')
+						}
 					},
 				}
 			},
@@ -258,55 +209,34 @@ export const buildModule: CheckModule = defineCheckModule(
 			description: 'Check if package.json exports are properly configured',
 			fixable: false,
 			async check(ctx) {
-				// Skip for monorepo root - exports are per-package
-				if (isMonorepoRoot(ctx)) {
-					// Check all TypeScript workspace packages
-					const issues: PackageIssue[] = []
-					const tsPackages = ctx.workspacePackages.filter(isTypeScriptPackage)
+				const packages = getPackagesToCheck(ctx, { includePrivate: false, typescript: true })
+				if (packages.length === 0) {
+					return { passed: true, message: 'No packages to check', skipped: true }
+				}
 
-					for (const pkg of tsPackages) {
-						// Skip private packages
-						if (pkg.packageJson?.private) continue
-						if (!pkg.packageJson) continue
+				const issues: PackageIssue[] = []
 
-						const issue = checkExports(pkg.packageJson, pkg.relativePath)
-						if (issue) {
-							issues.push(issue)
-						}
-					}
-
-					if (issues.length === 0) {
-						return {
-							passed: true,
-							message: `All ${ctx.workspacePackages.length} packages have valid exports`,
-						}
-					}
-
-					return {
-						passed: false,
-						message: `${issues.length} package(s) with invalid exports`,
-						hint: formatPackageIssues(issues),
+				for (const pkg of packages) {
+					const issue = checkExports(pkg)
+					if (issue) {
+						issues.push(issue)
 					}
 				}
 
-				// Single package - check root
-				if (!ctx.packageJson) {
+				if (issues.length === 0) {
 					return {
-						passed: false,
-						message: 'No package.json found',
-					}
-				}
-				const issue = checkExports(ctx.packageJson, 'root')
-				if (issue) {
-					return {
-						passed: false,
-						message: `package.json ${issue.issue}`,
+						passed: true,
+						message:
+							packages.length === 1
+								? 'package.json exports properly configured'
+								: `All ${packages.length} packages have valid exports`,
 					}
 				}
 
 				return {
-					passed: true,
-					message: 'package.json exports properly configured',
+					passed: false,
+					message: `${issues.length} package(s) with invalid exports`,
+					hint: formatPackageIssues(issues),
 				}
 			},
 		},
@@ -322,12 +252,10 @@ export const buildModule: CheckModule = defineCheckModule(
 				const buildScript = ctx.packageJson?.scripts?.build ?? ''
 				const usesBunup = buildScript.includes('bunup')
 
-				// Skip if build doesn't use bunup
 				if (!usesBunup) {
 					return { passed: true, message: 'Build does not use bunup (skipped)', skipped: true }
 				}
 
-				// Read fresh from disk to handle post-fix verification
 				const packageJson = readPackageJson(ctx.cwd)
 				const devDeps = packageJson?.devDependencies ?? {}
 				const hasBunup = 'bunup' in devDeps
@@ -350,98 +278,46 @@ export const buildModule: CheckModule = defineCheckModule(
 			async check(ctx) {
 				const { exec } = await import('../utils/exec')
 
-				// For monorepo, check all workspace packages
-				if (isMonorepoRoot(ctx)) {
-					const issues: PackageIssue[] = []
-					const allDepsToRemove: string[] = []
+				// Check all packages including root
+				const packages = getPackagesToCheck(ctx, { includeRoot: true, typescript: true })
+				if (packages.length === 0) {
+					return { passed: true, message: 'No packages to check', skipped: true }
+				}
 
-					for (const pkg of ctx.workspacePackages) {
+				const issues: PackageIssue[] = []
+				const allDepsToRemove: string[] = []
+
+				for (const pkg of packages) {
+					const issue = checkLegacyBundlers(pkg)
+					if (issue) {
+						issues.push(issue)
+						// Collect deps to remove
 						const allDeps = {
 							...pkg.packageJson?.dependencies,
 							...pkg.packageJson?.devDependencies,
 						}
 						const legacyDeps = LEGACY_BUNDLER_DEPS.filter((dep) => dep in allDeps)
-
-						const buildScript = pkg.packageJson?.scripts?.build ?? ''
-						const usesBunBuild = buildScript.includes('bun build') && !buildScript.includes('bunup')
-
-						if (legacyDeps.length > 0) {
-							issues.push({
-								location: pkg.relativePath,
-								issue: `legacy deps: ${legacyDeps.join(', ')}`,
-							})
-							allDepsToRemove.push(...legacyDeps)
-						}
-						if (usesBunBuild) {
-							issues.push({
-								location: pkg.relativePath,
-								issue: '"bun build" in build script',
-							})
-						}
-					}
-
-					// Also check root
-					const { deps: rootDeps, usesBunBuild: rootUsesBunBuild } = usesLegacyBundlers(ctx)
-					if (rootDeps.length > 0) {
-						issues.push({ location: '.', issue: `legacy deps: ${rootDeps.join(', ')}` })
-						allDepsToRemove.push(...rootDeps)
-					}
-					if (rootUsesBunBuild) {
-						issues.push({ location: '.', issue: '"bun build" in build script' })
-					}
-
-					if (issues.length === 0) {
-						return { passed: true, message: 'No legacy bundlers', skipped: true }
-					}
-
-					const uniqueDeps = [...new Set(allDepsToRemove)]
-
-					return {
-						passed: false,
-						message: `${issues.length} package(s) using legacy bundlers`,
-						hint: formatPackageIssues(issues),
-						fix:
-							uniqueDeps.length > 0
-								? async () => {
-										await exec('bun', ['remove', ...uniqueDeps], ctx.cwd)
-										await exec('bun', ['add', '-D', 'bunup'], ctx.cwd)
-									}
-								: undefined,
+						allDepsToRemove.push(...legacyDeps)
 					}
 				}
 
-				// Single package - check root
-				const { deps, usesBunBuild } = usesLegacyBundlers(ctx)
-
-				// No legacy bundlers = nothing to check, skip silently
-				if (deps.length === 0 && !usesBunBuild) {
+				if (issues.length === 0) {
 					return { passed: true, message: 'No legacy bundlers', skipped: true }
 				}
 
-				// Build error message
-				const issues: string[] = []
-				if (deps.length > 0) {
-					issues.push(`legacy deps: ${deps.join(', ')}`)
-				}
-				if (usesBunBuild) {
-					issues.push('"bun build" in build script')
-				}
+				const uniqueDeps = [...new Set(allDepsToRemove)]
 
-				// Found legacy bundlers - must migrate to bunup
 				return {
 					passed: false,
-					message: `Using legacy bundlers: ${issues.join('; ')}`,
-					hint:
-						deps.length > 0
-							? `Use bunup instead. Run: bun remove ${deps.join(' ')} && bun add -D bunup`
-							: 'Use bunup instead. Replace "bun build" with "bunup" in build script',
+					message: `${issues.length} package(s) using legacy bundlers`,
+					hint: formatPackageIssues(issues),
 					fix:
-						deps.length > 0
+						uniqueDeps.length > 0
 							? async () => {
-									await exec('bun', ['remove', ...deps], ctx.cwd)
+									await exec('bun', ['remove', ...uniqueDeps], ctx.cwd)
 									await exec('bun', ['add', '-D', 'bunup'], ctx.cwd)
 								}
-							: undefined, // Can't auto-fix build script change
+							: undefined,
 				}
 			},
 		},

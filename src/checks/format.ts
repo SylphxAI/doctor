@@ -91,7 +91,7 @@ export const formatModule: CheckModule = defineCheckModule(
 			description: 'Check for legacy linting tools (use biome instead)',
 			fixable: true,
 			async check(ctx) {
-				const { readPackageJson } = await import('../utils/fs')
+				const { checkBannedDeps } = await import('../utils/context')
 				const { exec } = await import('../utils/exec')
 
 				// Banned linting/formatting packages - biome is mandatory
@@ -107,22 +107,20 @@ export const formatModule: CheckModule = defineCheckModule(
 					'eslint-plugin-react-hooks',
 				]
 
-				// Read fresh from disk to handle post-fix verification
-				const packageJson = readPackageJson(ctx.cwd)
-				const allDeps = {
-					...packageJson?.dependencies,
-					...packageJson?.devDependencies,
-				}
-
-				const found = banned.filter((pkg) => pkg in allDeps)
+				const { found, issues } = checkBannedDeps(ctx, banned)
 
 				if (found.length === 0) {
 					return { passed: true, message: 'No legacy linting tools' }
 				}
 
+				const message =
+					issues.length === 1
+						? `Found legacy linting tools: ${found.join(', ')}`
+						: `Found legacy linting tools in ${issues.length} package(s): ${found.join(', ')}`
+
 				return {
 					passed: false,
-					message: `Found legacy linting tools: ${found.join(', ')}`,
+					message,
 					hint: `Use biome instead. Run: bun remove ${found.join(' ')}`,
 					fix: async () => {
 						await exec('bun', ['remove', ...found], ctx.cwd)
