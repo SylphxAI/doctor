@@ -1,5 +1,11 @@
 # sylphx-doctor
 
+## 1.32.1 (2025-12-03)
+
+### 🐛 Bug Fixes
+
+- **build:** skip legacy bundler check when using bunup ([6a13ff7](https://github.com/SylphxAI/doctor/commit/6a13ff7465b04282852efa202451fcb843aef52f))
+
 ## 1.32.0 (2025-12-03)
 
 ### ✨ Features
