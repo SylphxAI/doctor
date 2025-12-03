@@ -100,14 +100,21 @@ function checkExports(pkg: WorkspacePackage): PackageIssue | null {
  * Check for legacy bundlers in a package
  */
 function checkLegacyBundlers(pkg: WorkspacePackage): PackageIssue | null {
+	const buildScript = pkg.packageJson?.scripts?.build ?? ''
+
+	// If already using bunup, skip this check
+	// Other bundler deps are likely type-only or plugin targets (e.g. unplugin)
+	if (buildScript.includes('bunup')) {
+		return null
+	}
+
 	const allDeps = {
 		...pkg.packageJson?.dependencies,
 		...pkg.packageJson?.devDependencies,
 	}
 	const legacyDeps = LEGACY_BUNDLER_DEPS.filter((dep) => dep in allDeps)
 
-	const buildScript = pkg.packageJson?.scripts?.build ?? ''
-	const usesBunBuild = buildScript.includes('bun build') && !buildScript.includes('bunup')
+	const usesBunBuild = buildScript.includes('bun build')
 
 	const issues: string[] = []
 	if (legacyDeps.length > 0) {
