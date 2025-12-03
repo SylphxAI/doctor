@@ -31,10 +31,86 @@ const EXAMPLE_PATH_PATTERNS = [
 ]
 
 /**
+ * Patterns that indicate a framework binding package
+ * These are thin wrappers around core packages for specific frameworks
+ */
+const FRAMEWORK_BINDING_PATTERNS = [
+	/-react$/,
+	/-preact$/,
+	/-vue$/,
+	/-svelte$/,
+	/-solid$/,
+	/-angular$/,
+	/-qwik$/,
+	/^react-/,
+	/^preact-/,
+	/^vue-/,
+	/^svelte-/,
+	/^solid-/,
+	/^angular-/,
+]
+
+/**
  * Check if a path indicates an example/demo package
  */
 export function isExamplePath(relativePath: string): boolean {
 	return EXAMPLE_PATH_PATTERNS.some((pattern) => pattern.test(relativePath))
+}
+
+/**
+ * Check if a package name indicates a framework binding
+ * Framework bindings are thin wrappers (e.g., rapid-signal-react, react-query)
+ * They typically don't need their own tests as they're just adapters
+ */
+export function isFrameworkBinding(pkg: WorkspacePackage): boolean {
+	const name = pkg.name
+	if (!name) return false
+
+	// Check against framework binding patterns
+	// Strip scope if present (e.g., @scope/pkg-react -> pkg-react)
+	const baseName = name.startsWith('@') ? name.split('/')[1] ?? name : name
+
+	return FRAMEWORK_BINDING_PATTERNS.some((pattern) => pattern.test(baseName ?? ''))
+}
+
+/**
+ * Check if a package is a re-export package (barrel/facade)
+ * Re-export packages just re-export from other packages and don't need tests
+ *
+ * Detection:
+ * 1. Has a dependency on a "-core" sibling package
+ * 2. Package name ends with common re-export suffixes (without -core)
+ *
+ * Examples:
+ * - rapid-signal (re-exports rapid-signal-core)
+ * - rapid-router (re-exports rapid-router-core)
+ */
+export function isReExportPackage(pkg: WorkspacePackage): boolean {
+	const name = pkg.name
+	if (!name) return false
+
+	// Strip scope for checking
+	const baseName = name.startsWith('@') ? name.split('/')[1] ?? '' : name
+
+	// Check if this package has a -core sibling as a dependency
+	const deps = {
+		...pkg.packageJson?.dependencies,
+		...pkg.packageJson?.peerDependencies,
+	}
+
+	// Look for core package dependency
+	// e.g., rapid-signal depends on rapid-signal-core
+	const corePackageName = `${baseName}-core`
+	const scopedCorePackageName = name.startsWith('@')
+		? `${name.split('/')[0]}/${corePackageName}`
+		: corePackageName
+
+	const hasCoreAsDep =
+		corePackageName in deps ||
+		scopedCorePackageName in deps ||
+		Object.keys(deps).some((dep) => dep.endsWith(`/${corePackageName}`))
+
+	return hasCoreAsDep
 }
 
 /**
@@ -186,9 +262,31 @@ export function needsCredits(pkg: WorkspacePackage): boolean {
 
 /**
  * Check if a package needs tests
- * Config and example packages don't need tests
+ *
+ * Packages that DON'T need tests:
+ * - Config packages (export JSON/YAML only)
+ * - Example packages (demos, not production code)
+ * - Re-export packages (barrel files, tested via core package)
+ * - Framework bindings (thin wrappers, hard to unit test)
  */
 export function needsTests(pkg: WorkspacePackage): boolean {
+	// Config and example packages don't need tests
+	if (pkg.projectType === 'config' || pkg.projectType === 'example') {
+		return false
+	}
+
+	// Re-export packages don't need tests (core package has them)
+	if (isReExportPackage(pkg)) {
+		return false
+	}
+
+	// Framework bindings typically don't need unit tests
+	// (they're integration adapters, tested via integration tests)
+	if (isFrameworkBinding(pkg)) {
+		return false
+	}
+
+	// Apps and libraries need tests
 	return pkg.projectType === 'library' || pkg.projectType === 'app'
 }
 

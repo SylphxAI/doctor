@@ -1,4 +1,11 @@
-import { getPackagesToCheck, isMonorepoRoot, needsBuildScripts, needsTests } from '../utils/context'
+import {
+	getPackagesToCheck,
+	isFrameworkBinding,
+	isMonorepoRoot,
+	isReExportPackage,
+	needsBuildScripts,
+	needsTests,
+} from '../utils/context'
 import { formatPackageIssues, type PackageIssue } from '../utils/format'
 import type { CheckModule } from './define'
 import { defineCheckModule } from './define'
@@ -26,13 +33,29 @@ export const testModule: CheckModule = defineCheckModule(
 					}
 				}
 
-				// Get packages that need tests
-				const packages = getPackagesToCheck(ctx, { filter: needsTests })
+				// Get all packages to analyze
+				const allPackages = getPackagesToCheck(ctx, { typescript: true })
 
-				if (packages.length === 0) {
+				// Categorize packages
+				const packagesNeedingTests = allPackages.filter(needsTests)
+				const reExportPackages = allPackages.filter(isReExportPackage)
+				const frameworkBindings = allPackages.filter(isFrameworkBinding)
+
+				// Skip if no packages need tests
+				if (packagesNeedingTests.length === 0) {
+					const reasons: string[] = []
+					if (reExportPackages.length > 0) reasons.push(`${reExportPackages.length} re-export`)
+					if (frameworkBindings.length > 0)
+						reasons.push(`${frameworkBindings.length} framework binding`)
+
+					const configExample = allPackages.filter(
+						(p) => p.projectType === 'config' || p.projectType === 'example'
+					)
+					if (configExample.length > 0) reasons.push(`${configExample.length} config/example`)
+
 					return {
 						passed: true,
-						message: 'All packages are config/example (no tests expected)',
+						message: `No packages require tests (${reasons.join(', ')})`,
 						skipped: true,
 					}
 				}
@@ -40,7 +63,7 @@ export const testModule: CheckModule = defineCheckModule(
 				const issues: PackageIssue[] = []
 				let totalTests = 0
 
-				for (const pkg of packages) {
+				for (const pkg of packagesNeedingTests) {
 					const testFiles = await findFiles(pkg.path, /\.(test|spec)\.(ts|tsx|js|jsx)$/)
 					if (testFiles.length === 0) {
 						issues.push({ location: pkg.relativePath, issue: 'no test files' })
@@ -49,19 +72,23 @@ export const testModule: CheckModule = defineCheckModule(
 					}
 				}
 
+				// Build skip summary for display
+				const skippedCount = reExportPackages.length + frameworkBindings.length
+				const skipNote = skippedCount > 0 ? ` (${skippedCount} skipped: re-exports/bindings)` : ''
+
 				if (issues.length === 0) {
 					return {
 						passed: true,
 						message:
-							packages.length === 1
-								? `Found ${totalTests} test file(s)`
-								: `Found ${totalTests} test file(s) across ${packages.length} package(s)`,
+							packagesNeedingTests.length === 1
+								? `Found ${totalTests} test file(s)${skipNote}`
+								: `Found ${totalTests} test file(s) across ${packagesNeedingTests.length} package(s)${skipNote}`,
 					}
 				}
 
 				return {
 					passed: false,
-					message: `${issues.length} package(s) have no tests (${totalTests} tests in others)`,
+					message: `${issues.length} package(s) have no tests${skipNote}`,
 					hint: formatPackageIssues(issues),
 				}
 			},
