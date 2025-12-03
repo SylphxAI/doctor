@@ -1,5 +1,20 @@
 # sylphx-doctor
 
+## 1.31.0 (2025-12-03)
+
+### ✨ Features
+
+- **test:** skip test checks for re-exports and framework bindings ([983091f](https://github.com/SylphxAI/doctor/commit/983091fe4991ac70b2aa16e6b90a47aca6011665))
+- **config:** add flexible config system with per-package support ([c75d381](https://github.com/SylphxAI/doctor/commit/c75d381c0412d26eb9a21ffc9e2f5cf3426c8f8f))
+
+### 📚 Documentation
+
+- update README with new config options ([938711d](https://github.com/SylphxAI/doctor/commit/938711dabd643d811e9805940f15f06d4ec4fa5b))
+
+### ✅ Tests
+
+- **config:** add tests for new config system ([1b3a9c8](https://github.com/SylphxAI/doctor/commit/1b3a9c82e7f55ca2a438ed402a4193ea9dde06db))
+
 ## 1.30.1 (2025-12-02)
 
 ### 🐛 Bug Fixes
