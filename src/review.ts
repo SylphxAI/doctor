@@ -19,8 +19,9 @@ const checklist: ChecklistSection[] = [
 	{
 		id: 'philosophy',
 		title: '0. Philosophy & Trade-offs',
-		description: 'Guiding principles, context awareness, decision framework',
+		description: 'Guiding principles, context awareness, decision framework, X-First strategies',
 		items: [
+			// Core values
 			{ text: 'Core values explicit: correctness > performance > convenience' },
 			{ text: 'Trade-offs documented — every decision has costs, make them visible' },
 			{ text: 'Context drives decisions — startup vs enterprise, library vs service, team size' },
@@ -31,6 +32,12 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Automation over documentation — if it can be automated, automate it' },
 			{ text: 'Observability is not optional — if you cannot see it, you cannot fix it' },
 			{ text: "Security is foundational — not a feature, it's a constraint" },
+			// X-First strategies
+			{ text: 'Type-First — define types/schemas before implementation' },
+			{ text: 'Schema-First — design API contract before code (OpenAPI, GraphQL SDL)' },
+			{ text: 'Test-First — write tests before implementation (TDD mindset)' },
+			{ text: 'Server-First — server-rendered by default, client hydration for interactivity' },
+			{ text: 'Mobile-First — design for smallest screen first, scale up' },
 		],
 	},
 
@@ -106,7 +113,7 @@ const checklist: ChecklistSection[] = [
 			// Architectural integrity
 			{ text: 'Workarounds are debt — proper fix or documented TODO with deadline + owner' },
 			{ text: 'Root cause fix, not symptom patch' },
-			{ text: 'YAGNI — You Ain\'t Gonna Need It, avoid over-engineering' },
+			{ text: "YAGNI — You Ain't Gonna Need It, avoid over-engineering" },
 			{ text: 'KISS — Keep It Simple, Stupid' },
 		],
 	},
@@ -190,7 +197,9 @@ const checklist: ChecklistSection[] = [
 			// Complexity-aware design (design time)
 			{ text: 'Default to O(1) — for every operation, ask "can this be O(1)?"' },
 			{ text: 'Avoid hidden O(n²) — no O(n) operation inside loops' },
-			{ text: 'Choose data structure by operation: HashMap for lookup, Heap for min/max, Set for membership' },
+			{
+				text: 'Choose data structure by operation: HashMap for lookup, Heap for min/max, Set for membership',
+			},
 			{ text: 'Lookup uses Map/Set O(1), not Array.find() O(n)' },
 			{ text: 'Pre-compute at build/startup, not per-request' },
 			{ text: 'Expensive computations memoized' },
@@ -328,7 +337,7 @@ const checklist: ChecklistSection[] = [
 	{
 		id: 'security',
 		title: '13. Security & Compliance',
-		description: 'Auth, encryption, supply chain, Zero Trust, compliance',
+		description: 'Auth, encryption, supply chain, Zero Trust, attack prevention, compliance',
 		items: [
 			// Authentication & authorization
 			{ text: 'Auth logic centralized; permissions clearly auditable' },
@@ -340,6 +349,14 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Encryption in transit (TLS 1.2+) and at rest for sensitive data' },
 			{ text: 'Secrets rotated regularly; emergency rotation runbook exists' },
 			{ text: 'Secrets in vault (not env vars for production)' },
+			// Attack prevention
+			{ text: 'CSRF protection: tokens or SameSite cookies' },
+			{ text: 'XSS prevention: input sanitization, output encoding, CSP' },
+			{ text: 'SQL/NoSQL injection: parameterized queries only' },
+			{ text: 'Account enumeration prevented: constant-time responses, generic messages' },
+			{ text: 'Timing attacks mitigated: constant-time comparison for secrets' },
+			{ text: 'Clickjacking protection: X-Frame-Options, frame-ancestors CSP' },
+			{ text: 'Open redirect prevented: allowlist redirect destinations' },
 			// Supply chain & dependencies
 			{ text: 'Dependency vulnerabilities scanned in CI (fail on high/critical)' },
 			{ text: 'SBOM generated for releases; supply chain verified' },
@@ -597,6 +614,44 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Plugins have lifecycle (init/start/stop/destroy)' },
 		],
 	},
+	{
+		id: 'auth',
+		title: '25. Identity & Authentication',
+		description: 'Auth strategy, session management, authorization models, credential security',
+		items: [
+			// Auth strategy
+			{ text: 'Auth strategy chosen with rationale: session vs JWT vs API key' },
+			{
+				text: 'Stateful (session) for web apps, stateless (JWT) for APIs, API keys for service-to-service',
+			},
+			{ text: 'OAuth/OIDC for third-party auth — standard flows, state parameter for CSRF' },
+			// Session management
+			{ text: 'Session cookies: HttpOnly, Secure, SameSite=Strict/Lax' },
+			{ text: 'Session regenerated on privilege change (login, role change)' },
+			{ text: 'Session invalidation on logout, password change, suspicious activity' },
+			{ text: 'Concurrent session limits if applicable' },
+			// JWT considerations
+			{ text: 'JWT: short expiry (15min), refresh tokens for long-lived sessions' },
+			{ text: 'JWT revocation strategy if needed (blacklist, short expiry, version claim)' },
+			{ text: 'JWT stored securely — httpOnly cookie preferred over localStorage' },
+			// API keys
+			{ text: 'API keys: scoped permissions, rotatable, never in URLs' },
+			{ text: 'API key hashed in storage, not plaintext' },
+			// Authorization models
+			{ text: 'Authorization model evaluated: RBAC vs ABAC vs ReBAC' },
+			{
+				text: 'RBAC for simple role-based, ABAC for attribute-based, ReBAC for relationship-based',
+			},
+			{ text: 'Permission checks at request boundary, not scattered in business logic' },
+			{ text: 'Deny by default — explicit allowlist, not blocklist' },
+			// Credential security
+			{ text: 'Passwords hashed with modern algorithm (Argon2, bcrypt, scrypt)' },
+			{ text: 'MFA available for sensitive accounts, recovery codes provided' },
+			{ text: 'Brute force protection: rate limiting, account lockout, CAPTCHA' },
+			{ text: 'Password reset tokens: single-use, time-limited, invalidated on use' },
+			{ text: 'Credential stuffing defense: leaked password detection, device fingerprinting' },
+		],
+	},
 ]
 
 export function formatReviewChecklist(): string {
@@ -638,7 +693,7 @@ export function formatReviewChecklist(): string {
 	)
 	lines.push(
 		pc.dim(
-			'          Delivery (14-15) · Evolution (16-18) · Frontend (19-22) · Cross-cutting (23-24)'
+			'          Delivery (14-15) · Evolution (16-18) · Frontend (19-22) · Cross-cutting (23-25)'
 		)
 	)
 	lines.push(pc.bold('━'.repeat(60)))

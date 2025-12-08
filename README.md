@@ -96,7 +96,7 @@ doctor upgrade --target=stable
 
 ### Project review checklist
 
-High-level architectural review checklist (25 sections, 325 items) for manual verification. Unlike automated checks, this provides hints that cannot be automatically verified.
+High-level architectural review checklist (26 sections, 358 items) for manual verification. Unlike automated checks, this provides hints that cannot be automatically verified.
 
 **Philosophy (0):**
 0. Philosophy & Trade-offs
@@ -137,9 +137,10 @@ High-level architectural review checklist (25 sections, 325 items) for manual ve
 21. UI Feedback & Real-time
 22. Frontend Performance & Design System
 
-**Cross-cutting (23-24):**
+**Cross-cutting (23-25):**
 23. i18n & Localization
 24. Extensibility & Plugins
+25. Identity & Authentication
 
 ```bash
 # Show full checklist
