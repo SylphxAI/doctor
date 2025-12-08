@@ -53,8 +53,12 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Unidirectional dependencies: core → feature → app' },
 			{ text: 'Domain layer is pure — no IO, no framework dependencies' },
 			{ text: 'Critical business logic in explicit use-case layer, not scattered in controllers' },
-			{ text: 'Composition Root — dependencies assembled and injected externally' },
-			{ text: 'Separate read/write paths when needed (CQRS)' },
+			{
+				text: 'Dependencies assembled at startup (Composition Root) — injected, not instantiated internally',
+			},
+			{
+				text: 'Read/write paths separated when scaling requires it (CQRS — Command Query Responsibility Segregation)',
+			},
 			{ text: 'Public API surface is small and stable' },
 			{ text: 'Service boundaries align with team ownership' },
 			{ text: 'Each module has single responsibility — describable in one sentence' },
@@ -84,8 +88,9 @@ const checklist: ChecklistSection[] = [
 			{
 				text: 'Null/None/nil handling is explicit (Options, nullability annotations, or explicit checks)',
 			},
-			{ text: 'Validation at boundaries — parse and validate, then trust internal types' },
-			{ text: 'All input validated at boundaries — prevent injection' },
+			{
+				text: 'Input validated at boundaries — parse, validate types/constraints, sanitize to prevent injection',
+			},
 		],
 	},
 	{
@@ -111,10 +116,10 @@ const checklist: ChecklistSection[] = [
 			{ text: 'No suppressed warnings — fix the warning, not the symptom' },
 			{ text: 'No catch-all exceptions — handle specific errors' },
 			// Architectural integrity
-			{ text: 'Workarounds are debt — proper fix or documented TODO with deadline + owner' },
-			{ text: 'Root cause fix, not symptom patch' },
-			{ text: "YAGNI — You Ain't Gonna Need It, avoid over-engineering" },
-			{ text: 'KISS — Keep It Simple, Stupid' },
+			{ text: 'Workarounds are debt — proper fix or tracked issue with owner and deadline' },
+			{
+				text: 'YAGNI + KISS — avoid over-engineering, speculative features must justify their cost',
+			},
 		],
 	},
 	{
@@ -148,9 +153,16 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Retry logic uses jittered exponential backoff for transient errors' },
 			{ text: 'Dead letter queues or equivalent for failed async operations' },
 			{ text: 'Critical errors trigger alerts, not just logs' },
-			{ text: 'Non-critical features have fallback (e.g., recommendations down → show default)' },
+			{
+				text: 'Graceful degradation — non-critical features have fallbacks, critical paths have circuit breakers',
+			},
+			{
+				text: 'Bulkhead pattern — isolate resources (thread pools, connections) to prevent cascade failures',
+			},
+			{
+				text: 'Load shedding — reject low-priority requests when overloaded, protect critical paths',
+			},
 			{ text: 'Self-healing capability (auto-restart, health check + replace)' },
-			{ text: "Failure blast radius controlled — one failure doesn't cascade to entire system" },
 		],
 	},
 	{
@@ -161,7 +173,6 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Handlers/services stateless by default — no in-memory state across requests' },
 			{ text: 'Session/state externalized (Redis, DB, external store)' },
 			{ text: 'External calls have timeout + cancellation' },
-			{ text: 'Critical paths have circuit breaker / fallback' },
 			{ text: 'Infra dependencies (filesystem, network) abstracted via adapters' },
 			{ text: 'Graceful shutdown — drain requests, close connections, release resources' },
 			{ text: 'Health endpoints distinguish liveness vs readiness' },
@@ -232,8 +243,12 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Data access isolated — persistence logic separated from business logic' },
 			{ text: 'Data model matches domain — clear aggregates, no god tables/documents' },
 			{ text: 'Consistency model explicit — strong vs eventual, documented per use case' },
-			{ text: 'Distributed operations use Saga / Outbox pattern when needed' },
-			{ text: 'Event Sourcing considered — events as source of truth if applicable' },
+			{
+				text: 'Distributed transactions use Saga (compensating actions) or Outbox (reliable event publishing) patterns',
+			},
+			{
+				text: 'Event Sourcing evaluated for audit-heavy domains — events as source of truth, state derived from history',
+			},
 			{ text: 'Schema versioned — migrations exist, tested, and rollback-able' },
 			{ text: 'Indexes cover query patterns — no full scans in critical paths' },
 			{ text: 'Connection pooling configured with limits and timeouts' },
@@ -274,9 +289,9 @@ const checklist: ChecklistSection[] = [
 			// Versioning & operations
 			{ text: 'Versioning strategy defined (URL, header, or query param)' },
 			{ text: 'Breaking changes defined; deprecation has notice period + sunset header' },
-			{ text: 'All mutating operations idempotent — safe to retry with idempotency key' },
-			{ text: 'GET/HEAD/OPTIONS are safe (no side effects)' },
-			{ text: 'PUT/DELETE are idempotent' },
+			{
+				text: 'HTTP method semantics enforced — GET/HEAD safe (no side effects), PUT/DELETE idempotent, POST uses idempotency keys',
+			},
 			{ text: 'Rate limiting with headers (limit, remaining, reset)' },
 			{ text: '429 returned with retry-after on rate limit' },
 			// Bulk & efficiency
@@ -332,6 +347,10 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Releases traceable to commits' },
 			{ text: 'Alerting rules codified — no manual alert configuration' },
 			{ text: 'Telemetry exportable to multiple backends (Jaeger, Prometheus, etc.)' },
+			// Operational observability
+			{ text: 'Log aggregation centralized — searchable, with retention policy' },
+			{ text: 'Metric cardinality controlled — avoid unbounded labels (user IDs, trace IDs)' },
+			{ text: 'Alert fatigue prevented — high signal-to-noise, actionable alerts only' },
 		],
 	},
 	{
@@ -352,11 +371,20 @@ const checklist: ChecklistSection[] = [
 			// Attack prevention
 			{ text: 'CSRF protection: tokens or SameSite cookies' },
 			{ text: 'XSS prevention: input sanitization, output encoding, CSP' },
-			{ text: 'SQL/NoSQL injection: parameterized queries only' },
+			{ text: 'Injection prevented: parameterized queries, no shell exec with user input' },
+			{
+				text: 'SSRF prevented: allowlist external domains, block internal IPs and metadata endpoints',
+			},
+			{
+				text: 'IDOR prevented: object-level authorization verified (users can only access their own resources)',
+			},
 			{ text: 'Account enumeration prevented: constant-time responses, generic messages' },
 			{ text: 'Timing attacks mitigated: constant-time comparison for secrets' },
 			{ text: 'Clickjacking protection: X-Frame-Options, frame-ancestors CSP' },
 			{ text: 'Open redirect prevented: allowlist redirect destinations' },
+			{
+				text: 'Threat modeling performed — identify trust boundaries, attack vectors, mitigations',
+			},
 			// Supply chain & dependencies
 			{ text: 'Dependency vulnerabilities scanned in CI (fail on high/critical)' },
 			{ text: 'SBOM generated for releases; supply chain verified' },
@@ -412,18 +440,29 @@ const checklist: ChecklistSection[] = [
 	{
 		id: 'operations',
 		title: '15. Operational Readiness',
-		description: 'SLOs, runbooks, capacity, disaster recovery, cost',
+		description: 'SRE principles, incident management, capacity, disaster recovery',
 		items: [
-			{ text: 'SLOs defined for critical services (latency, availability, error rate)' },
-			{ text: 'Runbooks for common operational tasks and incidents' },
-			{ text: 'On-call rotation and escalation path documented' },
-			{ text: 'Capacity planning based on metrics and growth projections' },
+			// SRE fundamentals
+			{ text: 'Error budget defined — how much downtime acceptable per SLO period' },
+			{ text: 'Error budget tracked — real-time consumption visible, enforced when exhausted' },
+			{ text: 'Toil measured and reduced — automate repetitive manual work' },
+			// Incident management
+			{ text: 'Incident severity classification defined (SEV1/2/3 with response times)' },
+			{ text: 'On-call rotation with fair schedule, escalation path, and handoff procedures' },
+			{ text: 'Runbooks for common incidents — actionable, tested, versioned' },
+			{ text: 'Post-incident reviews blameless — focus on systems, not individuals' },
+			{ text: 'Post-incident action items tracked with owners and deadlines' },
+			// Resilience testing
+			{ text: 'Chaos engineering practiced — fault injection, failure scenarios tested regularly' },
+			{ text: 'Game days conducted — simulate outages, verify runbooks work' },
+			// Capacity & cost
+			{ text: 'Capacity planning with headroom — plan 3-6 months ahead, 20-30% buffer' },
 			{ text: 'Load testing performed regularly, not just pre-launch' },
-			{ text: 'Backup/restore tested quarterly; RPO/RTO verified' },
+			{
+				text: 'Backup/restore tested quarterly — RPO (Recovery Point) and RTO (Recovery Time) verified',
+			},
 			{ text: 'Disaster recovery plan tested (failover, data recovery)' },
-			{ text: 'Post-incident reviews conducted within 48 hours' },
-			{ text: 'Cost monitoring with budgets and alerts' },
-			{ text: 'Resource right-sizing reviewed regularly' },
+			{ text: 'Cost monitoring with budgets and alerts — cost per request/user visible' },
 		],
 	},
 
@@ -440,7 +479,6 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Dependencies reviewed: security updates, remove bloat' },
 			{ text: 'API/schema changes have migration scripts' },
 			{ text: 'Semantic versioning + changelog maintained' },
-			{ text: 'Architecture decisions recorded (ADR)' },
 			{ text: 'Code style enforced by automated tools' },
 			// Refactor culture
 			{ text: 'Refactoring is routine — not a "special event"' },
@@ -464,29 +502,43 @@ const checklist: ChecklistSection[] = [
 	{
 		id: 'docs',
 		title: '17. Documentation',
-		description: 'Architecture, API docs, onboarding',
+		description: 'Architecture, API docs, onboarding, collaboration',
 		items: [
 			{ text: 'Architecture diagram — boundaries, flows, core modules visible' },
-			{ text: 'Public APIs have auto-generated docs' },
+			{ text: 'Public APIs have auto-generated docs with examples' },
 			{ text: 'README: how to dev / test / build / deploy' },
 			{ text: 'Critical business flows have dedicated docs' },
-			{ text: 'Runbooks for operational procedures' },
+			{ text: 'Troubleshooting guide for common errors with solutions' },
 			{ text: 'New hire onboarding < 1 day to run local dev' },
+			// Collaboration
+			{ text: 'CONTRIBUTING.md explains contribution workflow (setup, style, process)' },
+			{ text: 'PR template guides description, testing, and checklist' },
+			{ text: 'Code review guidelines documented (what to review, response time SLA)' },
+			{ text: 'Architecture Decision Records (ADRs) capture context, options, consequences' },
 		],
 	},
 	{
 		id: 'config',
 		title: '18. Configuration & DX',
-		description: 'Zero-config, developer experience, local dev',
+		description: 'Zero-config, developer experience, local dev, tooling',
 		items: [
+			// Configuration
 			{ text: 'Common scenarios have sensible defaults' },
 			{ text: 'Config validated at startup — fail-fast on invalid config' },
 			{ text: 'Convention-over-configuration for routes/handlers/jobs' },
 			{ text: 'Environment differences via config/adapters, not scattered conditionals' },
+			// Local development
+			{ text: 'First commit possible within 10 minutes of clone' },
 			{ text: 'CLI provides one-command operations (dev/test/build/deploy)' },
-			{ text: 'Local dev environment setup documented and scripted' },
 			{ text: 'Dev environment reproducible (Dev Containers, Docker Compose, Nix)' },
-			{ text: 'Fast feedback loop (test < 1s, lint < 2s, build < 10s)' },
+			{ text: 'External services have local mocks/stubs — no cloud dependencies for dev' },
+			{ text: 'Seed data available via single command for realistic local testing' },
+			{ text: 'Hot reload/HMR for instant feedback on code changes' },
+			// Tooling & feedback
+			{ text: 'IDE language server configured (autocomplete, go-to-definition, refactor)' },
+			{ text: 'Debugger configuration provided (launch.json, etc.)' },
+			{ text: 'Fast feedback loop — test < 1s, lint < 2s, build < 10s' },
+			{ text: 'Test watch mode for instant feedback during development' },
 		],
 	},
 
@@ -626,9 +678,9 @@ const checklist: ChecklistSection[] = [
 			},
 			{ text: 'OAuth/OIDC for third-party auth — standard flows, state parameter for CSRF' },
 			// Session management
-			{ text: 'Session cookies: HttpOnly, Secure, SameSite=Strict/Lax' },
-			{ text: 'Session regenerated on privilege change (login, role change)' },
-			{ text: 'Session invalidation on logout, password change, suspicious activity' },
+			{
+				text: 'Session security: HttpOnly/Secure/SameSite cookies, regenerate on auth, invalidate on logout/security events',
+			},
 			{ text: 'Concurrent session limits if applicable' },
 			// JWT considerations
 			{ text: 'JWT: short expiry (15min), refresh tokens for long-lived sessions' },
@@ -638,9 +690,8 @@ const checklist: ChecklistSection[] = [
 			{ text: 'API keys: scoped permissions, rotatable, never in URLs' },
 			{ text: 'API key hashed in storage, not plaintext' },
 			// Authorization models
-			{ text: 'Authorization model evaluated: RBAC vs ABAC vs ReBAC' },
 			{
-				text: 'RBAC for simple role-based, ABAC for attribute-based, ReBAC for relationship-based',
+				text: 'Authorization model chosen: RBAC (role-based), ABAC (attribute-based), or ReBAC (relationship-based)',
 			},
 			{ text: 'Permission checks at request boundary, not scattered in business logic' },
 			{ text: 'Deny by default — explicit allowlist, not blocklist' },
