@@ -14,12 +14,33 @@ interface ChecklistSection {
 
 const checklist: ChecklistSection[] = [
 	// ============================================
-	// CORE ARCHITECTURE (1-10)
+	// PHILOSOPHY (0)
+	// ============================================
+	{
+		id: 'philosophy',
+		title: '0. Philosophy & Trade-offs',
+		description: 'Guiding principles, context awareness, decision framework',
+		items: [
+			{ text: 'Core values explicit: correctness > performance > convenience' },
+			{ text: 'Trade-offs documented — every decision has costs, make them visible' },
+			{ text: 'Context drives decisions — startup vs enterprise, library vs service, team size' },
+			{ text: 'Simplicity preferred — complexity must justify itself' },
+			{ text: 'Boring technology by default — proven > novel unless novel solves real problem' },
+			{ text: 'Optimize for change — code will be modified more than written' },
+			{ text: 'Fail fast, recover gracefully — detect errors early, handle them well' },
+			{ text: 'Automation over documentation — if it can be automated, automate it' },
+			{ text: 'Observability is not optional — if you cannot see it, you cannot fix it' },
+			{ text: "Security is foundational — not a feature, it's a constraint" },
+		],
+	},
+
+	// ============================================
+	// ARCHITECTURE (1-4)
 	// ============================================
 	{
 		id: 'architecture',
-		title: '1. Architecture & Design',
-		description: 'System boundaries, layering, dependency direction',
+		title: '1. Architecture & Modularity',
+		description: 'System boundaries, layering, dependency direction, module design',
 		items: [
 			{ text: 'Clear system boundaries — infra/framework stays at the edge' },
 			{ text: 'Unidirectional dependencies: core → feature → app' },
@@ -29,12 +50,19 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Separate read/write paths when needed (CQRS)' },
 			{ text: 'Public API surface is small and stable' },
 			{ text: 'Service boundaries align with team ownership' },
+			{ text: 'Each module has single responsibility — describable in one sentence' },
+			{ text: 'Modules communicate via interfaces/ports, not concrete implementations' },
+			{ text: 'External services behind Ports & Adapters' },
+			{ text: 'Respect dependency direction — no reverse imports' },
+			{ text: 'Any feature can be safely removed without hidden coupling' },
+			{ text: 'Features grouped by business capability, not technical layer' },
+			{ text: 'Dependency versions locked and reproducible' },
 		],
 	},
 	{
 		id: 'contracts',
-		title: '2. Contracts & Validation',
-		description: 'Type safety, schemas, interface contracts',
+		title: '2. Contracts & Boundaries',
+		description: 'Type safety, schemas, interface contracts, validation',
 		items: [
 			{
 				text: 'Strictest available type checking enabled (strict mode, mypy, compiler warnings as errors)',
@@ -50,6 +78,7 @@ const checklist: ChecklistSection[] = [
 				text: 'Null/None/nil handling is explicit (Options, nullability annotations, or explicit checks)',
 			},
 			{ text: 'Validation at boundaries — parse and validate, then trust internal types' },
+			{ text: 'All input validated at boundaries — prevent injection' },
 		],
 	},
 	{
@@ -70,7 +99,7 @@ const checklist: ChecklistSection[] = [
 	},
 	{
 		id: 'state',
-		title: '4. State & Side Effects',
+		title: '4. State & Effects',
 		description: 'State machines, effect boundaries, predictability',
 		items: [
 			{ text: 'Complex state flows use explicit state machines or state transitions' },
@@ -80,10 +109,14 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Global mutable state minimized or eliminated' },
 		],
 	},
+
+	// ============================================
+	// RELIABILITY (5-8)
+	// ============================================
 	{
 		id: 'errors',
 		title: '5. Error Handling & Recovery',
-		description: 'Error strategy, boundaries, graceful degradation',
+		description: 'Error strategy, boundaries, graceful degradation, retry logic',
 		items: [
 			{ text: 'Error handling strategy is consistent and idiomatic for the language' },
 			{ text: 'Errors classified: transient vs permanent, business vs system vs external' },
@@ -103,13 +136,11 @@ const checklist: ChecklistSection[] = [
 	{
 		id: 'runtime',
 		title: '6. Runtime & Resilience',
-		description: 'Stateless, idempotent, fault-tolerant, serverless-ready',
+		description: 'Stateless, fault-tolerant, serverless-ready, service mesh',
 		items: [
 			{ text: 'Handlers/services stateless by default — no in-memory state across requests' },
 			{ text: 'Session/state externalized (Redis, DB, external store)' },
-			{ text: 'All operations idempotent — safe to retry' },
 			{ text: 'External calls have timeout + cancellation' },
-			{ text: 'External services have retry + exponential backoff' },
 			{ text: 'Critical paths have circuit breaker / fallback' },
 			{ text: 'Infra dependencies (filesystem, network) abstracted via adapters' },
 			{ text: 'Graceful shutdown — drain requests, close connections, release resources' },
@@ -119,7 +150,7 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Execution time aware — know function/request timeout limits' },
 			{ text: "Horizontal scaling ready — adding instances doesn't require code changes" },
 			{ text: 'Event-driven triggers clearly defined (HTTP, queue, schedule, event)' },
-			{ text: 'APIs have rate limits / payload size limits' },
+			{ text: 'Service mesh evaluated for polyglot architectures (mTLS, traffic management)' },
 		],
 	},
 	{
@@ -139,19 +170,27 @@ const checklist: ChecklistSection[] = [
 		],
 	},
 	{
-		id: 'config',
-		title: '8. Configuration & DX',
-		description: 'Zero-config, developer experience',
+		id: 'performance',
+		title: '8. Performance Engineering',
+		description: 'Profiling, optimization, benchmarks, resource efficiency',
 		items: [
-			{ text: 'Common scenarios have sensible defaults' },
-			{ text: 'Config validated at startup — fail-fast on invalid config' },
-			{ text: 'Convention-over-configuration for routes/handlers/jobs' },
-			{ text: 'Environment differences via config/adapters, not scattered conditionals' },
-			{ text: 'Secrets via secret manager / env — never hardcoded' },
-			{ text: 'CLI provides one-command operations (dev/test/build/deploy)' },
-			{ text: 'Local dev environment setup documented and scripted' },
+			{ text: 'Performance targets defined (p50, p95, p99 latency for critical paths)' },
+			{ text: 'Query performance profiled (explain plans, query optimization)' },
+			{ text: 'Hot paths identified via profiling, not guessing' },
+			{ text: 'Memory profiling performed — no leaks in long-running processes' },
+			{ text: 'CPU profiling for compute-heavy operations' },
+			{ text: 'Load testing results inform architecture decisions' },
+			{ text: 'Performance regression detected in CI (benchmark comparisons)' },
+			{ text: 'Resource efficiency measured (cost per request, memory per user)' },
+			{ text: 'Batching and request deduplication strategies applied' },
+			{ text: 'Connection pooling efficiency monitored' },
+			{ text: 'N+1 query problem prevented (eager loading, batching, DataLoader)' },
 		],
 	},
+
+	// ============================================
+	// DATA & INTEGRATION (9-10)
+	// ============================================
 	{
 		id: 'data',
 		title: '9. Data & Persistence',
@@ -165,7 +204,6 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Schema versioned — migrations exist, tested, and rollback-able' },
 			{ text: 'Indexes cover query patterns — no full scans in critical paths' },
 			{ text: 'Connection pooling configured with limits and timeouts' },
-			{ text: 'N+1 query problem prevented (eager loading, batching, DataLoader)' },
 			{ text: 'Multi-level caching strategy (memory → distributed → CDN)' },
 			{ text: 'Cache invalidation has clear rules; TTL defined' },
 			{ text: 'Cache keys consistent and predictable' },
@@ -173,30 +211,60 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Data retention policy enforced — archive/purge automated' },
 			{ text: 'Large datasets have pagination (offset or cursor-based)' },
 			{ text: 'PII/sensitive data encrypted at rest' },
+			{ text: 'Data lineage tracked for critical data flows' },
 		],
 	},
 	{
-		id: 'modularity',
-		title: '10. Modularity & Dependencies',
-		description: 'Module boundaries, dependency management',
+		id: 'api',
+		title: '10. API Design & Operations',
+		description: 'Style, versioning, pagination, errors, idempotency, webhooks',
 		items: [
-			{ text: 'Each module has single responsibility — describable in one sentence' },
-			{ text: 'Modules communicate via interfaces/ports, not concrete implementations' },
-			{ text: 'External services behind Ports & Adapters' },
-			{ text: 'Respect dependency direction — no reverse imports' },
-			{ text: 'Any feature can be safely removed without hidden coupling' },
-			{ text: 'Features grouped by business capability, not technical layer' },
-			{ text: 'Dependency versions locked and reproducible' },
+			// Design fundamentals
+			{ text: 'Clear API style choice (REST, GraphQL, gRPC, RPC) with rationale' },
+			{ text: 'Resource naming consistent (nouns, plural, kebab-case)' },
+			{ text: 'URL structure hierarchical and predictable' },
+			{ text: 'HTTP methods semantically correct (GET=read, POST=create, PUT/PATCH=update)' },
+			{ text: 'HTTP status codes accurate (2xx/4xx/5xx clearly distinguished)' },
+			{ text: 'Request/Response has consistent envelope (data, error, meta)' },
+			{ text: 'Field naming consistent (camelCase or snake_case — pick one)' },
+			{ text: 'Timestamps in ISO 8601 UTC format' },
+			// Pagination & filtering
+			{ text: 'Pagination for large datasets (offset vs cursor-based)' },
+			{ text: 'Cursor-based for real-time data / infinite scroll' },
+			{ text: 'Filtering has standard query syntax' },
+			{ text: 'Default and max limits defined' },
+			// Errors
+			{ text: 'Error response has consistent structure (code, message, details)' },
+			{ text: 'Error codes machine-readable, not just HTTP status' },
+			{ text: 'Validation errors have field-level detail' },
+			{ text: 'No internal errors/stack traces exposed in production' },
+			// Versioning & operations
+			{ text: 'Versioning strategy defined (URL, header, or query param)' },
+			{ text: 'Breaking changes defined; deprecation has notice period + sunset header' },
+			{ text: 'All mutating operations idempotent — safe to retry with idempotency key' },
+			{ text: 'GET/HEAD/OPTIONS are safe (no side effects)' },
+			{ text: 'PUT/DELETE are idempotent' },
+			{ text: 'Rate limiting with headers (limit, remaining, reset)' },
+			{ text: '429 returned with retry-after on rate limit' },
+			// Bulk & webhooks
+			{ text: 'Bulk operations supported (batch create/update/delete)' },
+			{ text: 'Bulk responses have partial success handling' },
+			{ text: 'Webhooks have consistent payload + signature verification (HMAC)' },
+			{ text: 'Webhook retry policy with exponential backoff' },
+			// SDK & docs
+			{ text: 'OpenAPI/GraphQL schema as source of truth' },
+			{ text: 'SDK auto-generated from schema with typed responses' },
+			{ text: 'API playground available (Swagger UI, GraphiQL)' },
 		],
 	},
 
 	// ============================================
-	// QUALITY & OPERATIONS (11-18)
+	// QUALITY (11-13)
 	// ============================================
 	{
 		id: 'testing',
-		title: '11. Testing & Quality',
-		description: 'Test pyramid, coverage, quality gates',
+		title: '11. Testing & Correctness',
+		description: 'Test pyramid, coverage, quality gates, invariants',
 		items: [
 			{ text: 'Clear Test Pyramid: unit → integration → e2e, unit tests dominate' },
 			{ text: 'Domain logic tested without infra/network/time dependencies' },
@@ -210,54 +278,82 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Performance benchmarks for critical paths' },
 			{ text: 'Security scenarios tested (auth, input validation)' },
 			{ text: 'CI enforces type-check + lint + tests' },
+			{ text: 'Property-based testing for complex logic with many edge cases' },
+			{ text: 'Invariants documented and tested — what must always be true' },
 		],
 	},
 	{
 		id: 'observability',
 		title: '12. Observability',
-		description: 'Logging, metrics, tracing, alerting',
+		description: 'Logging, metrics, tracing, alerting, OpenTelemetry',
 		items: [
 			{ text: 'Structured logs with correlation IDs' },
 			{ text: 'Core paths have metrics (throughput, latency p50/p99, error rate)' },
+			{ text: 'OpenTelemetry instrumentation (vendor-neutral traces/metrics/logs)' },
 			{ text: 'Trace ID propagated across all services' },
-			{ text: 'Every service has health / readiness endpoints' },
-			{ text: 'Clear error classification: business vs system vs external' },
-			{ text: 'Critical errors have alerts, not just logs' },
+			{ text: 'Context propagation standardized (W3C Trace Context)' },
 			{ text: 'SLIs/SLOs defined for critical user journeys' },
 			{ text: 'Dashboards per service — latency, errors, saturation at a glance' },
 			{ text: 'Deployment markers visible in metrics for correlation' },
 			{ text: 'Releases traceable to commits' },
+			{ text: 'Alerting rules codified — no manual alert configuration' },
+			{ text: 'Telemetry exportable to multiple backends (Jaeger, Prometheus, etc.)' },
 		],
 	},
 	{
 		id: 'security',
 		title: '13. Security & Compliance',
-		description: 'Auth, encryption, supply chain, incident response',
+		description: 'Auth, encryption, supply chain, Zero Trust, compliance',
 		items: [
-			{ text: 'All input validated at boundaries — prevent injection' },
+			// Authentication & authorization
 			{ text: 'Auth logic centralized; permissions clearly auditable' },
 			{ text: 'Least privilege + minimal exposed surface' },
+			{ text: 'Zero Trust principles: never trust, always verify' },
+			{ text: 'Identity-based access control (RBAC/ABAC), not network-based' },
+			{ text: 'Service-to-service authentication required (mTLS, JWT)' },
+			// Encryption & secrets
 			{ text: 'Encryption in transit (TLS 1.2+) and at rest for sensitive data' },
 			{ text: 'Secrets rotated regularly; emergency rotation runbook exists' },
+			{ text: 'Secrets in vault (not env vars for production)' },
+			// Supply chain & dependencies
 			{ text: 'Dependency vulnerabilities scanned in CI (fail on high/critical)' },
 			{ text: 'SBOM generated for releases; supply chain verified' },
+			{ text: 'Artifacts signed with cryptographic signatures (Sigstore/cosign)' },
+			{ text: 'SLSA Level 2+ build provenance for critical services' },
+			{ text: 'Base images minimal and regularly updated (distroless preferred)' },
+			// Security testing
 			{ text: 'Security headers configured (CSP, HSTS, X-Frame-Options)' },
 			{ text: 'SAST/DAST in CI pipeline for security regression' },
+			{ text: 'Policy as Code enforced (OPA, Kyverno) at deployment' },
+			// Incident response
 			{ text: 'Security incident response plan documented and tested' },
 			{ text: 'Logs exclude sensitive data (tokens, passwords, PII)' },
+			// Compliance
 			{ text: 'PII has audit logs + data retention policy' },
+			{ text: 'GDPR/CCPA compliance: right to erasure, data portability, consent' },
+			{ text: 'Data residency requirements enforced if applicable' },
+			{ text: 'License compliance checked (SPDX, license scanning)' },
 		],
 	},
+
+	// ============================================
+	// DELIVERY (14-15)
+	// ============================================
 	{
 		id: 'deployment',
-		title: '14. Build & Deployment',
-		description: 'CI/CD, release strategy, environments, infrastructure',
+		title: '14. Build, Deploy & Supply Chain',
+		description: 'CI/CD, GitOps, release strategy, artifact security',
 		items: [
+			// Build
 			{ text: 'Build is deterministic — same input = same output' },
 			{ text: 'Artifacts tagged with version and commit SHA' },
 			{ text: 'Container-ready — Dockerfile / OCI image if applicable' },
 			{ text: 'Follows 12-factor app principles' },
+			// Infrastructure
 			{ text: 'Infrastructure as Code (Terraform, Pulumi, CDK)' },
+			{ text: 'GitOps: Git as single source of truth for infrastructure/config' },
+			{ text: 'Config changes reviewed via Git PRs, not manual apply' },
+			// Deployment strategy
 			{ text: 'Zero-downtime deployments (rolling, blue-green, or canary)' },
 			{ text: 'Database migrations decoupled from code deploy when needed' },
 			{ text: 'Rollback procedure documented and tested (< 5 min)' },
@@ -266,12 +362,15 @@ const checklist: ChecklistSection[] = [
 			{ text: "Immutable deployments — replace, don't patch" },
 			{ text: 'Deployment smoke tests verify critical paths' },
 			{ text: 'Release notes auto-generated from commits/PRs' },
+			// Supply chain
+			{ text: 'Build process runs in isolated, ephemeral environments' },
+			{ text: 'Container images scanned for vulnerabilities before deployment' },
 		],
 	},
 	{
 		id: 'operations',
 		title: '15. Operational Readiness',
-		description: 'SLOs, runbooks, capacity, disaster recovery',
+		description: 'SLOs, runbooks, capacity, disaster recovery, cost',
 		items: [
 			{ text: 'SLOs defined for critical services (latency, availability, error rate)' },
 			{ text: 'Runbooks for common operational tasks and incidents' },
@@ -282,12 +381,17 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Disaster recovery plan tested (failover, data recovery)' },
 			{ text: 'Post-incident reviews conducted within 48 hours' },
 			{ text: 'Cost monitoring with budgets and alerts' },
+			{ text: 'Resource right-sizing reviewed regularly' },
 		],
 	},
+
+	// ============================================
+	// EVOLUTION (16-18)
+	// ============================================
 	{
 		id: 'evolution',
 		title: '16. Code Health & Evolution',
-		description: 'Dead code, dependencies, refactoring',
+		description: 'Dead code, dependencies, refactoring, technical debt',
 		items: [
 			{ text: 'Regular scans for dead code / unused dependencies' },
 			{ text: 'Dependencies reviewed: security updates, remove bloat' },
@@ -313,105 +417,30 @@ const checklist: ChecklistSection[] = [
 		],
 	},
 	{
-		id: 'extensibility',
-		title: '18. Extensibility & Plugins',
-		description: 'Hooks, extension points, feature flags',
+		id: 'config',
+		title: '18. Configuration & DX',
+		description: 'Zero-config, developer experience, local dev',
 		items: [
-			{ text: 'Clear extension points — where custom logic can plug in' },
-			{ text: 'Plugins/middleware have standardized interface' },
-			{ text: 'Hook system allows before/after/around extension' },
-			{ text: "Core and plugins loosely coupled — plugin failure doesn't crash core" },
-			{ text: 'Feature flags control functionality without redeploy' },
-			{ text: 'Dynamic loading supported if needed (runtime plugin loading)' },
-			{ text: 'Plugins have lifecycle (init/start/stop/destroy)' },
+			{ text: 'Common scenarios have sensible defaults' },
+			{ text: 'Config validated at startup — fail-fast on invalid config' },
+			{ text: 'Convention-over-configuration for routes/handlers/jobs' },
+			{ text: 'Environment differences via config/adapters, not scattered conditionals' },
+			{ text: 'CLI provides one-command operations (dev/test/build/deploy)' },
+			{ text: 'Local dev environment setup documented and scripted' },
+			{ text: 'Dev environment reproducible (Dev Containers, Docker Compose, Nix)' },
+			{ text: 'Fast feedback loop (test < 1s, lint < 2s, build < 10s)' },
 		],
 	},
 
 	// ============================================
-	// INTERNATIONALIZATION (19)
-	// ============================================
-	{
-		id: 'i18n',
-		title: '19. Internationalization & Localization',
-		description: 'i18n ready, timezone, formatting',
-		items: [
-			{ text: 'Text externalized via i18n framework, not hardcoded' },
-			{ text: 'Timezone aware — store UTC, display local' },
-			{ text: 'Date/number/currency formatting follows locale' },
-			{ text: 'RTL support if needed' },
-			{ text: 'Translation workflow defined (extract → translate → integrate)' },
-		],
-	},
-
-	// ============================================
-	// API DESIGN (20-22)
-	// ============================================
-	{
-		id: 'api-design',
-		title: '20. API Design Fundamentals',
-		description: 'Style, naming, consistency, discoverability',
-		items: [
-			{ text: 'Clear API style choice (REST, GraphQL, gRPC, RPC)' },
-			{ text: 'Resource naming consistent (nouns, plural, kebab-case)' },
-			{ text: 'URL structure hierarchical and predictable' },
-			{ text: 'HTTP methods semantically correct (GET=read, POST=create, PUT/PATCH=update)' },
-			{ text: 'HTTP status codes accurate (2xx/4xx/5xx clearly distinguished)' },
-			{ text: 'Request/Response has consistent envelope (data, error, meta)' },
-			{ text: 'Field naming consistent (camelCase or snake_case — pick one)' },
-			{ text: 'Timestamps in ISO 8601 UTC format' },
-			{ text: 'API design favors discoverability — IDE/autocomplete guides usage' },
-			{ text: 'API style guide documented; team follows it' },
-		],
-	},
-	{
-		id: 'api-querying',
-		title: '21. API Pagination, Filtering & Errors',
-		description: 'Large datasets, query patterns, error handling',
-		items: [
-			{ text: 'Pagination for large datasets (offset vs cursor-based)' },
-			{ text: 'Cursor-based for real-time data / infinite scroll' },
-			{ text: 'Consistent pagination response (total, next, prev)' },
-			{ text: 'Filtering has standard query syntax' },
-			{ text: 'Sorting has consistent parameter (sort=field:asc)' },
-			{ text: 'Default and max limits defined' },
-			{ text: 'Error response has consistent structure (code, message, details)' },
-			{ text: 'Error codes machine-readable, not just HTTP status' },
-			{ text: 'Validation errors have field-level detail' },
-			{ text: 'No internal errors/stack traces exposed in production' },
-		],
-	},
-	{
-		id: 'api-operations',
-		title: '22. API Versioning & Operations',
-		description: 'Versioning, idempotency, bulk, webhooks, SDK',
-		items: [
-			{ text: 'Versioning strategy defined (URL, header, or query param)' },
-			{ text: 'Breaking changes defined; deprecation has notice period + sunset header' },
-			{ text: "Changelog records each version's changes" },
-			{ text: 'Migration guide for clients on breaking changes' },
-			{ text: 'Mutating operations support idempotency key' },
-			{ text: 'GET/HEAD/OPTIONS are safe (no side effects)' },
-			{ text: 'PUT/DELETE are idempotent' },
-			{ text: 'Rate limiting with headers (limit, remaining, reset)' },
-			{ text: '429 returned with retry-after on rate limit' },
-			{ text: 'Bulk operations supported (batch create/update/delete)' },
-			{ text: 'Bulk responses have partial success handling' },
-			{ text: 'Webhooks have consistent payload + signature verification (HMAC)' },
-			{ text: 'Webhook retry policy with exponential backoff' },
-			{ text: 'OpenAPI/GraphQL schema as source of truth' },
-			{ text: 'SDK auto-generated from schema with typed responses' },
-			{ text: 'API playground available (Swagger UI, GraphiQL)' },
-		],
-	},
-
-	// ============================================
-	// FRONTEND / UI (23-30)
+	// FRONTEND (19-22)
 	// ============================================
 	{
 		id: 'ui-state',
-		title: '23. UI State & Reactivity',
-		description: 'Reactive data flow, state management, derived state',
+		title: '19. UI State & Data',
+		description: 'State management, data fetching, caching, sync',
 		items: [
+			// State management
 			{ text: 'Reactive data binding — state changes auto-update UI' },
 			{ text: 'State clearly classified: local / shared / server / URL' },
 			{ text: 'Single source of truth — avoid duplicated state' },
@@ -419,13 +448,7 @@ const checklist: ChecklistSection[] = [
 			{ text: 'State updates immutable — no direct mutation' },
 			{ text: 'Complex UI flows use state machines (modals, wizards, multi-step)' },
 			{ text: 'Unidirectional data flow — easy to trace and debug' },
-		],
-	},
-	{
-		id: 'ui-data',
-		title: '24. Data Fetching & Sync',
-		description: 'Optimistic updates, caching, background sync',
-		items: [
+			// Data fetching
 			{ text: 'Optimistic updates — instant UI feedback, rollback on failure' },
 			{ text: 'Server state has cache + revalidation strategy' },
 			{ text: 'Loading / error / empty / success states all handled' },
@@ -437,9 +460,10 @@ const checklist: ChecklistSection[] = [
 	},
 	{
 		id: 'ui-responsive',
-		title: '25. Responsive & Adaptive Design',
-		description: 'Screen sizes, input modes, progressive enhancement',
+		title: '20. Responsive & Accessible',
+		description: 'Screen sizes, input modes, a11y, inclusive design',
 		items: [
+			// Responsive
 			{ text: 'Mobile-first or responsive design approach' },
 			{ text: 'Breakpoints have consistent system' },
 			{ text: 'Touch / mouse / keyboard input modes all supported' },
@@ -447,13 +471,7 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Slow network / low-end device considered' },
 			{ text: 'Images/assets have responsive loading (srcset, lazy load)' },
 			{ text: 'Layout uses flexible units (rem, %, vh/vw), not hardcoded px' },
-		],
-	},
-	{
-		id: 'accessibility',
-		title: '26. Accessibility (a11y)',
-		description: 'Inclusive design, assistive technology',
-		items: [
+			// Accessibility
 			{ text: 'Semantic HTML — correct headings, landmarks, buttons' },
 			{ text: 'All interactive elements keyboard accessible' },
 			{ text: 'Sufficient color contrast (WCAG AA/AAA)' },
@@ -466,9 +484,10 @@ const checklist: ChecklistSection[] = [
 	},
 	{
 		id: 'ui-feedback',
-		title: '27. UI Feedback & Errors',
-		description: 'Error boundaries, user feedback, recovery',
+		title: '21. UI Feedback & Real-time',
+		description: 'Error boundaries, user feedback, live updates, collaboration',
 		items: [
+			// Feedback & errors
 			{ text: "Error boundaries — partial errors don't crash entire app" },
 			{ text: 'Errors have user-friendly messages, not raw errors' },
 			{ text: 'Retry mechanism available for users' },
@@ -476,13 +495,7 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Success operations have confirmation feedback (toast, animation)' },
 			{ text: 'Form validation has inline feedback, not just on submit' },
 			{ text: 'Empty states are designed, not blank' },
-		],
-	},
-	{
-		id: 'ui-realtime',
-		title: '28. Real-time & Live Updates',
-		description: 'WebSocket, SSE, polling, collaboration',
-		items: [
+			// Real-time
 			{ text: 'Real-time needs have appropriate solution (WebSocket, SSE, polling)' },
 			{ text: 'Connection has reconnection + backoff' },
 			{ text: 'Connection state indicator (online/offline/connecting)' },
@@ -493,9 +506,10 @@ const checklist: ChecklistSection[] = [
 	},
 	{
 		id: 'ui-performance',
-		title: '29. Frontend Performance',
-		description: 'Code splitting, lazy loading, perceived speed',
+		title: '22. Frontend Performance & Design System',
+		description: 'Code splitting, lazy loading, perceived speed, consistency',
 		items: [
+			// Performance
 			{ text: 'Code splitting — not loading entire app upfront' },
 			{ text: 'Route-based lazy loading' },
 			{ text: 'Critical rendering path optimized' },
@@ -504,20 +518,42 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Heavy computation off main thread (Web Workers)' },
 			{ text: 'Virtualization for long lists' },
 			{ text: 'Memoization for expensive pure computations' },
-			{ text: 'Hot paths profiled, not guessed' },
-		],
-	},
-	{
-		id: 'design-system',
-		title: '30. Design System & Consistency',
-		description: 'Component library, tokens, patterns',
-		items: [
+			// Design system
 			{ text: 'Design tokens defined (color, spacing, typography)' },
 			{ text: 'Component library has consistent API' },
 			{ text: 'Pattern documentation (how to use, when to use)' },
 			{ text: 'Themeable — dark mode, branding customization' },
 			{ text: 'Components composable, not monolithic' },
 			{ text: 'Visual regression testing prevents accidental UI changes' },
+		],
+	},
+
+	// ============================================
+	// CROSS-CUTTING (23-24)
+	// ============================================
+	{
+		id: 'i18n',
+		title: '23. i18n & Localization',
+		description: 'i18n ready, timezone, formatting',
+		items: [
+			{ text: 'Text externalized via i18n framework, not hardcoded' },
+			{ text: 'Timezone aware — store UTC, display local' },
+			{ text: 'Date/number/currency formatting follows locale' },
+			{ text: 'RTL support if needed' },
+			{ text: 'Translation workflow defined (extract → translate → integrate)' },
+		],
+	},
+	{
+		id: 'extensibility',
+		title: '24. Extensibility & Plugins',
+		description: 'Hooks, extension points, dynamic loading',
+		items: [
+			{ text: 'Clear extension points — where custom logic can plug in' },
+			{ text: 'Plugins/middleware have standardized interface' },
+			{ text: 'Hook system allows before/after/around extension' },
+			{ text: "Core and plugins loosely coupled — plugin failure doesn't crash core" },
+			{ text: 'Dynamic loading supported if needed (runtime plugin loading)' },
+			{ text: 'Plugins have lifecycle (init/start/stop/destroy)' },
 		],
 	},
 ]
@@ -536,19 +572,18 @@ export function formatReviewChecklist(): string {
 	// Core principles
 	lines.push(pc.bold('━'.repeat(60)))
 	lines.push('')
-	lines.push(pc.bold('Core Principle'))
-	lines.push(pc.cyan('Well-typed, Resilient, Decoupled, Testable, Evolvable'))
+	lines.push(pc.bold('Core Principles'))
+	lines.push(pc.cyan('Correct → Resilient → Simple → Observable → Evolvable'))
 	lines.push('')
 
 	lines.push(pc.bold('Pillars'))
 	const pillars = [
 		'Well-typed',
 		'Resilient',
-		'Pragmatic',
-		'Modular',
+		'Secure',
+		'Performant',
 		'Testable',
 		'Observable',
-		'Evolvable',
 		'Documented',
 	]
 	lines.push(pillars.map((p) => pc.green(p)).join(pc.dim(' · ')))
@@ -556,8 +591,11 @@ export function formatReviewChecklist(): string {
 
 	// Section overview
 	lines.push(
-		pc.dim('Sections: Core (1-10) · Quality (11-18) · i18n (19) · API (20-22) · Frontend (23-30)')
+		pc.dim(
+			'Sections: Philosophy (0) · Architecture (1-4) · Reliability (5-8) · Data (9-10) · Quality (11-13)'
+		)
 	)
+	lines.push(pc.dim('          Delivery (14-15) · Evolution (16-18) · Frontend (19-22) · Cross-cutting (23-24)'))
 	lines.push(pc.bold('━'.repeat(60)))
 	lines.push('')
 

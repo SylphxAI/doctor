@@ -96,47 +96,50 @@ doctor upgrade --target=stable
 
 ### Project review checklist
 
-High-level architectural review checklist (30 sections, 271 items) for manual verification. Unlike automated checks, this provides hints that cannot be automatically verified.
+High-level architectural review checklist (25 sections, 294 items) for manual verification. Unlike automated checks, this provides hints that cannot be automatically verified.
 
-**Core (1-10):**
-1. Architecture & Design
-2. Contracts & Validation
+**Philosophy (0):**
+0. Philosophy & Trade-offs
+
+**Architecture (1-4):**
+1. Architecture & Modularity
+2. Contracts & Boundaries
 3. Design Principles
-4. State & Side Effects
+4. State & Effects
+
+**Reliability (5-8):**
 5. Error Handling & Recovery
 6. Runtime & Resilience
 7. Concurrency & Async
-8. Configuration & DX
-9. Data & Persistence
-10. Modularity & Dependencies
+8. Performance Engineering
 
-**Quality & Operations (11-18):**
-11. Testing & Quality
+**Data & Integration (9-10):**
+9. Data & Persistence
+10. API Design & Operations
+
+**Quality (11-13):**
+11. Testing & Correctness
 12. Observability
 13. Security & Compliance
-14. Build & Deployment
+
+**Delivery (14-15):**
+14. Build, Deploy & Supply Chain
 15. Operational Readiness
+
+**Evolution (16-18):**
 16. Code Health & Evolution
 17. Documentation
-18. Extensibility
+18. Configuration & DX
 
-**i18n (19):**
-19. Internationalization
+**Frontend (19-22):**
+19. UI State & Data
+20. Responsive & Accessible
+21. UI Feedback & Real-time
+22. Frontend Performance & Design System
 
-**API (20-22):**
-20. API Design Fundamentals
-21. API Querying & Filtering
-22. API Operations
-
-**Frontend/UI (23-30):**
-23. UI State Management
-24. UI Data Fetching
-25. Responsive Design
-26. Accessibility
-27. UI Feedback & Errors
-28. Real-time & Collaboration
-29. Frontend Performance
-30. Design System
+**Cross-cutting (23-24):**
+23. i18n & Localization
+24. Extensibility & Plugins
 
 ```bash
 # Show full checklist
