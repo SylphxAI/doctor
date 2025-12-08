@@ -96,7 +96,27 @@ doctor upgrade --target=stable
 
 ### Project review checklist
 
-High-level architectural review checklist for manual verification. Unlike automated checks, this provides hints for architecture, types, resilience, security, observability, and more.
+High-level architectural review checklist (18 sections, 156 items) for manual verification. Unlike automated checks, this provides hints that cannot be automatically verified.
+
+**Sections:**
+1. Architecture & Design
+2. Contracts & Validation
+3. Design Principles
+4. State & Side Effects
+5. Error Handling & Recovery
+6. Runtime & Resilience
+7. Concurrency & Async
+8. Configuration & DX
+9. Data & Persistence
+10. Modularity & Dependencies
+11. Testing & Quality
+12. Observability
+13. Security & Compliance
+14. API & Interface Design
+15. Build & Deployment
+16. Operational Readiness
+17. Code Health & Evolution
+18. Documentation
 
 ```bash
 # Show full checklist
@@ -104,7 +124,8 @@ doctor review
 
 # Show specific section
 doctor review security
-doctor review architecture
+doctor review errors
+doctor review data
 
 # List available sections
 doctor review --list
