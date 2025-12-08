@@ -84,8 +84,9 @@ const checklist: ChecklistSection[] = [
 	{
 		id: 'design',
 		title: '3. Design Principles',
-		description: 'Composition, immutability, separation of concerns',
+		description: 'Composition, immutability, code hygiene, no workarounds',
 		items: [
+			// Core principles
 			{ text: 'Prefer immutable data by default' },
 			{ text: 'Business logic is deterministic — same input, same output, minimal hidden state' },
 			{
@@ -95,6 +96,18 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Data transformation via pipelines or clear steps, not deep nesting' },
 			{ text: 'Dependencies injected, not instantiated internally' },
 			{ text: 'Single Responsibility — each unit does one thing well' },
+			// Code hygiene
+			{ text: 'No commented-out code — delete it, git has history' },
+			{ text: 'No copy-paste — extract and reuse, DRY principle' },
+			{ text: 'No hardcoded values — extract to config / constants' },
+			{ text: 'No magic numbers/strings — named constants with meaning' },
+			{ text: 'No suppressed warnings — fix the warning, not the symptom' },
+			{ text: 'No catch-all exceptions — handle specific errors' },
+			// Architectural integrity
+			{ text: 'Workarounds are debt — proper fix or documented TODO with deadline + owner' },
+			{ text: 'Root cause fix, not symptom patch' },
+			{ text: 'YAGNI — You Ain\'t Gonna Need It, avoid over-engineering' },
+			{ text: 'KISS — Keep It Simple, Stupid' },
 		],
 	},
 	{
@@ -171,20 +184,31 @@ const checklist: ChecklistSection[] = [
 	},
 	{
 		id: 'performance',
-		title: '8. Performance Engineering',
-		description: 'Profiling, optimization, benchmarks, resource efficiency',
+		title: '8. Efficiency & Performance',
+		description: 'O(1) thinking, data structures, profiling, optimization',
 		items: [
-			{ text: 'Performance targets defined (p50, p95, p99 latency for critical paths)' },
-			{ text: 'Query performance profiled (explain plans, query optimization)' },
+			// Complexity-aware design (design time)
+			{ text: 'Default to O(1) — for every operation, ask "can this be O(1)?"' },
+			{ text: 'Avoid hidden O(n²) — no O(n) operation inside loops' },
+			{ text: 'Choose data structure by operation: HashMap for lookup, Heap for min/max, Set for membership' },
+			{ text: 'Lookup uses Map/Set O(1), not Array.find() O(n)' },
+			{ text: 'Pre-compute at build/startup, not per-request' },
+			{ text: 'Expensive computations memoized' },
+			{ text: 'Regex/templates compiled once, not per-call' },
+			{ text: 'Use generators/iterators for large data — lazy evaluation' },
+			{ text: 'Structural sharing for immutable updates, not deep clone' },
+			// Database efficiency
+			{ text: 'Every queried column has index — no full table scans' },
+			{ text: 'COUNT(*) on big tables → use pre-computed counter' },
+			{ text: 'N+1 query prevented (batch fetch, JOIN, DataLoader)' },
+			{ text: 'Denormalize for read-heavy paths — trade write for O(1) read' },
+			// Runtime measurement
+			{ text: 'Performance targets defined (p50, p95, p99 latency)' },
 			{ text: 'Hot paths identified via profiling, not guessing' },
 			{ text: 'Memory profiling performed — no leaks in long-running processes' },
-			{ text: 'CPU profiling for compute-heavy operations' },
 			{ text: 'Load testing results inform architecture decisions' },
 			{ text: 'Performance regression detected in CI (benchmark comparisons)' },
 			{ text: 'Resource efficiency measured (cost per request, memory per user)' },
-			{ text: 'Batching and request deduplication strategies applied' },
-			{ text: 'Connection pooling efficiency monitored' },
-			{ text: 'N+1 query problem prevented (eager loading, batching, DataLoader)' },
 		],
 	},
 
@@ -246,9 +270,10 @@ const checklist: ChecklistSection[] = [
 			{ text: 'PUT/DELETE are idempotent' },
 			{ text: 'Rate limiting with headers (limit, remaining, reset)' },
 			{ text: '429 returned with retry-after on rate limit' },
-			// Bulk & webhooks
-			{ text: 'Bulk operations supported (batch create/update/delete)' },
+			// Bulk & efficiency
+			{ text: 'Batch API — 1 request for n items, not n requests' },
 			{ text: 'Bulk responses have partial success handling' },
+			{ text: 'Push over poll — webhooks/SSE for events, not repeated GET' },
 			{ text: 'Webhooks have consistent payload + signature verification (HMAC)' },
 			{ text: 'Webhook retry policy with exponential backoff' },
 			// SDK & docs
@@ -391,16 +416,32 @@ const checklist: ChecklistSection[] = [
 	{
 		id: 'evolution',
 		title: '16. Code Health & Evolution',
-		description: 'Dead code, dependencies, refactoring, technical debt',
+		description: 'Dead code, refactoring, tech debt, red flags',
 		items: [
+			// Maintenance
 			{ text: 'Regular scans for dead code / unused dependencies' },
 			{ text: 'Dependencies reviewed: security updates, remove bloat' },
 			{ text: 'API/schema changes have migration scripts' },
 			{ text: 'Semantic versioning + changelog maintained' },
 			{ text: 'Architecture decisions recorded (ADR)' },
-			{ text: 'Refactoring is routine — always ask "can this be simpler?"' },
 			{ text: 'Code style enforced by automated tools' },
-			{ text: 'Technical debt tracked and addressed regularly' },
+			// Refactor culture
+			{ text: 'Refactoring is routine — not a "special event"' },
+			{ text: 'PR reviews ask: "can this be simpler?"' },
+			{ text: 'Delete code encouraged — less code = less bugs = less maintenance' },
+			{ text: 'Boy Scout Rule — leave code better than you found it' },
+			// Tech debt management
+			{ text: 'Technical debt tracked in backlog with visibility' },
+			{ text: 'Regular debt review (per sprint or monthly)' },
+			{ text: 'Debt prioritized: blocking > high-impact > nice-to-have' },
+			{ text: 'New features budget time to pay down debt' },
+			// Red flags to watch
+			{ text: 'Red flag: "temporary" fix without follow-up plan' },
+			{ text: 'Red flag: same bug fixed twice' },
+			{ text: 'Red flag: HACK/FIXME/XXX comments ignored' },
+			{ text: 'Red flag: function > 100 lines, file > 500 lines' },
+			{ text: 'Red flag: cyclomatic complexity too high' },
+			{ text: 'Red flag: copy-paste more than 3 times' },
 		],
 	},
 	{
@@ -595,7 +636,11 @@ export function formatReviewChecklist(): string {
 			'Sections: Philosophy (0) · Architecture (1-4) · Reliability (5-8) · Data (9-10) · Quality (11-13)'
 		)
 	)
-	lines.push(pc.dim('          Delivery (14-15) · Evolution (16-18) · Frontend (19-22) · Cross-cutting (23-24)'))
+	lines.push(
+		pc.dim(
+			'          Delivery (14-15) · Evolution (16-18) · Frontend (19-22) · Cross-cutting (23-24)'
+		)
+	)
 	lines.push(pc.bold('━'.repeat(60)))
 	lines.push('')
 
