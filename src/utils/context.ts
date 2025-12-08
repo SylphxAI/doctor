@@ -68,7 +68,7 @@ export function isFrameworkBinding(pkg: WorkspacePackage): boolean {
 
 	// Check against framework binding patterns
 	// Strip scope if present (e.g., @scope/pkg-react -> pkg-react)
-	const baseName = name.startsWith('@') ? name.split('/')[1] ?? name : name
+	const baseName = name.startsWith('@') ? (name.split('/')[1] ?? name) : name
 
 	return FRAMEWORK_BINDING_PATTERNS.some((pattern) => pattern.test(baseName ?? ''))
 }
@@ -90,12 +90,12 @@ export function isReExportPackage(pkg: WorkspacePackage): boolean {
 	if (!name) return false
 
 	// Strip scope for checking
-	const baseName = name.startsWith('@') ? name.split('/')[1] ?? '' : name
+	const baseName = name.startsWith('@') ? (name.split('/')[1] ?? '') : name
 
 	// Check if this package has a -core sibling as a dependency
-	const deps = {
-		...pkg.packageJson?.dependencies,
-		...pkg.packageJson?.peerDependencies,
+	const deps: Record<string, string> = {
+		...(pkg.packageJson?.dependencies ?? {}),
+		...(pkg.packageJson?.peerDependencies ?? {}),
 	}
 
 	// Look for core package dependency

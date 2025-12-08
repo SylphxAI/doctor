@@ -9,6 +9,7 @@ import { guards } from './guards'
 import { getGuardsForHook, printGuardFailure, runHook } from './hooks'
 import { infoMessages } from './info'
 import { formatReport } from './reporter'
+import { formatReviewChecklist, formatReviewSection, getAvailableSections } from './review'
 import { checkUpgradeReadiness, runChecks } from './runner'
 import type { PresetName } from './types'
 
@@ -378,6 +379,54 @@ const prepublishCommand = defineCommand({
 	},
 })
 
+const reviewCommand = defineCommand({
+	meta: {
+		name: 'review',
+		description: 'High-level project review checklist (manual verification)',
+	},
+	args: {
+		section: {
+			type: 'positional',
+			description: `Section to show (${getAvailableSections().join(', ')})`,
+			required: false,
+		},
+		list: {
+			type: 'boolean',
+			description: 'List available sections',
+			default: false,
+		},
+	},
+	async run({ args }) {
+		if (args.list) {
+			console.log()
+			console.log(pc.bold('Available sections:'))
+			console.log()
+			for (const section of getAvailableSections()) {
+				console.log(`  ${pc.cyan(section)}`)
+			}
+			console.log()
+			console.log(pc.dim('Usage: doctor review <section>'))
+			console.log()
+			process.exit(0)
+		}
+
+		if (args.section) {
+			const output = formatReviewSection(args.section as string)
+			if (output) {
+				console.log(output)
+				process.exit(0)
+			} else {
+				consola.error(`Unknown section: ${args.section}`)
+				console.log(pc.dim(`Available: ${getAvailableSections().join(', ')}`))
+				process.exit(1)
+			}
+		}
+
+		console.log(formatReviewChecklist())
+		process.exit(0)
+	},
+})
+
 const main = defineCommand({
 	meta: {
 		name: 'sylphx-doctor',
@@ -393,6 +442,7 @@ const main = defineCommand({
 		init: initCommand,
 		upgrade: upgradeCommand,
 		prepublish: prepublishCommand,
+		review: reviewCommand,
 	},
 })
 
