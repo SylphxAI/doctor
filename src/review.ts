@@ -612,6 +612,7 @@ const checklist: ChecklistSection[] = [
 			// Real-time
 			{ text: 'Real-time needs have appropriate solution (WebSocket, SSE, polling)' },
 			{ text: 'Connection has reconnection + backoff' },
+			{ text: 'Restorable streaming — resume from last position (checkpoint, sequence ID, Last-Event-ID)' },
 			{ text: 'Connection state indicator (online/offline/connecting)' },
 			{ text: 'Live data has throttle/debounce to avoid UI thrashing' },
 			{ text: 'Collaborative editing has conflict handling (CRDT, OT)' },
