@@ -96,9 +96,9 @@ doctor upgrade --target=stable
 
 ### Project review checklist
 
-High-level architectural review checklist (18 sections, 156 items) for manual verification. Unlike automated checks, this provides hints that cannot be automatically verified.
+High-level architectural review checklist (30 sections, 271 items) for manual verification. Unlike automated checks, this provides hints that cannot be automatically verified.
 
-**Sections:**
+**Core (1-10):**
 1. Architecture & Design
 2. Contracts & Validation
 3. Design Principles
@@ -109,14 +109,34 @@ High-level architectural review checklist (18 sections, 156 items) for manual ve
 8. Configuration & DX
 9. Data & Persistence
 10. Modularity & Dependencies
+
+**Quality & Operations (11-18):**
 11. Testing & Quality
 12. Observability
 13. Security & Compliance
-14. API & Interface Design
-15. Build & Deployment
-16. Operational Readiness
-17. Code Health & Evolution
-18. Documentation
+14. Build & Deployment
+15. Operational Readiness
+16. Code Health & Evolution
+17. Documentation
+18. Extensibility
+
+**i18n (19):**
+19. Internationalization
+
+**API (20-22):**
+20. API Design Fundamentals
+21. API Querying & Filtering
+22. API Operations
+
+**Frontend/UI (23-30):**
+23. UI State Management
+24. UI Data Fetching
+25. Responsive Design
+26. Accessibility
+27. UI Feedback & Errors
+28. Real-time & Collaboration
+29. Frontend Performance
+30. Design System
 
 ```bash
 # Show full checklist
