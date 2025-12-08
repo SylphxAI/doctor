@@ -94,6 +94,22 @@ doctor upgrade
 doctor upgrade --target=stable
 ```
 
+### Project review checklist
+
+High-level architectural review checklist for manual verification. Unlike automated checks, this provides hints for architecture, types, resilience, security, observability, and more.
+
+```bash
+# Show full checklist
+doctor review
+
+# Show specific section
+doctor review security
+doctor review architecture
+
+# List available sections
+doctor review --list
+```
+
 ## Presets
 
 | Preset | Description | Use when |
