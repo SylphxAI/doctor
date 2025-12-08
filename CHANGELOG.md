@@ -1,5 +1,30 @@
 # sylphx-doctor
 
+## 1.33.0 (2025-12-08)
+
+### ✨ Features
+
+- **review:** add event-driven architecture patterns ([06c3e0d](https://github.com/SylphxAI/doctor/commit/06c3e0d55c6a89c6c91e0072437f7e32d16c3171))
+- **review:** add restorable streaming pattern ([abec316](https://github.com/SylphxAI/doctor/commit/abec31617b1a169ee434a1152fa27c37597d1eb8))
+- **review:** add X-First design strategies ([a63669b](https://github.com/SylphxAI/doctor/commit/a63669b24162ab491aa52428ed16a26254642746))
+- **review:** add identity/auth section and X-First strategies ([94d9667](https://github.com/SylphxAI/doctor/commit/94d9667f527c8588785f5b96f364c62dc4ca0310))
+- **review:** add architectural integrity and O(1) thinking ([39b4e2c](https://github.com/SylphxAI/doctor/commit/39b4e2c92aa7222f8820789f260a7f081862e9d9))
+- **review:** expand to 30 sections with comprehensive hints ([b75b75e](https://github.com/SylphxAI/doctor/commit/b75b75e834ab27cf51de141e618840cf457b6e78))
+- **review:** expand checklist to 18 sections based on multi-agent analysis ([da11e53](https://github.com/SylphxAI/doctor/commit/da11e53c8e287ba77f3268014c7c847baee3b1b4))
+- **cli:** add review command for high-level project checklist ([79ba1c7](https://github.com/SylphxAI/doctor/commit/79ba1c76050a890283b193a3458ce5ea00a6fad9))
+
+### ♻️ Refactoring
+
+- **review:** LLM-era reframe - outcome over process ([92674e9](https://github.com/SylphxAI/doctor/commit/92674e999769be1818f7fc58b02eabe1fe968e0a))
+- **review:** multi-agent analysis - merge redundancy, add SRE/Security/DX ([0210e5f](https://github.com/SylphxAI/doctor/commit/0210e5f9a00488dfa457686dc82922f53811f02e))
+- **review:** restructure checklist based on multi-agent analysis ([d471f04](https://github.com/SylphxAI/doctor/commit/d471f04ce7d780b59fd2d8ed1db6f35d5df4f4f3))
+- **review:** update to Universal Edition checklist ([e6add01](https://github.com/SylphxAI/doctor/commit/e6add019944784042c135601c5cbdf939e4547f4))
+
+### 📚 Documentation
+
+- update README with expanded review checklist sections ([bd07471](https://github.com/SylphxAI/doctor/commit/bd074712e002a306d9143000a77b83744f3c6562))
+- add review command usage to README ([884deab](https://github.com/SylphxAI/doctor/commit/884deabb7f9c4cae5b5b52ae4095f7da18d0c3ee))
+
 ## 1.32.1 (2025-12-03)
 
 ### 🐛 Bug Fixes
