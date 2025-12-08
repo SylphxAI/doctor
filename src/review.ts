@@ -134,6 +134,12 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Complex state flows use explicit state machines or state transitions' },
 			{ text: 'Side effects have clear boundaries — know where IO happens' },
 			{ text: 'Event-driven logic has clear event → handler mapping' },
+			{ text: 'Message broker for async decoupling (Kafka, RabbitMQ, SQS, NATS)' },
+			{ text: 'Pub/Sub for fan-out — producers and consumers decoupled' },
+			{
+				text: 'Event delivery semantics explicit: at-least-once (with idempotency), exactly-once, ordering guarantees',
+			},
+			{ text: 'CDC (Change Data Capture) for database → event stream if needed' },
 			{ text: 'Avoid hidden state — make state explicit and inspectable' },
 			{ text: 'Global mutable state minimized or eliminated' },
 		],
@@ -612,7 +618,9 @@ const checklist: ChecklistSection[] = [
 			// Real-time
 			{ text: 'Real-time needs have appropriate solution (WebSocket, SSE, polling)' },
 			{ text: 'Connection has reconnection + backoff' },
-			{ text: 'Restorable streaming — resume from last position (checkpoint, sequence ID, Last-Event-ID)' },
+			{
+				text: 'Restorable streaming — resume from last position (checkpoint, sequence ID, Last-Event-ID)',
+			},
 			{ text: 'Connection state indicator (online/offline/connecting)' },
 			{ text: 'Live data has throttle/debounce to avoid UI thrashing' },
 			{ text: 'Collaborative editing has conflict handling (CRDT, OT)' },
