@@ -38,6 +38,10 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Test-First — write tests before implementation (TDD mindset)' },
 			{ text: 'Server-First — server-rendered by default, client hydration for interactivity' },
 			{ text: 'Mobile-First — design for smallest screen first, scale up' },
+			{ text: 'Offline-First — design for offline, sync when online (CRDT, local-first)' },
+			{ text: 'Privacy-First — minimize data collection, privacy by default, not opt-in' },
+			{ text: 'Accessibility-First — a11y considered in design phase, not retrofitted' },
+			{ text: 'API-First — API is the product, designed before implementation' },
 		],
 	},
 
