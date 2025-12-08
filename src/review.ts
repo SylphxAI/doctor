@@ -32,10 +32,10 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Automation over documentation — if it can be automated, automate it' },
 			{ text: 'Observability is not optional — if you cannot see it, you cannot fix it' },
 			{ text: "Security is foundational — not a feature, it's a constraint" },
-			// X-First strategies
-			{ text: 'Type-First — define types/schemas before implementation' },
-			{ text: 'Schema-First — design API contract before code (OpenAPI, GraphQL SDL)' },
-			{ text: 'Test-First — write tests before implementation (TDD mindset)' },
+			// X-First strategies (guide generation, not sequence)
+			{ text: 'Type-First — types define the contract, implementation follows' },
+			{ text: 'Schema-First — API schema is source of truth (OpenAPI, GraphQL SDL)' },
+			{ text: 'Test-First — tests define expected behavior, verify correctness' },
 			{ text: 'Server-First — server-rendered by default, client hydration for interactivity' },
 			{ text: 'Mobile-First — design for smallest screen first, scale up' },
 			{ text: 'Offline-First — design for offline, sync when online (CRDT, local-first)' },
@@ -114,7 +114,7 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Single Responsibility — each unit does one thing well' },
 			// Code hygiene
 			{ text: 'No commented-out code — delete it, git has history' },
-			{ text: 'No copy-paste — extract and reuse, DRY principle' },
+			{ text: 'No duplicate patterns — extract and reuse, DRY principle' },
 			{ text: 'No hardcoded values — extract to config / constants' },
 			{ text: 'No magic numbers/strings — named constants with meaning' },
 			{ text: 'No suppressed warnings — fix the warning, not the symptom' },
@@ -491,10 +491,10 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Semantic versioning + changelog maintained' },
 			{ text: 'Code style enforced by automated tools' },
 			// Refactor culture
-			{ text: 'Refactoring is routine — not a "special event"' },
+			{ text: 'Regeneration over patching — rewrite if cleaner than fixing' },
 			{ text: 'PR reviews ask: "can this be simpler?"' },
 			{ text: 'Delete code encouraged — less code = less bugs = less maintenance' },
-			{ text: 'Boy Scout Rule — leave code better than you found it' },
+			{ text: 'Disposable code mindset — regenerate > preserve, attachment is debt' },
 			// Tech debt management
 			{ text: 'Technical debt tracked in backlog with visibility' },
 			{ text: 'Regular debt review (per sprint or monthly)' },
@@ -506,7 +506,7 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Red flag: HACK/FIXME/XXX comments ignored' },
 			{ text: 'Red flag: function > 100 lines, file > 500 lines' },
 			{ text: 'Red flag: cyclomatic complexity too high' },
-			{ text: 'Red flag: copy-paste more than 3 times' },
+			{ text: 'Red flag: duplicate pattern more than 3 times' },
 		],
 	},
 	{
