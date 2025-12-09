@@ -378,7 +378,8 @@ const checklist: ChecklistSection[] = [
 	{
 		id: 'security',
 		title: '13. Security, Auth & Compliance',
-		description: 'Authentication, authorization, encryption, attack prevention, supply chain, compliance',
+		description:
+			'Authentication, authorization, encryption, attack prevention, supply chain, compliance',
 		items: [
 			// Auth strategy
 			{ text: 'Auth strategy chosen with rationale — session vs token vs API key for use case' },
@@ -727,9 +728,22 @@ export function formatReviewChecklist(): string {
 	lines.push(pc.dim('Comprehensive hints for project health — select what applies to your project'))
 	lines.push('')
 
-	// Core principles
+	// Header: How to use this checklist
 	lines.push(pc.bold('━'.repeat(60)))
 	lines.push('')
+	lines.push(pc.bold('How to Use This Checklist'))
+	lines.push('')
+	lines.push(pc.cyan('This is guidance, not exhaustive. Go deeper on each topic.'))
+	lines.push('')
+	lines.push('  1. These items are hints — think beyond what is listed')
+	lines.push('  2. Each section deserves deep analysis, not just checkbox scanning')
+	lines.push('  3. Context matters — apply judgment for your specific project')
+	lines.push('  4. LLM knowledge may exceed this list — use it')
+	lines.push('')
+	lines.push(pc.bold('━'.repeat(60)))
+	lines.push('')
+
+	// Core principles
 	lines.push(pc.bold('Core Principles'))
 	lines.push(pc.cyan('Correct → Resilient → Simple → Observable → Evolvable'))
 	lines.push('')
@@ -774,13 +788,23 @@ export function formatReviewChecklist(): string {
 		lines.push('')
 	}
 
-	// Footer
+	// Footer: Workflow
 	lines.push(pc.bold('━'.repeat(60)))
 	lines.push('')
-	lines.push(pc.bold('Scoring Guide'))
-	lines.push(`  ${pc.green('✓ 80%+')}  Production-ready`)
-	lines.push(`  ${pc.yellow('⚠ 60-80%')} Acceptable with known gaps`)
-	lines.push(`  ${pc.red('✗ <60%')}  Significant gaps — prioritize improvements`)
+	lines.push(pc.bold('Recommended Workflow'))
+	lines.push('')
+	lines.push(pc.cyan('Parallel Deep Review → Final Gate → Implement → Iterate'))
+	lines.push('')
+	lines.push('  1. ' + pc.bold('Delegate to workers') + ' — each section reviewed in parallel, deep analysis')
+	lines.push('  2. ' + pc.bold('Final gate') + ' — synthesize findings, prioritize by impact')
+	lines.push('  3. ' + pc.bold('Decide actions') + ' — what needs fixing, what is acceptable')
+	lines.push('  4. ' + pc.bold('Delegate implementation') + ' — workers fix issues in parallel')
+	lines.push('  5. ' + pc.bold('Iterate') + ' — re-review until satisfied')
+	lines.push('')
+	lines.push(pc.dim('Each worker should think deeply, not just check boxes.'))
+	lines.push(pc.dim('Go beyond the list — your knowledge may find issues not listed here.'))
+	lines.push('')
+	lines.push(pc.bold('━'.repeat(60)))
 	lines.push('')
 	lines.push(pc.dim("Not all sections apply to every project. Skip sections that don't apply."))
 	lines.push(pc.dim("Use this as hints — each project decides what's relevant."))
