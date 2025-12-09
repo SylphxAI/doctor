@@ -253,11 +253,17 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Data access isolated — persistence logic separated from business logic' },
 			{ text: 'Data model matches domain — clear aggregates, no god tables/documents' },
 			// Schema design
-			{ text: 'Normalization level intentional — 3NF default, denormalize for read performance with rationale' },
+			{
+				text: 'Normalization level intentional — 3NF default, denormalize for read performance with rationale',
+			},
 			{ text: 'Primary keys meaningful — UUID/ULID for distributed, auto-increment for single DB' },
 			{ text: 'Foreign keys + constraints enforce integrity at DB level, not just app level' },
-			{ text: 'Column types optimized — right size (int vs bigint), appropriate precision (decimal vs float)' },
-			{ text: 'Storage efficiency — compression, partitioning for large tables, archival strategy' },
+			{
+				text: 'Column types optimized — right size (int vs bigint), appropriate precision (decimal vs float)',
+			},
+			{
+				text: 'Storage efficiency — compression, partitioning for large tables, archival strategy',
+			},
 			{ text: 'Consistency model explicit — strong vs eventual, documented per use case' },
 			{
 				text: 'Distributed transactions use Saga (compensating actions) or Outbox (reliable event publishing) patterns',
@@ -338,7 +344,7 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Tests are deterministic — no real time, randomness, or network' },
 			{ text: 'Happy AND unhappy paths tested — error scenarios not ignored' },
 			{ text: 'Critical features require tests before merge' },
-			{ text: 'Tests are fast — unit < 100ms, full suite < 5 min' },
+			{ text: 'Tests fast — quick feedback, not minutes of waiting' },
 			{ text: 'No flaky tests — fix or remove' },
 			{ text: 'Performance benchmarks for critical paths' },
 			{ text: 'Security scenarios tested (auth, input validation)' },
@@ -371,15 +377,38 @@ const checklist: ChecklistSection[] = [
 	},
 	{
 		id: 'security',
-		title: '13. Security & Compliance',
-		description: 'Auth, encryption, supply chain, Zero Trust, attack prevention, compliance',
+		title: '13. Security, Auth & Compliance',
+		description: 'Authentication, authorization, encryption, attack prevention, supply chain, compliance',
 		items: [
-			// Authentication & authorization
+			// Auth strategy
+			{ text: 'Auth strategy chosen with rationale — session vs token vs API key for use case' },
 			{ text: 'Auth logic centralized; permissions clearly auditable' },
+			{ text: 'OAuth/OIDC for third-party auth — standard flows, state parameter for CSRF' },
+			// Session & token management
+			{
+				text: 'Session security: HttpOnly/Secure/SameSite cookies, regenerate on auth, invalidate on logout',
+			},
+			{ text: 'Token expiry appropriate — short-lived access tokens, refresh for longevity' },
+			{ text: 'Token revocation strategy if needed (blacklist, version claim, short expiry)' },
+			{ text: 'Token storage secure — consider XSS exposure (httpOnly cookie vs localStorage)' },
+			// Authorization
+			{
+				text: 'Authorization model chosen: RBAC (role-based), ABAC (attribute-based), or ReBAC (relationship-based)',
+			},
 			{ text: 'Least privilege + minimal exposed surface' },
+			{ text: 'Permission checks at request boundary, not scattered in business logic' },
+			{ text: 'Deny by default — explicit allowlist, not blocklist' },
 			{ text: 'Zero Trust principles: never trust, always verify' },
-			{ text: 'Identity-based access control (RBAC/ABAC), not network-based' },
 			{ text: 'Service-to-service authentication required (mTLS, JWT)' },
+			// Credential security
+			{ text: 'Passwords hashed with modern algorithm (Argon2, bcrypt, scrypt)' },
+			{ text: 'MFA available for sensitive accounts, recovery codes provided' },
+			{ text: 'Brute force protection: rate limiting, account lockout, CAPTCHA' },
+			{ text: 'Password reset tokens: single-use, time-limited, invalidated on use' },
+			{ text: 'Credential stuffing defense: leaked password detection, device fingerprinting' },
+			// API keys
+			{ text: 'API keys: scoped permissions, rotatable, never in URLs' },
+			{ text: 'API key hashed in storage, not plaintext' },
 			// Encryption & secrets
 			{ text: 'Encryption in transit (TLS 1.2+) and at rest for sensitive data' },
 			{ text: 'Secrets rotated regularly; emergency rotation runbook exists' },
@@ -442,7 +471,7 @@ const checklist: ChecklistSection[] = [
 			// Deployment strategy
 			{ text: 'Zero-downtime deployments (rolling, blue-green, or canary)' },
 			{ text: 'Database migrations decoupled from code deploy when needed' },
-			{ text: 'Rollback procedure documented and tested (< 5 min)' },
+			{ text: 'Rollback procedure documented and tested — quick recovery' },
 			{ text: 'Feature flags for gradual rollout and emergency toggles' },
 			{ text: 'Environment parity — dev/staging/prod use same artifacts' },
 			{ text: "Immutable deployments — replace, don't patch" },
@@ -472,7 +501,7 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Chaos engineering practiced — fault injection, failure scenarios tested regularly' },
 			{ text: 'Game days conducted — simulate outages, verify runbooks work' },
 			// Capacity & cost
-			{ text: 'Capacity planning with headroom — plan 3-6 months ahead, 20-30% buffer' },
+			{ text: 'Capacity planning with headroom — plan ahead, maintain buffer' },
 			{ text: 'Load testing performed regularly, not just pre-launch' },
 			{
 				text: 'Backup/restore tested quarterly — RPO (Recovery Point) and RTO (Recovery Time) verified',
@@ -510,7 +539,7 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Red flag: "temporary" fix without follow-up plan' },
 			{ text: 'Red flag: same bug fixed twice' },
 			{ text: 'Red flag: HACK/FIXME/XXX comments ignored' },
-			{ text: 'Red flag: function > 100 lines, file > 500 lines' },
+			{ text: 'Red flag: functions/files too long — hard to understand at a glance' },
 			{ text: 'Red flag: cyclomatic complexity too high' },
 			{ text: 'Red flag: duplicate pattern more than 3 times' },
 		],
@@ -525,7 +554,7 @@ const checklist: ChecklistSection[] = [
 			{ text: 'README: how to dev / test / build / deploy' },
 			{ text: 'Critical business flows have dedicated docs' },
 			{ text: 'Troubleshooting guide for common errors with solutions' },
-			{ text: 'New hire onboarding < 1 day to run local dev' },
+			{ text: 'New hire onboarding quick — minimal friction to first contribution' },
 			// Collaboration
 			{ text: 'CONTRIBUTING.md explains contribution workflow (setup, style, process)' },
 			{ text: 'PR template guides description, testing, and checklist' },
@@ -544,7 +573,7 @@ const checklist: ChecklistSection[] = [
 			{ text: 'Convention-over-configuration for routes/handlers/jobs' },
 			{ text: 'Environment differences via config/adapters, not scattered conditionals' },
 			// Local development
-			{ text: 'First commit possible within 10 minutes of clone' },
+			{ text: 'First commit friction minimal — quick setup to productivity' },
 			{ text: 'CLI provides one-command operations (dev/test/build/deploy)' },
 			{ text: 'Dev environment reproducible (Dev Containers, Docker Compose, Nix)' },
 			{ text: 'External services have local mocks/stubs — no cloud dependencies for dev' },
@@ -553,7 +582,7 @@ const checklist: ChecklistSection[] = [
 			// Tooling & feedback
 			{ text: 'IDE language server configured (autocomplete, go-to-definition, refactor)' },
 			{ text: 'Debugger configuration provided (launch.json, etc.)' },
-			{ text: 'Fast feedback loop — test < 1s, lint < 2s, build < 10s' },
+			{ text: 'Fast feedback loop — seconds not minutes' },
 			{ text: 'Test watch mode for instant feedback during development' },
 		],
 	},
@@ -658,7 +687,7 @@ const checklist: ChecklistSection[] = [
 	},
 
 	// ============================================
-	// CROSS-CUTTING (23-24)
+	// CROSS-CUTTING (23-24) — was 23-25, Auth merged into Security
 	// ============================================
 	{
 		id: 'i18n',
@@ -683,43 +712,6 @@ const checklist: ChecklistSection[] = [
 			{ text: "Core and plugins loosely coupled — plugin failure doesn't crash core" },
 			{ text: 'Dynamic loading supported if needed (runtime plugin loading)' },
 			{ text: 'Plugins have lifecycle (init/start/stop/destroy)' },
-		],
-	},
-	{
-		id: 'auth',
-		title: '25. Identity & Authentication',
-		description: 'Auth strategy, session management, authorization models, credential security',
-		items: [
-			// Auth strategy
-			{ text: 'Auth strategy chosen with rationale: session vs JWT vs API key' },
-			{
-				text: 'Stateful (session) for web apps, stateless (JWT) for APIs, API keys for service-to-service',
-			},
-			{ text: 'OAuth/OIDC for third-party auth — standard flows, state parameter for CSRF' },
-			// Session management
-			{
-				text: 'Session security: HttpOnly/Secure/SameSite cookies, regenerate on auth, invalidate on logout/security events',
-			},
-			{ text: 'Concurrent session limits if applicable' },
-			// JWT considerations
-			{ text: 'JWT: short expiry (15min), refresh tokens for long-lived sessions' },
-			{ text: 'JWT revocation strategy if needed (blacklist, short expiry, version claim)' },
-			{ text: 'JWT stored securely — httpOnly cookie preferred over localStorage' },
-			// API keys
-			{ text: 'API keys: scoped permissions, rotatable, never in URLs' },
-			{ text: 'API key hashed in storage, not plaintext' },
-			// Authorization models
-			{
-				text: 'Authorization model chosen: RBAC (role-based), ABAC (attribute-based), or ReBAC (relationship-based)',
-			},
-			{ text: 'Permission checks at request boundary, not scattered in business logic' },
-			{ text: 'Deny by default — explicit allowlist, not blocklist' },
-			// Credential security
-			{ text: 'Passwords hashed with modern algorithm (Argon2, bcrypt, scrypt)' },
-			{ text: 'MFA available for sensitive accounts, recovery codes provided' },
-			{ text: 'Brute force protection: rate limiting, account lockout, CAPTCHA' },
-			{ text: 'Password reset tokens: single-use, time-limited, invalidated on use' },
-			{ text: 'Credential stuffing defense: leaked password detection, device fingerprinting' },
 		],
 	},
 ]
@@ -763,7 +755,7 @@ export function formatReviewChecklist(): string {
 	)
 	lines.push(
 		pc.dim(
-			'          Delivery (14-15) · Evolution (16-18) · Frontend (19-22) · Cross-cutting (23-25)'
+			'          Delivery (14-15) · Evolution (16-18) · Frontend (19-22) · Cross-cutting (23-24)'
 		)
 	)
 	lines.push(pc.bold('━'.repeat(60)))
