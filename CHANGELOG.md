@@ -1,5 +1,16 @@
 # sylphx-doctor
 
+## 1.34.0 (2025-12-09)
+
+### ✨ Features
+
+- **review:** add LLM guidance header and workflow footer ([89ec5b9](https://github.com/SylphxAI/doctor/commit/89ec5b91306c30da6d116fafd2ad0c48256cf771))
+- **review:** add schema design and storage efficiency hints ([90b7845](https://github.com/SylphxAI/doctor/commit/90b78456429ed243cddf2d1154b0656533edbfbb))
+
+### ♻️ Refactoring
+
+- **review:** merge Auth into Security, adjust abstraction level ([4405838](https://github.com/SylphxAI/doctor/commit/44058388f31d44eb7f00d06a08a2b95b2e785442))
+
 ## 1.33.0 (2025-12-08)
 
 ### ✨ Features
