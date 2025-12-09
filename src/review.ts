@@ -252,6 +252,12 @@ const checklist: ChecklistSection[] = [
 		items: [
 			{ text: 'Data access isolated — persistence logic separated from business logic' },
 			{ text: 'Data model matches domain — clear aggregates, no god tables/documents' },
+			// Schema design
+			{ text: 'Normalization level intentional — 3NF default, denormalize for read performance with rationale' },
+			{ text: 'Primary keys meaningful — UUID/ULID for distributed, auto-increment for single DB' },
+			{ text: 'Foreign keys + constraints enforce integrity at DB level, not just app level' },
+			{ text: 'Column types optimized — right size (int vs bigint), appropriate precision (decimal vs float)' },
+			{ text: 'Storage efficiency — compression, partitioning for large tables, archival strategy' },
 			{ text: 'Consistency model explicit — strong vs eventual, documented per use case' },
 			{
 				text: 'Distributed transactions use Saga (compensating actions) or Outbox (reliable event publishing) patterns',
