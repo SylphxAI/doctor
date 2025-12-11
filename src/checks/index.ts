@@ -4,6 +4,7 @@ import { brandingModule } from './branding'
 import { buildModule } from './build'
 import { ciModule } from './ci'
 import { configModule } from './config'
+import { dbModule } from './db'
 import type { CheckModule } from './define'
 import { depsModule } from './deps'
 import { docsModule } from './docs'
@@ -38,6 +39,7 @@ export const checkModules: CheckModule[] = [
 	releaseModule,
 	brandingModule,
 	rustModule,
+	dbModule,
 ]
 
 /**
@@ -91,6 +93,7 @@ export {
 	releaseModule,
 	brandingModule,
 	rustModule,
+	dbModule,
 }
 
 export type {

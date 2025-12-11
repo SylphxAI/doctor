@@ -139,6 +139,13 @@ const basePreset: PresetConfig = {
 	'rust/has-tests': 'off',
 	'rust/deny': 'off',
 	'rust/cargo-lock': 'off',
+
+	// Database migrations
+	'db/has-migrations': 'off',
+	'db/no-push-in-prod': 'off',
+	'db/has-migrate-script': 'off',
+	'db/config-exists': 'off',
+	'db/ci-migrations': 'off',
 }
 
 /**
@@ -205,6 +212,13 @@ const devPreset: PresetConfig = extendPreset(basePreset, {
 	'monorepo/turbo-tasks': 'error',
 	'monorepo/packages-readme': 'warn',
 	'monorepo/packages-license': 'warn',
+
+	// Database - enable if migration tool detected
+	'db/has-migrations': 'warn',
+	'db/no-push-in-prod': 'error',
+	'db/has-migrate-script': 'warn',
+	'db/config-exists': 'error',
+	'db/ci-migrations': 'info',
 })
 
 /**
@@ -251,6 +265,11 @@ const stablePreset: PresetConfig = extendPreset(devPreset, {
 	'monorepo/consistent-versions': 'error',
 	'monorepo/packages-readme': 'error',
 	'monorepo/packages-license': 'error',
+
+	// Database - strict migration enforcement
+	'db/has-migrations': 'error',
+	'db/has-migrate-script': 'error',
+	'db/ci-migrations': 'warn',
 })
 
 /**

@@ -248,7 +248,7 @@ const checklist: ChecklistSection[] = [
 	{
 		id: 'data',
 		title: '9. Data & Persistence',
-		description: 'Data modeling, consistency, caching, lifecycle',
+		description: 'Data modeling, consistency, caching, lifecycle, migrations',
 		items: [
 			{ text: 'Data access isolated — persistence logic separated from business logic' },
 			{ text: 'Data model matches domain — clear aggregates, no god tables/documents' },
@@ -271,6 +271,21 @@ const checklist: ChecklistSection[] = [
 			{
 				text: 'Event Sourcing evaluated for audit-heavy domains — events as source of truth, state derived from history',
 			},
+			// Migration discipline
+			{ text: 'Schema changes ALWAYS via migration files — never db push/sync in production' },
+			{ text: 'Migrations are idempotent — safe to run multiple times' },
+			{ text: 'Migrations are reversible — down migration exists and tested' },
+			{ text: 'Migration naming convention: timestamp prefix (e.g., 20240101_add_users)' },
+			{
+				text: 'Data migrations separated from schema migrations — different concerns, different timing',
+			},
+			{ text: 'Large data migrations batched — avoid locking tables' },
+			{ text: 'Migration tested in staging before production — no surprises' },
+			{ text: 'Zero-downtime migrations — expand-contract pattern for breaking changes' },
+			{ text: 'Migration rollback plan documented — know how to undo' },
+			{ text: 'CI runs migrations against test database — catch errors early' },
+			{ text: 'No manual SQL in production — all changes via migration tooling' },
+			// Original items
 			{ text: 'Schema versioned — migrations exist, tested, and rollback-able' },
 			{ text: 'Indexes cover query patterns — no full scans in critical paths' },
 			{ text: 'Connection pooling configured with limits and timeouts' },
